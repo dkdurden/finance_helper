@@ -13,7 +13,8 @@ Read these files first:
 1. README.md
 2. docs/plan.md
 3. docs/README.md
-4. docs/learn/milestone-0-notes.md
+4. docs/learn/milestone-1-notes.md
+5. docs/how-to/ledger-transfer-model.md
 
 Then do the following:
 - Summarize current project state in 5-10 bullets.
@@ -33,18 +34,23 @@ Constraints:
 ## Current Project Snapshot
 
 - Milestone 0 completed (repo bootstrap).
-- Monorepo directories exist: `apps/web`, `apps/api`, `packages/shared`, `infra/docker`, `docs`.
-- `docker-compose.yml` exists with `web`, `api`, `db` baseline services.
-- `apps/web` and `apps/api` are placeholders (not fully scaffolded frameworks yet).
-- `.env.example` files use placeholders only (no real values).
-- Learning docs structure exists:
-  - `docs/decisions/`
-  - `docs/how-to/`
-  - `docs/learn/`
+- Milestone 1 data model foundation completed in `apps/api`.
+- Django + DRF project scaffolded and running in Docker.
+- `finance` app includes models and migrations for:
+  - `Account`, `Category`, `Transaction`, `Transfer`
+  - `Product`, `GroceryTrip`, `GroceryTripItem`
+- Money fields use integer cents with `BigIntegerField`.
+- Transfer and grocery integrity constraints are implemented at DB level.
+- Health endpoint exists at `GET /api/health/`.
+- Admin registrations exist for current finance models.
+- Docs added/updated:
+  - `docs/learn/milestone-1-notes.md`
+  - `docs/how-to/api-bootstrap.md`
+  - `docs/how-to/ledger-transfer-model.md`
 
 ## Next Recommended Step
 
-Milestone 1: scaffold Django + DRF in `apps/api` and implement V1 data models + migrations.
+Milestone 1 (API layer): implement DRF serializers + viewsets for core resources and add initial API tests.
 
 ## Definition of Done Per Milestone
 
