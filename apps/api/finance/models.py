@@ -1,4 +1,6 @@
+from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import F, Q
 from django.utils import timezone
 
 
@@ -19,7 +21,7 @@ class Account(models.Model):
         default=AccountType.CHECKING,
     )
     is_liability = models.BooleanField(default=False)
-    opening_balance_cents = models.IntegerField(default=0)
+    opening_balance_cents = models.BigIntegerField(default=0)
     opening_balance_date = models.DateTimeField(default=timezone.now)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -43,3 +45,96 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Transfer(models.Model):
+    date = models.DateField()
+    occurred_at = models.DateTimeField(null=True, blank=True)
+    amount_cents = models.BigIntegerField()
+    from_account = models.ForeignKey(
+        Account,
+        on_delete=models.PROTECT,
+        related_name="outgoing_transfers",
+    )
+    to_account = models.ForeignKey(
+        Account,
+        on_delete=models.PROTECT,
+        related_name="incoming_transfers",
+    )
+    note = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-date", "-id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(amount_cents__gt=0),
+                name="transfer_amount_cents_positive",
+            ),
+            models.CheckConstraint(
+                condition=~Q(from_account=F("to_account")),
+                name="transfer_accounts_must_differ",
+            ),
+        ]
+
+    def clean(self):
+        if self.from_account_id and self.to_account_id and self.from_account_id == self.to_account_id:
+            raise ValidationError("from_account and to_account must be different")
+        if self.amount_cents is not None and self.amount_cents <= 0:
+            raise ValidationError("amount_cents must be greater than zero")
+
+    def __str__(self):
+        return f"{self.date} {self.amount_cents}"
+
+
+class Transaction(models.Model):
+    class TransactionType(models.TextChoices):
+        NORMAL = "normal", "Normal"
+        ADJUSTMENT = "adjustment", "Adjustment"
+        TRANSFER = "transfer", "Transfer"
+
+    date = models.DateField()
+    occurred_at = models.DateTimeField(null=True, blank=True)
+    signed_amount_cents = models.BigIntegerField()
+    transaction_type = models.CharField(
+        max_length=20,
+        choices=TransactionType.choices,
+        default=TransactionType.NORMAL,
+    )
+    merchant = models.CharField(max_length=255, null=True, blank=True)
+    note = models.TextField(null=True, blank=True)
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.PROTECT,
+        related_name="transactions",
+    )
+    account = models.ForeignKey(
+        Account,
+        on_delete=models.PROTECT,
+        related_name="transactions",
+    )
+    transfer = models.ForeignKey(
+        Transfer,
+        on_delete=models.PROTECT,
+        related_name="transactions",
+        null=True,
+        blank=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-date", "-id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    (Q(transaction_type="transfer") & Q(transfer__isnull=False))
+                    | (~Q(transaction_type="transfer") & Q(transfer__isnull=True))
+                ),
+                name="transaction_transfer_type_link_match",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.date} {self.signed_amount_cents}"
