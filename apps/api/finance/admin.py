@@ -1,6 +1,14 @@
 from django.contrib import admin
 
-from .models import Account, Category, Transaction, Transfer
+from .models import (
+    Account,
+    Category,
+    GroceryTrip,
+    GroceryTripItem,
+    Product,
+    Transaction,
+    Transfer,
+)
 
 
 @admin.register(Account)
@@ -38,3 +46,24 @@ class TransactionAdmin(admin.ModelAdmin):
     )
     list_filter = ("transaction_type", "account", "category")
     search_fields = ("merchant", "note")
+
+
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    list_display = ("name", "default_unit", "is_archived", "updated_at")
+    list_filter = ("is_archived",)
+    search_fields = ("name",)
+
+
+@admin.register(GroceryTrip)
+class GroceryTripAdmin(admin.ModelAdmin):
+    list_display = ("date", "occurred_at", "store", "total_cents", "transaction")
+    list_filter = ("date", "store")
+    search_fields = ("store",)
+
+
+@admin.register(GroceryTripItem)
+class GroceryTripItemAdmin(admin.ModelAdmin):
+    list_display = ("trip", "product", "name_snapshot", "qty", "unit", "line_total_cents")
+    list_filter = ("unit",)
+    search_fields = ("name_snapshot", "product__name")

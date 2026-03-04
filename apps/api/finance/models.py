@@ -128,13 +128,107 @@ class Transaction(models.Model):
         ordering = ["-date", "-id"]
         constraints = [
             models.CheckConstraint(
+                condition=~Q(signed_amount_cents=0),
+                name="transaction_signed_amount_non_zero",
+            ),
+            models.CheckConstraint(
                 condition=(
                     (Q(transaction_type="transfer") & Q(transfer__isnull=False))
                     | (~Q(transaction_type="transfer") & Q(transfer__isnull=True))
                 ),
                 name="transaction_transfer_type_link_match",
-            )
+            ),
         ]
 
     def __str__(self):
         return f"{self.date} {self.signed_amount_cents}"
+
+
+class Product(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+    default_unit = models.CharField(max_length=50, null=True, blank=True)
+    is_archived = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
+class GroceryTrip(models.Model):
+    date = models.DateField()
+    occurred_at = models.DateTimeField(null=True, blank=True)
+    store = models.CharField(max_length=255, null=True, blank=True)
+    tax_cents = models.BigIntegerField(default=0)
+    fees_cents = models.BigIntegerField(default=0)
+    total_cents = models.BigIntegerField()
+    transaction = models.OneToOneField(
+        Transaction,
+        on_delete=models.PROTECT,
+        related_name="grocery_trip",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-date", "-id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(tax_cents__gte=0),
+                name="grocery_trip_tax_non_negative",
+            ),
+            models.CheckConstraint(
+                condition=Q(fees_cents__gte=0),
+                name="grocery_trip_fees_non_negative",
+            ),
+            models.CheckConstraint(
+                condition=Q(total_cents__gte=0),
+                name="grocery_trip_total_non_negative",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.date} {self.store or 'grocery_trip'}"
+
+
+class GroceryTripItem(models.Model):
+    trip = models.ForeignKey(
+        GroceryTrip,
+        on_delete=models.CASCADE,
+        related_name="items",
+    )
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.PROTECT,
+        related_name="trip_items",
+    )
+    name_snapshot = models.CharField(max_length=255)
+    qty = models.DecimalField(max_digits=10, decimal_places=3, null=True, blank=True)
+    unit = models.CharField(max_length=50, null=True, blank=True)
+    unit_price_cents = models.BigIntegerField(null=True, blank=True)
+    line_total_cents = models.BigIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(line_total_cents__gte=0),
+                name="grocery_trip_item_line_total_non_negative",
+            ),
+            models.CheckConstraint(
+                condition=Q(unit_price_cents__isnull=True) | Q(unit_price_cents__gte=0),
+                name="grocery_trip_item_unit_price_non_negative",
+            ),
+            models.CheckConstraint(
+                condition=Q(qty__isnull=True) | Q(qty__gt=0),
+                name="grocery_trip_item_qty_positive",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.name_snapshot} {self.line_total_cents}"
