@@ -21,9 +21,10 @@ Read these files first:
 Then do the following:
 - Summarize current project state in 5-10 bullets.
 - Propose the next concrete implementation step aligned to milestones.
-- Implement that step end-to-end (code + docs update).
+- Propose one small implementation step and wait for approval before implementing.
 - Add/update learning notes in `docs/learn/milestone-<n>-notes.md`.
 - Explain what changed, why, and how to run/verify locally.
+- After each step, pause for confirmation before proceeding.
 
 Constraints:
 - Keep architecture aligned with Next.js + Django + Postgres plan.
@@ -82,5 +83,7 @@ docker compose logs -f api
 docker compose down
 docker compose run --rm api python manage.py test finance
 ```
+
+
 
 
