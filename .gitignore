@@ -6,3 +6,32 @@ __pycache__/
 node_modules/
 .next/
 .venv/*
+
+# Next.js (apps/web)
+apps/web/.next/
+apps/web/out/
+apps/web/.vercel/
+apps/web/next-env.d.ts
+
+# Node logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Additional local env patterns
+apps/web/.env*.local
+
+# Make sure not to commit Frontend Mentor designs!
+# Avoid accidental upload of the Sketch and Figma design files
+#####################################################
+## Please do not remove lines 30/31 - thanks! 🙂 ##
+#####################################################
+*.sketch
+*.fig
+
+# Avoid accidental XD upload if you convert the design file
+###############################################
+## Please do not remove line 37 - thanks! 🙂 ##
+###############################################
+*.xd

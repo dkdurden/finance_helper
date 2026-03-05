@@ -16,6 +16,7 @@ Read these files first:
 4. docs/learn/milestone-1-notes.md
 5. docs/how-to/api-core-endpoints.md
 6. docs/how-to/ledger-transfer-model.md
+7. apps/web/AGENTS_STYLE_GUIDE.md
 
 Then do the following:
 - Summarize current project state in 5-10 bullets.
@@ -81,3 +82,5 @@ docker compose logs -f api
 docker compose down
 docker compose run --rm api python manage.py test finance
 ```
+
+
