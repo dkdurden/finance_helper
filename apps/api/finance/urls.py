@@ -5,6 +5,7 @@ from .views import (
     AccountViewSet,
     CategoryViewSet,
     ProductViewSet,
+    ReceiptItemViewSet,
     ReceiptViewSet,
     TransactionViewSet,
     TransferViewSet,
@@ -16,6 +17,7 @@ router.register("accounts", AccountViewSet, basename="account")
 router.register("categories", CategoryViewSet, basename="category")
 router.register("products", ProductViewSet, basename="product")
 router.register("receipts", ReceiptViewSet, basename="receipt")
+router.register("receipt-items", ReceiptItemViewSet, basename="receipt-item")
 router.register("transactions", TransactionViewSet, basename="transaction")
 router.register("transfers", TransferViewSet, basename="transfer")
 

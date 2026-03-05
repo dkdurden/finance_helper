@@ -1,11 +1,12 @@
 from django.http import JsonResponse
 from rest_framework import viewsets
 
-from .models import Account, Category, Product, Receipt, Transaction, Transfer
+from .models import Account, Category, Product, Receipt, ReceiptItem, Transaction, Transfer
 from .serializers import (
     AccountSerializer,
     CategorySerializer,
     ProductSerializer,
+    ReceiptItemSerializer,
     ReceiptSerializer,
     TransactionSerializer,
     TransferSerializer,
@@ -30,6 +31,11 @@ class ProductViewSet(viewsets.ModelViewSet):
 class ReceiptViewSet(viewsets.ModelViewSet):
     queryset = Receipt.objects.all()
     serializer_class = ReceiptSerializer
+
+
+class ReceiptItemViewSet(viewsets.ModelViewSet):
+    queryset = ReceiptItem.objects.all()
+    serializer_class = ReceiptItemSerializer
 
 
 class TransferViewSet(viewsets.ModelViewSet):

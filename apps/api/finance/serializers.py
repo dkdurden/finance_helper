@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Account, Category, Product, Receipt, Transaction, Transfer
+from .models import Account, Category, Product, Receipt, ReceiptItem, Transaction, Transfer
 
 
 class AccountSerializer(serializers.ModelSerializer):
@@ -62,6 +62,46 @@ class ReceiptSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class ReceiptItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReceiptItem
+        fields = [
+            "id",
+            "receipt",
+            "product",
+            "name_snapshot",
+            "qty",
+            "unit",
+            "unit_price_cents",
+            "line_total_cents",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+    def validate(self, attrs):
+        line_total_cents = attrs.get("line_total_cents", getattr(self.instance, "line_total_cents", None))
+        qty = attrs.get("qty", getattr(self.instance, "qty", None))
+        unit_price_cents = attrs.get("unit_price_cents", getattr(self.instance, "unit_price_cents", None))
+
+        if line_total_cents is not None and line_total_cents < 0:
+            raise serializers.ValidationError(
+                {"line_total_cents": "line_total_cents must be greater than or equal to zero."}
+            )
+
+        if qty is not None and qty <= 0:
+            raise serializers.ValidationError(
+                {"qty": "qty must be greater than zero when provided."}
+            )
+
+        if unit_price_cents is not None and unit_price_cents < 0:
+            raise serializers.ValidationError(
+                {"unit_price_cents": "unit_price_cents must be greater than or equal to zero when provided."}
+            )
+
+        return attrs
 
 
 class TransferSerializer(serializers.ModelSerializer):

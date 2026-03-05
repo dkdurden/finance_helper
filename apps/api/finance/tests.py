@@ -2,7 +2,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .models import Account, Category, Product, Receipt, Transaction, Transfer
+from .models import Account, Category, Product, Receipt, ReceiptItem, Transaction, Transfer
 
 
 class HealthEndpointTests(APITestCase):
@@ -154,6 +154,94 @@ class ReceiptApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["store"], "Costco")
+
+
+class ReceiptItemApiTests(APITestCase):
+    def setUp(self):
+        self.account = Account.objects.create(
+            name="ReceiptItem Checking",
+            account_type=Account.AccountType.CHECKING,
+            is_liability=False,
+            opening_balance_cents=0,
+            opening_balance_date="2026-01-01T00:00:00Z",
+        )
+        self.category = Category.objects.create(name="ReceiptItem Category")
+        self.transaction = Transaction.objects.create(
+            date="2026-03-05",
+            signed_amount_cents=-2500,
+            transaction_type=Transaction.TransactionType.NORMAL,
+            category=self.category,
+            account=self.account,
+            transfer=None,
+        )
+        self.receipt = Receipt.objects.create(
+            date="2026-03-05",
+            store="Walmart",
+            tax_cents=100,
+            fees_cents=0,
+            total_cents=2500,
+            transaction=self.transaction,
+        )
+        self.product = Product.objects.create(name="Laundry Detergent", default_unit="bottle")
+
+    def test_create_receipt_item(self):
+        payload = {
+            "receipt": self.receipt.id,
+            "product": self.product.id,
+            "name_snapshot": "Laundry Detergent",
+            "qty": "1.000",
+            "unit": "bottle",
+            "unit_price_cents": 1299,
+            "line_total_cents": 1299,
+        }
+
+        response = self.client.post(reverse("receipt-item-list"), payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["name_snapshot"], payload["name_snapshot"])
+        self.assertEqual(response.data["line_total_cents"], payload["line_total_cents"])
+
+    def test_list_receipt_items(self):
+        ReceiptItem.objects.create(
+            receipt=self.receipt,
+            product=self.product,
+            name_snapshot="Laundry Detergent",
+            qty="1.000",
+            unit="bottle",
+            unit_price_cents=1299,
+            line_total_cents=1299,
+        )
+
+        response = self.client.get(reverse("receipt-item-list"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["name_snapshot"], "Laundry Detergent")
+
+    def test_receipt_item_rejects_negative_line_total(self):
+        payload = {
+            "receipt": self.receipt.id,
+            "product": self.product.id,
+            "name_snapshot": "Bad Line",
+            "line_total_cents": -1,
+        }
+
+        response = self.client.post(reverse("receipt-item-list"), payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_receipt_item_rejects_non_positive_qty(self):
+        payload = {
+            "receipt": self.receipt.id,
+            "product": self.product.id,
+            "name_snapshot": "Bad Qty",
+            "qty": "0.000",
+            "line_total_cents": 100,
+        }
+
+        response = self.client.post(reverse("receipt-item-list"), payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
 class TransferApiTests(APITestCase):
