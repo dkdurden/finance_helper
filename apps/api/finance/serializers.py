@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Account, Category, Product, Transaction, Transfer
+from .models import Account, Category, Product, Receipt, Transaction, Transfer
 
 
 class AccountSerializer(serializers.ModelSerializer):
@@ -40,6 +40,24 @@ class ProductSerializer(serializers.ModelSerializer):
             "name",
             "default_unit",
             "is_archived",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class ReceiptSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Receipt
+        fields = [
+            "id",
+            "date",
+            "occurred_at",
+            "store",
+            "tax_cents",
+            "fees_cents",
+            "total_cents",
+            "transaction",
             "created_at",
             "updated_at",
         ]

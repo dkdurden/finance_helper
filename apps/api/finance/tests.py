@@ -2,7 +2,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .models import Account, Category, Product, Transfer
+from .models import Account, Category, Product, Receipt, Transaction, Transfer
 
 
 class HealthEndpointTests(APITestCase):
@@ -101,6 +101,59 @@ class ProductApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["name"], "Dish Soap")
+
+
+class ReceiptApiTests(APITestCase):
+    def setUp(self):
+        self.account = Account.objects.create(
+            name="Receipt Checking",
+            account_type=Account.AccountType.CHECKING,
+            is_liability=False,
+            opening_balance_cents=0,
+            opening_balance_date="2026-01-01T00:00:00Z",
+        )
+        self.category = Category.objects.create(name="Receipt Category")
+        self.transaction = Transaction.objects.create(
+            date="2026-03-05",
+            signed_amount_cents=-2500,
+            transaction_type=Transaction.TransactionType.NORMAL,
+            merchant="Target",
+            category=self.category,
+            account=self.account,
+            transfer=None,
+        )
+
+    def test_create_receipt(self):
+        payload = {
+            "date": "2026-03-05",
+            "store": "Target",
+            "tax_cents": 200,
+            "fees_cents": 0,
+            "total_cents": 2500,
+            "transaction": self.transaction.id,
+        }
+
+        response = self.client.post(reverse("receipt-list"), payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["store"], payload["store"])
+        self.assertEqual(response.data["total_cents"], payload["total_cents"])
+
+    def test_list_receipts(self):
+        Receipt.objects.create(
+            date="2026-03-05",
+            store="Costco",
+            tax_cents=300,
+            fees_cents=0,
+            total_cents=4000,
+            transaction=self.transaction,
+        )
+
+        response = self.client.get(reverse("receipt-list"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["store"], "Costco")
 
 
 class TransferApiTests(APITestCase):
