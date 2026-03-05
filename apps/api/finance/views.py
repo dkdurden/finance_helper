@@ -1,10 +1,11 @@
 from django.http import JsonResponse
 from rest_framework import viewsets
 
-from .models import Account, Category, Transaction, Transfer
+from .models import Account, Category, Product, Transaction, Transfer
 from .serializers import (
     AccountSerializer,
     CategorySerializer,
+    ProductSerializer,
     TransactionSerializer,
     TransferSerializer,
 )
@@ -18,6 +19,11 @@ class AccountViewSet(viewsets.ModelViewSet):
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+
+
+class ProductViewSet(viewsets.ModelViewSet):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
 
 
 class TransferViewSet(viewsets.ModelViewSet):

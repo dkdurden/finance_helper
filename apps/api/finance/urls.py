@@ -4,6 +4,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     AccountViewSet,
     CategoryViewSet,
+    ProductViewSet,
     TransactionViewSet,
     TransferViewSet,
     health,
@@ -12,6 +13,7 @@ from .views import (
 router = DefaultRouter()
 router.register("accounts", AccountViewSet, basename="account")
 router.register("categories", CategoryViewSet, basename="category")
+router.register("products", ProductViewSet, basename="product")
 router.register("transactions", TransactionViewSet, basename="transaction")
 router.register("transfers", TransferViewSet, basename="transfer")
 

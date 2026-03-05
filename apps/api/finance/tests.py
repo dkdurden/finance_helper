@@ -2,7 +2,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .models import Account, Category, Transfer
+from .models import Account, Category, Product, Transfer
 
 
 class HealthEndpointTests(APITestCase):
@@ -77,6 +77,30 @@ class CategoryApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["name"], "Rent")
+
+
+class ProductApiTests(APITestCase):
+    def test_create_product(self):
+        payload = {
+            "name": "Paper Towels",
+            "default_unit": "pack",
+            "is_archived": False,
+        }
+
+        response = self.client.post(reverse("product-list"), payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["name"], payload["name"])
+        self.assertEqual(response.data["default_unit"], payload["default_unit"])
+
+    def test_list_products(self):
+        Product.objects.create(name="Dish Soap", default_unit="bottle", is_archived=False)
+
+        response = self.client.get(reverse("product-list"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["name"], "Dish Soap")
 
 
 class TransferApiTests(APITestCase):
