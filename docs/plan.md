@@ -1,12 +1,12 @@
-# Finance + Receipt Tracker --- Architecture & Build Plan (V1, snake_case)
+# Finance + Receipt Tracker - Architecture and Build Plan (V1, snake_case)
 
 ## Core Principles
 
 - Manual-only data entry (no bank APIs)
-- transaction table is the source of truth for money
-- receipt data is detailed metadata attached to a transaction
-- all monetary values stored as integer cents
-- account balances are derived, not stored
+- `transaction` table is the source of truth for money
+- Receipt data is metadata attached to a transaction
+- All monetary values stored as integer cents
+- Account balances are derived, not stored
 
 ---
 
@@ -14,13 +14,11 @@
 
 ## account
 
-Represents a financial account (checking, savings, credit card, loan,
-etc.)
+Represents a financial account (checking, savings, cash, credit card, loan, investment, other).
 
 - id
 - name
-- account_type (checking \| savings \| cash \| credit_card \| loan \|
-  investment \| other)
+- account_type
 - is_liability (boolean)
 - opening_balance_cents (int)
 - opening_balance_date (datetime)
@@ -29,9 +27,9 @@ etc.)
 
 ### Balance Logic
 
-balance = opening_balance_cents + sum(transaction.signed_amount_cents)
+`balance = opening_balance_cents + sum(transaction.signed_amount_cents)`
 
-If is_liability = true, the balance represents amount owed.
+If `is_liability = true`, the balance represents amount owed.
 
 ---
 
@@ -45,7 +43,7 @@ Used for reporting and grouping transactions.
 - created_at
 - updated_at
 
-Examples: - groceries - rent - gym - income - adjustments
+Examples: groceries, rent, gym, income, adjustments.
 
 ---
 
@@ -56,22 +54,40 @@ Represents a single financial event.
 - id
 - date
 - signed_amount_cents (int)
-- transaction_type (normal \| adjustment)
-- merchant (string nullable)
-- note (string nullable)
-- category_id (fk → category)
-- account_id (fk → account)
-- receipt_id (nullable fk → receipt)
+- transaction_type (`normal | adjustment | transfer`)
+- merchant (nullable string)
+- note (nullable string)
+- category_id (fk -> category)
+- account_id (fk -> account)
+- transfer_id (nullable fk -> transfer)
 - created_at
 - updated_at
 
 ### Signed Amount Rules
 
-For asset accounts: - positive → increases balance - negative →
-decreases balance
+For asset accounts:
+- positive -> increases balance
+- negative -> decreases balance
 
-For liability accounts: - positive → increases amount owed - negative →
-decreases amount owed
+For liability accounts:
+- positive -> increases amount owed
+- negative -> decreases amount owed
+
+---
+
+## transfer
+
+Represents a transfer event across two accounts.
+
+- id
+- date
+- occurred_at (nullable datetime)
+- amount_cents (int, > 0)
+- from_account_id (fk -> account)
+- to_account_id (fk -> account)
+- note (nullable string)
+- created_at
+- updated_at
 
 ---
 
@@ -81,48 +97,48 @@ Reusable product catalog item.
 
 - id
 - name
-- default_unit (string nullable)
+- default_unit (nullable string)
 - is_archived (boolean)
 - created_at
 - updated_at
 
 ---
 
-## receipt (receipt header)
+## receipt (header)
 
-Represents one receipt/purchase event.
+Represents one purchase receipt.
 
 - id
 - date
-- store (string nullable)
+- store (nullable string)
 - tax_cents (int default 0)
 - fees_cents (int default 0)
 - total_cents (int)
-- transaction_id (unique fk → transaction)
+- transaction_id (unique fk -> transaction)
 - created_at
 - updated_at
 
 ### Total Rule
 
-total_cents = sum(receipt_item.line_total_cents) + tax_cents +
-fees_cents
+`total_cents = sum(receipt_item.line_total_cents) + tax_cents + fees_cents`
 
-transaction.signed_amount_cents must reflect this total: - negative for
-asset accounts - positive for liability accounts
+`transaction.signed_amount_cents` should reflect this total:
+- negative for asset accounts
+- positive for liability accounts
 
 ---
 
-## receipt_item (receipt line item)
+## receipt_item (line item)
 
-Represents what was purchased on a specific receipt.
+Represents an item on a receipt.
 
 - id
 - receipt_id (fk -> receipt)
-- product_id (fk → product)
+- product_id (fk -> product)
 - name_snapshot (string)
-- qty (float nullable)
-- unit (string nullable)
-- unit_price_cents (int nullable)
+- qty (nullable float/decimal)
+- unit (nullable string)
+- unit_price_cents (nullable int)
 - line_total_cents (int)
 - created_at
 - updated_at
@@ -131,11 +147,9 @@ Represents what was purchased on a specific receipt.
 
 # Relationships
 
-account 1 ────\< transaction \>──── 1 category
-
-transaction 1 ──── 1 receipt
-
-receipt 1 ────\< receipt_item \>──── 1 product
+- `account 1 -----< transaction >----- 1 category`
+- `transaction 1 ----- 0..1 receipt`
+- `receipt 1 -----< receipt_item >----- 1 product`
 
 ---
 
@@ -143,29 +157,29 @@ receipt 1 ────\< receipt_item \>──── 1 product
 
 When user sets an account to a reported balance:
 
-1.  Compute current balance
-2.  Calculate difference
-3.  Create transaction:
-    - signed_amount_cents = difference
-    - transaction_type = adjustment
-    - category = adjustments
-    - note = "balance adjustment"
+1. Compute current balance
+2. Calculate difference
+3. Create transaction:
+   - signed_amount_cents = difference
+   - transaction_type = adjustment
+   - category = adjustments
+   - note = "balance adjustment"
 
 ---
 
 # Net Worth Calculation
 
-net_worth = sum(asset_balances) - sum(liability_balances)
+`net_worth = sum(asset_balances) - sum(liability_balances)`
 
-Where: - asset = account.is_liability = false - liability =
-account.is_liability = true
+Where:
+- asset = `account.is_liability = false`
+- liability = `account.is_liability = true`
 
 ---
 
 # Not Included in V1
 
-- merchant model
-- transfers
+- merchant model (separate entity)
 - budgets
 - subscriptions
 - bank integrations
@@ -185,150 +199,124 @@ account.is_liability = true
 
 ---
 
-# Tech stack + architecture plan (Next.js + Django + Postgres)
+# Tech Stack + Architecture Plan (Next.js + Django + Postgres)
 
 ## High-level architecture
 
 - **web app (Next.js)**
-  - SSR/SEO pages (server components) as needed
-  - client components only when you need interactivity
-  - calls the Django API **from the server** when possible (keeps API keys/logic off the browser)
-- **api (Django + Django REST Framework)**
-  - owns business logic + database (Postgres via Django ORM)
-  - exposes REST endpoints (JSON)
+  - SSR/SEO pages (server components) where useful
+  - client components for interactivity
+  - call Django API from server side when possible
+- **api (Django + DRF)**
+  - owns business logic + database
+  - exposes REST endpoints
 - **database (Postgres)**
   - single source of truth for persisted data
 
 ### Request flow (recommended)
 
-1. Browser requests a page from **Next.js**
-2. Next.js server fetches data from **Django API** (server-side)
-3. Next.js renders HTML (SSR) and returns to browser
-4. For mutations (create/edit), Next.js calls Django API (server action → API)
-
-This matches your goal: SSR/SEO + “do API calls on the server side” where it makes sense.
+1. Browser requests a page from Next.js
+2. Next.js server fetches data from Django API
+3. Next.js renders HTML and returns to browser
+4. Mutations call Django API from server actions/handlers
 
 ---
 
-## Monorepo vs separate repos
+## Monorepo recommendation
 
-**Recommendation: monorepo** (easier dev + deploy + shared types/docs).
+Keep monorepo layout:
 
-Suggested structure:
-
-```
+```text
 repo/
   apps/
-    web/                 # Next.js (App Router)
-    api/                 # Django project (DRF)
+    web/
+    api/
   packages/
-    shared/              # (optional) shared utils/types (OpenAPI-generated types later)
+    shared/
   infra/
-    docker/              # dockerfiles, compose, nginx/caddy configs
+    docker/
   docs/
     plan.md
 ```
 
 ---
 
-## API contract (how Next talks to Django)
-
-### Preferred approach
+## API contract
 
 - Django provides REST endpoints
-- Next.js fetches them **server-side** (server components / route handlers / server actions)
+- Next.js fetches them server-side
 
-### Helpful additions (v1.1)
-
-- Add an **OpenAPI schema** from DRF and generate TypeScript types for the web app.
+Potential v1.1 improvement:
+- DRF OpenAPI schema + generated TypeScript types for web app
 
 ---
 
-## Authentication recommendation (manual-only app)
+## Authentication recommendation
 
-Because this is a **manual-entry, single-user app**, you can keep auth simple.
+For manual-entry single-user scope:
+- Django auth + cookie-based session authentication
 
-Use **Django auth with cookie-based session authentication**
+---
 
 ## Deployment recommendation
 
-Since you’re doing Next.js + Django + Postgres, the simplest, most reliable path is:
-
-### Recommended: Docker Compose on a VPS
-
+Docker Compose on a VPS:
 - `web` (Next.js)
 - `api` (Django + gunicorn)
 - `db` (Postgres)
-- reverse proxy (Caddy or Nginx) for TLS + routing
+- reverse proxy (Caddy/Nginx) for TLS and routing
 
-Why:
-
-- predictable
-- cheap
-- easy backups (Postgres volume)
-- deploy both services together
-
-If you’d rather use a managed platform, common options people use for container apps include **Fly.io** and **Render**, and DigitalOcean App Platform is another common choice.
-
-### Routing
-
-- `https://yourdomain.com` → Next.js
-- `https://api.yourdomain.com` → Django API
+Routing:
+- `https://yourdomain.com` -> Next.js
+- `https://api.yourdomain.com` -> Django API
 
 ---
 
-## Local development (recommended)
+## Local development
 
-Use docker-compose for everything so dev ≈ prod:
+Use Docker Compose for parity with production:
+- `web`
+- `api`
+- `db`
 
-- `web`: Next.js dev server
-- `api`: Django dev server
-- `db`: Postgres with volume
-
-Environment variables:
-
+Env vars:
 - `DATABASE_URL` (api)
 - `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`
 - `API_BASE_URL` (web)
 
 ---
 
-## Build milestones (stack-specific)
+## Build milestones
 
-### Milestone 0 — Repo bootstrap
-
+### Milestone 0 - Repo bootstrap
 - Create monorepo folders
 - Add base docker-compose
-- Verify `web`, `api`, `db` all run together
+- Verify `web`, `api`, `db` run together
 
-### Milestone 1 — Django API foundation
-
-- Create Django project + app(s)
+### Milestone 1 - Django API foundation
+- Create Django project + apps
 - Add DRF
-- Implement models from the V1 spec
+- Implement models
 - Add migrations
-- Add admin for quick inspection
+- Add admin
+- Add API endpoints/tests
 
-### Milestone 2 — Next.js UI foundation
-
+### Milestone 2 - Next.js UI foundation
 - App Router pages
 - Basic layout + navigation
 - Server-side data fetching from Django
 
-### Milestone 3 — Transactions + accounts flows
-
-- accounts CRUD (requires opening_balance inputs)
+### Milestone 3 - Transactions + accounts flows
+- accounts CRUD
 - transactions CRUD
 - account balance view (derived)
-- adjustment flow (creates adjustment transaction)
+- adjustment flow
 
-### Milestone 4 - Receipt module
-
+### Milestone 4 - Receipt module UX
 - products CRUD + search/autocomplete
 - receipt create/edit (writes transaction + receipt + items)
 
-### Milestone 5 — Reporting
-
+### Milestone 5 - Reporting
 - monthly totals
 - spend by category
 - net worth
@@ -337,10 +325,5 @@ Environment variables:
 
 ## Notes on SSR + server-side API calls
 
-- Next.js server components can fetch from your API directly (simple and common). citeturn0search14turn0search11
-- Server Actions are useful for mutations without creating extra Next API routes; you can call your Django API from them. citeturn0search8
-
-
-
-
-
+- Next.js server components can fetch from API directly.
+- Server Actions are useful for mutations without extra Next API routes.

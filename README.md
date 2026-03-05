@@ -16,13 +16,17 @@ docs/
   plan.md     # Project architecture and milestones
 ```
 
-## Milestone 0 status
+## Milestone status
 
-- Monorepo folders created
-- Docker Compose baseline added (`web`, `api`, `db`)
-- Environment variable templates added
+- Milestone 0 complete: monorepo + Docker baseline.
+- Milestone 1 complete: Django + DRF API foundation in `apps/api`.
+  - Models + migrations + admin
+  - DRF serializers + viewsets + routes
+  - Endpoints: accounts, categories, transactions, transfers, products, receipts, receipt-items
+  - Validation tests passing (`docker compose run --rm api python manage.py test finance`)
+- Next: Milestone 2 (Next.js web foundation in `apps/web`) with server-side API integration.
 
-## Start services (baseline)
+## Start services
 
 1. Copy env templates:
    - `Copy-Item .env.example .env`
@@ -31,5 +35,9 @@ docs/
 2. Start containers:
    - `docker compose up --build`
 
-Current `web` and `api` services are bootstrap placeholders so the stack starts cleanly.  
-Next step is Milestone 1: scaffold Django + DRF in `apps/api`, then Milestone 2: scaffold Next.js in `apps/web`.
+## Useful docs
+
+- `docs/plan.md`
+- `docs/how-to/api-bootstrap.md`
+- `docs/how-to/api-core-endpoints.md`
+- `docs/learn/milestone-1-notes.md`

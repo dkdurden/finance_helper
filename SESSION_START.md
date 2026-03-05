@@ -1,6 +1,6 @@
 # Session Start Guide (for New AI Context)
 
-Last updated: 2026-03-04
+Last updated: 2026-03-05
 
 Use this file at the beginning of any new chat/session so the assistant can start with full project context and minimal back-and-forth.
 
@@ -14,7 +14,8 @@ Read these files first:
 2. docs/plan.md
 3. docs/README.md
 4. docs/learn/milestone-1-notes.md
-5. docs/how-to/ledger-transfer-model.md
+5. docs/how-to/api-core-endpoints.md
+6. docs/how-to/ledger-transfer-model.md
 
 Then do the following:
 - Summarize current project state in 5-10 bullets.
@@ -27,6 +28,7 @@ Constraints:
 - Keep architecture aligned with Next.js + Django + Postgres plan.
 - Use integer cents for money fields.
 - Transaction is source of truth for balances.
+- Run Django commands through Docker Compose from repo root.
 - Do not commit real secrets.
 - Keep docs updated as features are added.
 ```
@@ -34,7 +36,7 @@ Constraints:
 ## Current Project Snapshot
 
 - Milestone 0 completed (repo bootstrap).
-- Milestone 1 data model foundation completed in `apps/api`.
+- Milestone 1 completed in `apps/api`.
 - Django + DRF project scaffolded and running in Docker.
 - `finance` app includes models and migrations for:
   - `Account`, `Category`, `Transaction`, `Transfer`
@@ -42,15 +44,15 @@ Constraints:
 - Money fields use integer cents with `BigIntegerField`.
 - Transfer and receipt integrity constraints are implemented at DB level.
 - Health endpoint exists at `GET /api/health/`.
+- API endpoints exposed under `/api/` for:
+  - `accounts`, `categories`, `transactions`, `transfers`
+  - `products`, `receipts`, `receipt-items`
 - Admin registrations exist for current finance models.
-- Docs added/updated:
-  - `docs/learn/milestone-1-notes.md`
-  - `docs/how-to/api-bootstrap.md`
-  - `docs/how-to/ledger-transfer-model.md`
+- Current API test status: `Ran 21 tests ... OK`.
 
 ## Next Recommended Step
 
-Milestone 1 (API layer): implement DRF serializers + viewsets for core resources and add initial API tests.
+Milestone 2 (web foundation): scaffold/build `apps/web` pages and wire server-side data fetching to Django API endpoints.
 
 ## Definition of Done Per Milestone
 
@@ -77,5 +79,5 @@ docker compose up --build
 docker compose ps
 docker compose logs -f api
 docker compose down
+docker compose run --rm api python manage.py test finance
 ```
-

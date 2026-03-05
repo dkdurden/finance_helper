@@ -1,6 +1,6 @@
 # Ledger Transfer Model (Account + Transaction + Transfer)
 
-This note explains how transfer data is represented in V1 and where constraints are enforced.
+This note explains how transfer data is represented in V1 and where constraints are enforced. This is independent of receipt/item metadata naming.
 
 ## Core idea
 
@@ -91,3 +91,4 @@ Transaction B (destination leg):
 - Opposite signs with equal absolute amount.
 
 This exact-2-leg rule is not guaranteed by a simple foreign key alone.
+
