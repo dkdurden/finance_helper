@@ -3,9 +3,9 @@ from django.contrib import admin
 from .models import (
     Account,
     Category,
-    GroceryTrip,
-    GroceryTripItem,
     Product,
+    Receipt,
+    ReceiptItem,
     Transaction,
     Transfer,
 )
@@ -55,15 +55,16 @@ class ProductAdmin(admin.ModelAdmin):
     search_fields = ("name",)
 
 
-@admin.register(GroceryTrip)
-class GroceryTripAdmin(admin.ModelAdmin):
+@admin.register(Receipt)
+class ReceiptAdmin(admin.ModelAdmin):
     list_display = ("date", "occurred_at", "store", "total_cents", "transaction")
     list_filter = ("date", "store")
     search_fields = ("store",)
 
 
-@admin.register(GroceryTripItem)
-class GroceryTripItemAdmin(admin.ModelAdmin):
-    list_display = ("trip", "product", "name_snapshot", "qty", "unit", "line_total_cents")
+@admin.register(ReceiptItem)
+class ReceiptItemAdmin(admin.ModelAdmin):
+    list_display = ("receipt", "product", "name_snapshot", "qty", "unit", "line_total_cents")
     list_filter = ("unit",)
     search_fields = ("name_snapshot", "product__name")
+

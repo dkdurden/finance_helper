@@ -17,10 +17,10 @@ Date: 2026-03-05
   - `Transaction`
   - `Transfer`
   - `Product`
-  - `GroceryTrip`
-  - `GroceryTripItem`
+  - `Receipt`
+  - `ReceiptItem`
 - Monetary fields use integer cents with `BigIntegerField` for range safety.
-- Added transfer integrity constraints and grocery non-negative/positive constraints.
+- Added transfer integrity constraints and receipt non-negative/positive constraints.
 - Added initial DRF API layer for core resources:
   - `AccountSerializer`, `CategorySerializer`, `TransactionSerializer`
   - `AccountViewSet`, `CategoryViewSet`, `TransactionViewSet`
@@ -76,5 +76,7 @@ Date: 2026-03-05
 
 ## Next implementation step
 
-- Continue DRF API coverage for remaining finance resources (`Product`, `Transfer`, `GroceryTrip`, `GroceryTripItem`).
+- Continue DRF API coverage for remaining finance resources (`Product`, `Transfer`, `Receipt`, `ReceiptItem`).
 - Add targeted validation tests for each new resource.
+
+

@@ -1,6 +1,6 @@
 # finance_helper
 
-Monorepo for a manual-first finance and grocery tracker.
+Monorepo for a manual-first finance and receipt tracker.
 
 ## Structure
 

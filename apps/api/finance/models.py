@@ -158,7 +158,7 @@ class Product(models.Model):
         return self.name
 
 
-class GroceryTrip(models.Model):
+class Receipt(models.Model):
     date = models.DateField()
     occurred_at = models.DateTimeField(null=True, blank=True)
     store = models.CharField(max_length=255, null=True, blank=True)
@@ -168,7 +168,7 @@ class GroceryTrip(models.Model):
     transaction = models.OneToOneField(
         Transaction,
         on_delete=models.PROTECT,
-        related_name="grocery_trip",
+        related_name="receipt",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -178,32 +178,32 @@ class GroceryTrip(models.Model):
         constraints = [
             models.CheckConstraint(
                 condition=Q(tax_cents__gte=0),
-                name="grocery_trip_tax_non_negative",
+                name="receipt_tax_non_negative",
             ),
             models.CheckConstraint(
                 condition=Q(fees_cents__gte=0),
-                name="grocery_trip_fees_non_negative",
+                name="receipt_fees_non_negative",
             ),
             models.CheckConstraint(
                 condition=Q(total_cents__gte=0),
-                name="grocery_trip_total_non_negative",
+                name="receipt_total_non_negative",
             ),
         ]
 
     def __str__(self):
-        return f"{self.date} {self.store or 'grocery_trip'}"
+        return f"{self.date} {self.store or 'receipt'}"
 
 
-class GroceryTripItem(models.Model):
-    trip = models.ForeignKey(
-        GroceryTrip,
+class ReceiptItem(models.Model):
+    receipt = models.ForeignKey(
+        Receipt,
         on_delete=models.CASCADE,
         related_name="items",
     )
     product = models.ForeignKey(
         Product,
         on_delete=models.PROTECT,
-        related_name="trip_items",
+        related_name="receipt_items",
     )
     name_snapshot = models.CharField(max_length=255)
     qty = models.DecimalField(max_digits=10, decimal_places=3, null=True, blank=True)
@@ -218,17 +218,19 @@ class GroceryTripItem(models.Model):
         constraints = [
             models.CheckConstraint(
                 condition=Q(line_total_cents__gte=0),
-                name="grocery_trip_item_line_total_non_negative",
+                name="receipt_item_line_total_non_negative",
             ),
             models.CheckConstraint(
                 condition=Q(unit_price_cents__isnull=True) | Q(unit_price_cents__gte=0),
-                name="grocery_trip_item_unit_price_non_negative",
+                name="receipt_item_unit_price_non_negative",
             ),
             models.CheckConstraint(
                 condition=Q(qty__isnull=True) | Q(qty__gt=0),
-                name="grocery_trip_item_qty_positive",
+                name="receipt_item_qty_positive",
             ),
         ]
 
     def __str__(self):
         return f"{self.name_snapshot} {self.line_total_cents}"
+
+

@@ -38,9 +38,9 @@ Constraints:
 - Django + DRF project scaffolded and running in Docker.
 - `finance` app includes models and migrations for:
   - `Account`, `Category`, `Transaction`, `Transfer`
-  - `Product`, `GroceryTrip`, `GroceryTripItem`
+  - `Product`, `Receipt`, `ReceiptItem`
 - Money fields use integer cents with `BigIntegerField`.
-- Transfer and grocery integrity constraints are implemented at DB level.
+- Transfer and receipt integrity constraints are implemented at DB level.
 - Health endpoint exists at `GET /api/health/`.
 - Admin registrations exist for current finance models.
 - Docs added/updated:
@@ -78,3 +78,4 @@ docker compose ps
 docker compose logs -f api
 docker compose down
 ```
+

@@ -1,10 +1,10 @@
-# Finance + Grocery Tracker --- Architecture & Build Plan (V1, snake_case)
+# Finance + Receipt Tracker --- Architecture & Build Plan (V1, snake_case)
 
 ## Core Principles
 
 - Manual-only data entry (no bank APIs)
 - transaction table is the source of truth for money
-- grocery data is detailed metadata attached to a transaction
+- receipt data is detailed metadata attached to a transaction
 - all monetary values stored as integer cents
 - account balances are derived, not stored
 
@@ -61,7 +61,7 @@ Represents a single financial event.
 - note (string nullable)
 - category_id (fk → category)
 - account_id (fk → account)
-- grocery_trip_id (nullable fk → grocery_trip)
+- receipt_id (nullable fk → receipt)
 - created_at
 - updated_at
 
@@ -77,7 +77,7 @@ decreases amount owed
 
 ## product
 
-Reusable grocery catalog item.
+Reusable product catalog item.
 
 - id
 - name
@@ -88,9 +88,9 @@ Reusable grocery catalog item.
 
 ---
 
-## grocery_trip (receipt header)
+## receipt (receipt header)
 
-Represents one grocery shopping event.
+Represents one receipt/purchase event.
 
 - id
 - date
@@ -104,7 +104,7 @@ Represents one grocery shopping event.
 
 ### Total Rule
 
-total_cents = sum(grocery_trip_item.line_total_cents) + tax_cents +
+total_cents = sum(receipt_item.line_total_cents) + tax_cents +
 fees_cents
 
 transaction.signed_amount_cents must reflect this total: - negative for
@@ -112,12 +112,12 @@ asset accounts - positive for liability accounts
 
 ---
 
-## grocery_trip_item (receipt line item)
+## receipt_item (receipt line item)
 
-Represents what was purchased on a specific trip.
+Represents what was purchased on a specific receipt.
 
 - id
-- trip_id (fk → grocery_trip)
+- receipt_id (fk -> receipt)
 - product_id (fk → product)
 - name_snapshot (string)
 - qty (float nullable)
@@ -133,9 +133,9 @@ Represents what was purchased on a specific trip.
 
 account 1 ────\< transaction \>──── 1 category
 
-transaction 1 ──── 1 grocery_trip
+transaction 1 ──── 1 receipt
 
-grocery_trip 1 ────\< grocery_trip_item \>──── 1 product
+receipt 1 ────\< receipt_item \>──── 1 product
 
 ---
 
@@ -322,10 +322,10 @@ Environment variables:
 - account balance view (derived)
 - adjustment flow (creates adjustment transaction)
 
-### Milestone 4 — Grocery module
+### Milestone 4 - Receipt module
 
 - products CRUD + search/autocomplete
-- grocery_trip create/edit (writes transaction + trip + items)
+- receipt create/edit (writes transaction + receipt + items)
 
 ### Milestone 5 — Reporting
 
@@ -339,3 +339,8 @@ Environment variables:
 
 - Next.js server components can fetch from your API directly (simple and common). citeturn0search14turn0search11
 - Server Actions are useful for mutations without creating extra Next API routes; you can call your Django API from them. citeturn0search8
+
+
+
+
+
