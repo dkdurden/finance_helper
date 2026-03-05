@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Account, Category, Transaction
+from .models import Account, Category, Transaction, Transfer
 
 
 class AccountSerializer(serializers.ModelSerializer):
@@ -30,6 +30,44 @@ class CategorySerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class TransferSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transfer
+        fields = [
+            "id",
+            "date",
+            "occurred_at",
+            "amount_cents",
+            "from_account",
+            "to_account",
+            "note",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+    def validate(self, attrs):
+        from_account = attrs.get("from_account", getattr(self.instance, "from_account", None))
+        to_account = attrs.get("to_account", getattr(self.instance, "to_account", None))
+        amount_cents = attrs.get("amount_cents", getattr(self.instance, "amount_cents", None))
+
+        if (
+            from_account is not None
+            and to_account is not None
+            and from_account.id == to_account.id
+        ):
+            raise serializers.ValidationError(
+                {"to_account": "to_account must be different from from_account."}
+            )
+
+        if amount_cents is not None and amount_cents <= 0:
+            raise serializers.ValidationError(
+                {"amount_cents": "amount_cents must be greater than zero."}
+            )
+
+        return attrs
 
 
 class TransactionSerializer(serializers.ModelSerializer):

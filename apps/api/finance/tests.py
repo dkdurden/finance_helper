@@ -79,6 +79,88 @@ class CategoryApiTests(APITestCase):
         self.assertEqual(response.data[0]["name"], "Rent")
 
 
+class TransferApiTests(APITestCase):
+    def setUp(self):
+        self.from_account = Account.objects.create(
+            name="Transfer Source",
+            account_type=Account.AccountType.CHECKING,
+            is_liability=False,
+            opening_balance_cents=0,
+            opening_balance_date="2026-01-01T00:00:00Z",
+        )
+        self.to_account = Account.objects.create(
+            name="Transfer Destination",
+            account_type=Account.AccountType.SAVINGS,
+            is_liability=False,
+            opening_balance_cents=0,
+            opening_balance_date="2026-01-01T00:00:00Z",
+        )
+
+    def test_create_transfer(self):
+        payload = {
+            "date": "2026-03-05",
+            "amount_cents": 10000,
+            "from_account": self.from_account.id,
+            "to_account": self.to_account.id,
+            "note": "Move cash",
+        }
+
+        response = self.client.post(reverse("transfer-list"), payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["amount_cents"], payload["amount_cents"])
+
+    def test_list_transfers(self):
+        self.client.post(
+            reverse("transfer-list"),
+            {
+                "date": "2026-03-05",
+                "amount_cents": 5000,
+                "from_account": self.from_account.id,
+                "to_account": self.to_account.id,
+            },
+            format="json",
+        )
+
+        response = self.client.get(reverse("transfer-list"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["amount_cents"], 5000)
+
+    def test_transfer_amount_must_be_positive(self):
+        payload = {
+            "date": "2026-03-05",
+            "amount_cents": 0,
+            "from_account": self.from_account.id,
+            "to_account": self.to_account.id,
+        }
+
+        response = self.client.post(reverse("transfer-list"), payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data["amount_cents"][0],
+            "amount_cents must be greater than zero.",
+        )
+
+    def test_transfer_accounts_must_differ(self):
+        payload = {
+            "date": "2026-03-05",
+            "amount_cents": 1000,
+            "from_account": self.from_account.id,
+            "to_account": self.from_account.id,
+        }
+
+        response = self.client.post(reverse("transfer-list"), payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data["to_account"][0],
+            "to_account must be different from from_account.",
+        )
+
+
 class TransactionApiTests(APITestCase):
     def setUp(self):
         self.account = Account.objects.create(
