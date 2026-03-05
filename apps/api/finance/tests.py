@@ -45,3 +45,33 @@ class AccountApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["name"], "Savings")
+
+
+class CategoryApiTests(APITestCase):
+    def test_create_category(self):
+        payload = {
+            "name": "Groceries",
+            "is_archived": False,
+        }
+
+        response = self.client.post(reverse("category-list"), payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["name"], payload["name"])
+        self.assertEqual(response.data["is_archived"], payload["is_archived"])
+
+    def test_list_categories(self):
+        self.client.post(
+            reverse("category-list"),
+            {
+                "name": "Rent",
+                "is_archived": False,
+            },
+            format="json",
+        )
+
+        response = self.client.get(reverse("category-list"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["name"], "Rent")
