@@ -20,15 +20,16 @@ Date: 2026-03-05
   - `Receipt`
   - `ReceiptItem`
 - Monetary fields use integer cents with `BigIntegerField` for range safety.
-- Added transfer integrity constraints and receipt non-negative/positive constraints.
-- Added initial DRF API layer for core resources:
-  - `AccountSerializer`, `CategorySerializer`, `TransactionSerializer`
-  - `AccountViewSet`, `CategoryViewSet`, `TransactionViewSet`
-  - Router endpoints under `/api/accounts/`, `/api/categories/`, `/api/transactions/`
-- Added serializer-level transaction validation for transfer link rules:
-  - `transaction_type=transfer` requires non-null `transfer`
-  - non-transfer types require `transfer=null`
-- Added API tests for create/list flows and transaction validation behavior.
+- Added transfer and receipt integrity constraints at DB level.
+- Added DRF API layer for all milestone-1 resources:
+  - Serializers: `Account`, `Category`, `Transaction`, `Transfer`, `Product`, `Receipt`, `ReceiptItem`
+  - Viewsets for each resource
+  - Router endpoints under `/api/` for all current resources
+- Added serializer-level validation for key cross-field and constraint-aligned rules:
+  - transaction transfer-link rules
+  - transfer amount/account rules
+  - receipt item non-negative/positive numeric rules
+- Added API tests for create/list flows plus validation behavior for core resources.
 
 ## Why this matters
 
@@ -36,7 +37,7 @@ Date: 2026-03-05
 - Confirms app routing and request/response flow independently of business logic.
 - Locks in a durable data model with enforceable DB-level guardrails.
 - Preserves accounting source-of-truth principle through `Transaction` rows.
-- Exposes a usable CRUD API surface for early UI integration in Milestone 2.
+- Provides complete baseline CRUD API coverage for Milestone 2 UI integration.
 
 ## Commands used
 
@@ -50,7 +51,6 @@ Date: 2026-03-05
 - `docker compose run --rm api python manage.py makemigrations finance`
 - `docker compose run --rm api python manage.py migrate`
 - `docker compose run --rm api python manage.py migrate finance 0003_grocerytrip_grocerytripitem_product_and_more`
-- `docker compose run --rm api python manage.py showmigrations finance`
 - `docker compose run --rm api python manage.py check`
 
 ## Verification
@@ -61,11 +61,16 @@ Date: 2026-03-05
   - `GET/POST /api/accounts/`
   - `GET/POST /api/categories/`
   - `GET/POST /api/transactions/`
-- Test suite status for current API app: `Ran 9 tests ... OK`.
+  - `GET/POST /api/transfers/`
+  - `GET/POST /api/products/`
+  - `GET/POST /api/receipts/`
+  - `GET/POST /api/receipt-items/`
+- Test suite status for current API app: `Ran 21 tests ... OK`.
 - Finance migration state:
   - `[X] 0001_initial`
   - `[X] 0002_alter_account_opening_balance_cents_transfer_and_more`
   - `[X] 0003_grocerytrip_grocerytripitem_product_and_more`
+  - `[X] 0004_rename_grocerytrip_to_receipt_and_more`
 - Django system checks: no issues.
 
 ## Related docs
@@ -76,7 +81,5 @@ Date: 2026-03-05
 
 ## Next implementation step
 
-- Continue DRF API coverage for remaining finance resources (`Product`, `Transfer`, `Receipt`, `ReceiptItem`).
-- Add targeted validation tests for each new resource.
-
-
+- Begin Milestone 2 (`apps/web`) integration against current `/api/` endpoints.
+- Add nested receipt-write flows (receipt + items together) once UI flow is defined.
