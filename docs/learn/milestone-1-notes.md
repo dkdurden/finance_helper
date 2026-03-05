@@ -1,6 +1,6 @@
 # Milestone 1 Notes (Django API Foundation)
 
-Date: 2026-03-04
+Date: 2026-03-05
 
 ## What we built
 
@@ -21,6 +21,14 @@ Date: 2026-03-04
   - `GroceryTripItem`
 - Monetary fields use integer cents with `BigIntegerField` for range safety.
 - Added transfer integrity constraints and grocery non-negative/positive constraints.
+- Added initial DRF API layer for core resources:
+  - `AccountSerializer`, `CategorySerializer`, `TransactionSerializer`
+  - `AccountViewSet`, `CategoryViewSet`, `TransactionViewSet`
+  - Router endpoints under `/api/accounts/`, `/api/categories/`, `/api/transactions/`
+- Added serializer-level transaction validation for transfer link rules:
+  - `transaction_type=transfer` requires non-null `transfer`
+  - non-transfer types require `transfer=null`
+- Added API tests for create/list flows and transaction validation behavior.
 
 ## Why this matters
 
@@ -28,6 +36,7 @@ Date: 2026-03-04
 - Confirms app routing and request/response flow independently of business logic.
 - Locks in a durable data model with enforceable DB-level guardrails.
 - Preserves accounting source-of-truth principle through `Transaction` rows.
+- Exposes a usable CRUD API surface for early UI integration in Milestone 2.
 
 ## Commands used
 
@@ -48,7 +57,11 @@ Date: 2026-03-04
 
 - Postgres role and DB initialization validated in container.
 - `GET /api/health/` returns JSON `{ "status": "ok" }`.
-- Test suite status for current API app: `Ran 1 test ... OK`.
+- Core API endpoints available:
+  - `GET/POST /api/accounts/`
+  - `GET/POST /api/categories/`
+  - `GET/POST /api/transactions/`
+- Test suite status for current API app: `Ran 9 tests ... OK`.
 - Finance migration state:
   - `[X] 0001_initial`
   - `[X] 0002_alter_account_opening_balance_cents_transfer_and_more`
@@ -59,9 +72,9 @@ Date: 2026-03-04
 
 - `docs/how-to/api-bootstrap.md`
 - `docs/how-to/ledger-transfer-model.md`
+- `docs/how-to/api-core-endpoints.md`
 
 ## Next implementation step
 
-- Add DRF serializers and viewsets for core resources.
-- Expose initial CRUD endpoints under `/api/`.
-- Add API tests for at least accounts, categories, and transactions.
+- Continue DRF API coverage for remaining finance resources (`Product`, `Transfer`, `GroceryTrip`, `GroceryTripItem`).
+- Add targeted validation tests for each new resource.
