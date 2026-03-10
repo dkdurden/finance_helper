@@ -24,16 +24,23 @@ docs/
   - DRF serializers + viewsets + routes
   - Endpoints: accounts, categories, transactions, transfers, products, receipts, receipt-items
   - Validation tests passing (`docker compose run --rm api python manage.py test finance`)
-- Next: Milestone 2 (Next.js web foundation in `apps/web`) with server-side API integration.
+- Milestone 2 in progress: Next.js web foundation in `apps/web`.
+- Current local development workflow:
+  - `db` and `api` run through Docker Compose
+  - `web` runs locally for reliable hot reload on Windows
 
 ## Start services
 
 1. Copy env templates:
    - `Copy-Item .env.example .env`
    - `Copy-Item apps/api/.env.example apps/api/.env`
-   - `Copy-Item apps/web/.env.example apps/web/.env`
-2. Start containers:
-   - `docker compose up --build`
+   - `Copy-Item apps/web/.env.example apps/web/.env.local`
+2. Start backend containers:
+   - `docker compose up --build db api`
+3. Start the web app locally:
+   - `Set-Location apps/web`
+   - `npm install`
+   - `npm run dev`
 
 ## Useful docs
 
@@ -41,3 +48,4 @@ docs/
 - `docs/how-to/api-bootstrap.md`
 - `docs/how-to/api-core-endpoints.md`
 - `docs/learn/milestone-1-notes.md`
+- `docs/decisions/2026-03-10-web-local-dev.md`

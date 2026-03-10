@@ -31,21 +31,32 @@ services:
     depends_on:
       - db
 
-  web:
-    build:
-      context: .
-      dockerfile: infra/docker/web.Dockerfile
-    container_name: finance_helper_web
-    restart: unless-stopped
-    env_file:
-      - apps/web/.env
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./apps/web:/app
-      - /app/node_modules
-    depends_on:
-      - api
+  # Switching to local dev for web - issues with HMR
+  # https://nextjs.org/docs/app/guides/local-development#8-consider-local-development-over-docker
+  # web:
+  #   build:
+  #     context: .
+  #     dockerfile: infra/docker/web.Dockerfile
+  #   container_name: finance_helper_web
+  #   restart: unless-stopped
+  #   env_file:
+  #     - apps/web/.env
+  #   ports:
+  #     - "3000:3000"
+  #   volumes:
+  #     - ./apps/web:/app
+  #     - /app/node_modules
+  #   depends_on:
+  #     - api
+  #   develop:
+  #     watch:
+  #       - action: sync
+  #         path: ./apps/web
+  #         target: /app
+  #         ignore:
+  #           - node_modules/
+  #       - action: rebuild
+  #         path: ./apps/web/package.json
 
 volumes:
   postgres_data:
