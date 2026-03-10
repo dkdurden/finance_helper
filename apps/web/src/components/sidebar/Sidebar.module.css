@@ -1,0 +1,104 @@
+.sidebar {
+  --sidebar-width: 300px;
+  --sidebar-collapsed-width: 88px;
+  --sidebar-item-height: 56px;
+
+  display: flex;
+  min-height: 606px;
+  width: var(--sidebar-width);
+  flex-direction: column;
+  gap: var(--space-300);
+  overflow: hidden;
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  background:
+    linear-gradient(180deg, rgb(32 31 36 / 1) 0%, rgb(26 25 31 / 1) 100%);
+  padding-bottom: var(--space-300);
+  color: var(--color-grey-300);
+  box-shadow: var(--shadow-md);
+  transition:
+    width var(--transition-base),
+    gap var(--transition-base);
+}
+
+.collapsed {
+  width: var(--sidebar-collapsed-width);
+}
+
+.logoWrap {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  padding: var(--space-500) var(--space-400);
+}
+
+.collapsed .logoWrap {
+  justify-content: center;
+}
+
+.nav {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-50);
+  padding-right: var(--space-300);
+}
+
+.collapsed .nav {
+  padding-right: var(--space-100);
+}
+
+.navItem,
+.toggle {
+  display: flex;
+  min-height: var(--sidebar-item-height);
+  align-items: center;
+  gap: var(--space-200);
+  border-radius: 0 var(--space-150) var(--space-150) 0;
+  padding: var(--space-200) var(--space-400);
+  color: var(--color-grey-300);
+  transition:
+    background-color var(--transition-base),
+    color var(--transition-base),
+    transform var(--transition-base);
+}
+
+.navItem:hover,
+.toggle:hover {
+  background: rgb(255 255 255 / 0.04);
+  color: var(--color-white);
+}
+
+.navItem:focus-visible,
+.toggle:focus-visible {
+  outline-color: var(--color-cyan);
+}
+
+.navLabel,
+.toggleLabel {
+  color: inherit;
+  font-size: var(--text-preset-3-size);
+  font-weight: var(--text-preset-3-weight);
+  line-height: var(--text-preset-3-line-height);
+  white-space: nowrap;
+}
+
+.toggle {
+  width: 100%;
+  cursor: pointer;
+}
+
+.collapsed .navItem,
+.collapsed .toggle {
+  justify-content: center;
+  padding-right: var(--space-400);
+}
+
+.toggleIcon,
+.toggleIconCollapsed {
+  flex: none;
+}
+
+.toggleIconCollapsed {
+  transform: rotate(180deg);
+}
