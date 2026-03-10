@@ -31,7 +31,7 @@ docs/
 1. Copy env templates:
    - `Copy-Item .env.example .env`
    - `Copy-Item apps/api/.env.example apps/api/.env`
-   - `Copy-Item apps/web/.env.example apps/web/.env.local`
+   - `Copy-Item apps/web/.env.example apps/web/.env`
 2. Start containers:
    - `docker compose up --build`
 

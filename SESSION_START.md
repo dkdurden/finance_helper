@@ -76,7 +76,7 @@ Milestone 2 (web foundation): scaffold/build `apps/web` pages and wire server-si
 ```powershell
 Copy-Item .env.example .env
 Copy-Item apps/api/.env.example apps/api/.env
-Copy-Item apps/web/.env.example apps/web/.env.local
+Copy-Item apps/web/.env.example apps/web/.env
 docker compose up --build
 docker compose ps
 docker compose logs -f api
