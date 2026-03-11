@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { animate, motion, useMotionValue, useTransform } from "motion/react";
+import { useEffect, useState } from "react";
 import styles from "./Sidebar.module.css";
 
 type NavItem = {
@@ -38,6 +39,23 @@ const navItems: NavItem[] = [
   },
 ];
 
+const TOGGLE_ARC_RADIUS = 8;
+const TOGGLE_ARC_CENTER_Y = 10;
+
+function getToggleArcPosition(progress: number) {
+  const angle = Math.PI - Math.PI * progress;
+  const verticalDip = 35 * Math.sin(Math.PI * progress);
+
+  return {
+    x: Math.cos(angle) * TOGGLE_ARC_RADIUS,
+    y:
+      TOGGLE_ARC_CENTER_Y -
+      Math.sin(angle) * TOGGLE_ARC_RADIUS -
+      10 +
+      verticalDip,
+  };
+}
+
 type SidebarNavItemProps = {
   collapsed: boolean;
   href: string;
@@ -72,6 +90,21 @@ type SidebarToggleProps = {
 };
 
 function SidebarToggle({ collapsed, onToggle }: SidebarToggleProps) {
+  const progress = useMotionValue(collapsed ? 1 : 0);
+
+  useEffect(() => {
+    const controls = animate(progress, collapsed ? 1 : 0, {
+      duration: 0.4,
+      ease: [0.45, 0, 0.55, 1],
+    });
+
+    return () => controls.stop();
+  }, [collapsed, progress]);
+
+  const x = useTransform(progress, (latest) => getToggleArcPosition(latest).x);
+  const y = useTransform(progress, (latest) => getToggleArcPosition(latest).y);
+  const rotate = useTransform(progress, [0, 1], [0, -180]);
+
   return (
     <button
       type="button"
@@ -80,16 +113,20 @@ function SidebarToggle({ collapsed, onToggle }: SidebarToggleProps) {
       aria-label={collapsed ? "Maximize menu" : "Minimize menu"}
       title={collapsed ? "Maximize menu" : "Minimize menu"}
     >
-      <Image
-        className={`${styles.icon} ${
-          collapsed ? styles.toggleIconCollapsed : styles.toggleIcon
-        }`}
-        src="/images/icon-minimize-menu.svg"
-        alt=""
-        width={24}
-        height={24}
-        aria-hidden="true"
-      />
+      <motion.span
+        className={styles.toggleIconMotionWrap}
+        initial={false}
+        style={{ x, y, rotate }}
+      >
+        <Image
+          className={styles.icon}
+          src="/images/icon-minimize-menu.svg"
+          alt=""
+          width={24}
+          height={24}
+          aria-hidden="true"
+        />
+      </motion.span>
       <span
         className={`${styles.toggleLabel} ${
           collapsed ? styles.toggleLabelCollapsed : ""

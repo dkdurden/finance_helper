@@ -36,9 +36,6 @@
   padding: var(--space-500) var(--space-400);
 }
 
-
-
-
 .nav {
   display: flex;
   min-height: 0;
@@ -112,6 +109,14 @@
   flex: none;
 }
 
+.toggleIconMotionWrap {
+  display: grid;
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: none;
+  place-items: center;
+}
+
 .toggle {
   width: 100%;
   cursor: pointer;
@@ -121,15 +126,4 @@
 .collapsed .navItem,
 .collapsed .toggle {
   padding-right: var(--space-400);
-}
-
-.toggleIcon,
-.toggleIconCollapsed {
-  transform-origin: center;
-  transition: transform var(--sidebar-motion-duration)
-    var(--sidebar-motion-easing);
-}
-
-.toggleIconCollapsed {
-  transform: rotate(-180deg);
 }
