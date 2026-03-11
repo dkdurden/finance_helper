@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { animate, motion, useMotionValue, useTransform } from "motion/react";
 import { useEffect, useState } from "react";
 import styles from "./Sidebar.module.css";
@@ -57,17 +58,25 @@ function getToggleArcPosition(progress: number) {
 }
 
 type SidebarNavItemProps = {
+  active: boolean;
   collapsed: boolean;
   href: string;
   icon: string;
   label: string;
 };
 
-function SidebarNavItem({ collapsed, href, icon, label }: SidebarNavItemProps) {
+function SidebarNavItem({
+  active,
+  collapsed,
+  href,
+  icon,
+  label,
+}: SidebarNavItemProps) {
   return (
     <a
-      className={styles.navItem}
+      className={`${styles.navItem} ${active ? styles.navItemActive : ""}`.trim()}
       href={href}
+      aria-current={active ? "page" : undefined}
       aria-label={collapsed ? label : undefined}
       title={collapsed ? label : undefined}
     >
@@ -141,6 +150,7 @@ function SidebarToggle({ collapsed, onToggle }: SidebarToggleProps) {
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const pathname = usePathname();
 
   return (
     <aside
@@ -159,7 +169,15 @@ export function Sidebar() {
 
       <nav className={styles.nav} aria-label="Main navigation">
         {navItems.map((item) => (
-          <SidebarNavItem key={item.label} collapsed={collapsed} {...item} />
+          <SidebarNavItem
+            key={item.label}
+            active={
+              pathname === item.href ||
+              (pathname === "/" && item.href === "/overview")
+            }
+            collapsed={collapsed}
+            {...item}
+          />
         ))}
       </nav>
 

@@ -55,6 +55,7 @@
   min-height: var(--sidebar-item-height);
   align-items: center;
   gap: var(--space-200);
+  position: relative;
   border-radius: 0 var(--space-150) var(--space-150) 0;
   padding: var(--space-200) var(--space-400);
   color: var(--color-grey-300);
@@ -64,15 +65,58 @@
     transform var(--transition-base);
 }
 
-.navItem:hover,
-.toggle:hover {
+.navItem::before {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
   background: rgb(255 255 255 / 0.04);
-  color: var(--color-white);
+  content: "";
+  opacity: 0;
+  transition: opacity var(--transition-base);
 }
 
+.navItem:hover,
+.toggle:hover {
+  color: var(--color-grey-100);
+}
+
+.navItem:hover::before {
+  opacity: 1;
+}
+
+.navItemActive {
+  background: var(--color-beige-100);
+  color: var(--color-grey-900);
+}
+
+.navItemActive::before {
+  opacity: 0;
+}
+
+.navItemActive:hover {
+  color: var(--color-grey-900);
+}
+
+.navItemActive::after {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--color-green);
+  content: "";
+}
+
+.navItemActive .icon {
+  filter: brightness(0) saturate(100%) invert(37%) sepia(43%) saturate(677%) hue-rotate(128deg) brightness(91%) contrast(87%);
+}
 .navItem:focus-visible,
 .toggle:focus-visible {
   outline-color: var(--color-cyan);
+}
+
+.navItem > *,
+.toggle > * {
+  position: relative;
+  z-index: 1;
 }
 
 .navLabel,
