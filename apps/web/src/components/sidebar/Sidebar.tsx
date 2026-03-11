@@ -53,7 +53,14 @@ function SidebarNavItem({ collapsed, href, icon, label }: SidebarNavItemProps) {
       aria-label={collapsed ? label : undefined}
       title={collapsed ? label : undefined}
     >
-      <Image src={icon} alt="" width={24} height={24} aria-hidden="true" />
+      <Image
+        className={styles.icon}
+        src={icon}
+        alt=""
+        width={24}
+        height={24}
+        aria-hidden="true"
+      />
       {!collapsed ? <span className={styles.navLabel}>{label}</span> : null}
     </a>
   );
@@ -74,14 +81,23 @@ function SidebarToggle({ collapsed, onToggle }: SidebarToggleProps) {
       title={collapsed ? "Maximize menu" : "Minimize menu"}
     >
       <Image
-        className={collapsed ? styles.toggleIconCollapsed : styles.toggleIcon}
+        className={`${styles.icon} ${
+          collapsed ? styles.toggleIconCollapsed : styles.toggleIcon
+        }`}
         src="/images/icon-minimize-menu.svg"
         alt=""
         width={24}
         height={24}
         aria-hidden="true"
       />
-      {!collapsed ? <span className={styles.toggleLabel}>Minimize Menu</span> : null}
+      <span
+        className={`${styles.toggleLabel} ${
+          collapsed ? styles.toggleLabelCollapsed : ""
+        }`.trim()}
+        aria-hidden={collapsed}
+      >
+        Minimize Menu
+      </span>
     </button>
   );
 }
