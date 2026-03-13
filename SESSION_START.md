@@ -1,6 +1,6 @@
 # Session Start Guide (for New AI Context)
 
-Last updated: 2026-03-10
+Last updated: 2026-03-13
 
 Use this file at the beginning of any new chat/session so the assistant can start with full project context and minimal back-and-forth.
 
@@ -15,10 +15,11 @@ Read these files first:
 2. docs/plan.md
 3. docs/README.md
 4. docs/learn/milestone-1-notes.md
-5. docs/how-to/api-core-endpoints.md
-6. docs/how-to/ledger-transfer-model.md
-7. apps/web/AGENTS_STYLE_GUIDE.md
-8. docs/decisions/2026-03-10-web-local-dev.md
+5. docs/learn/milestone-2-notes.md
+6. docs/how-to/api-core-endpoints.md
+7. docs/how-to/ledger-transfer-model.md
+8. apps/web/AGENTS_STYLE_GUIDE.md
+9. docs/decisions/2026-03-10-web-local-dev.md
 
 Then do the following:
 
@@ -56,11 +57,16 @@ Constraints:
   - `products`, `receipts`, `receipt-items`
 - Admin registrations exist for current finance models.
 - Current API test status: `Ran 21 tests ... OK`.
+- Current Milestone 2 work in `apps/web` is being handled as a Figma-driven frontend prototype.
+- Completed frontend prototype slices so far:
+  - responsive sidebar navigation for desktop, tablet, and mobile
+  - reusable button component with primary, secondary, tertiary, and destroy variants
+  - reusable text input and select-style field components under `apps/web/src/components/input`
 - Local development workflow is Docker for `db`/`api` and local Next.js dev for `apps/web`.
 
 ## Next Recommended Step
 
-Milestone 2 (web foundation): build `apps/web` pages and wire server-side data fetching to Django API endpoints.
+Continue Milestone 2 by implementing the next Figma-driven frontend component or screen slice in `apps/web`, building on the existing sidebar, button, and input foundations.
 
 ## Definition of Done Per Milestone
 

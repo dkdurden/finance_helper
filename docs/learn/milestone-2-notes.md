@@ -1,6 +1,6 @@
 # Milestone 2 Notes (Next.js UI Foundation)
 
-Date: 2026-03-11
+Date: 2026-03-13
 
 ## What we built
 
@@ -9,61 +9,73 @@ Date: 2026-03-11
 - Added shared color tokens for the app palette, including neutrals, semantic aliases, and supporting accent colors.
 - Added typography tokens based on the Figma text presets and reusable global typography utility classes.
 - Added spacing tokens from the Figma design system for consistent gaps, padding, and layout rhythm.
-- Started the first reusable web UI component in `apps/web/src/components/sidebar/Sidebar.tsx`.
-- Implemented the desktop sidebar foundation with:
-  - expanded and collapsed states
-  - logo swap between full and compact modes
-  - nav items for overview, transactions, budgets, pots, and recurring bills
-  - bottom toggle control for collapse/expand behavior
-- Added sidebar-specific component styling in `apps/web/src/components/sidebar/Sidebar.module.css`.
-- Added the `motion` package to `apps/web` for UI animation experiments and component-level interaction work.
-- Built isolated motion exploration components beside the sidebar files to test:
-  - layout and presence animation
-  - drag and staggered motion patterns
-  - arc-based toggle icon motion studies
-- Integrated the motion work back into the real sidebar toggle so the minimize icon now animates with a curved travel path and rotation rather than a simple CSS flip.
-- Restored the homepage preview to render the real sidebar component after the motion experiments.
+- Built the first reusable navigation shell in `apps/web/src/components/sidebar/Sidebar.tsx`.
+- Implemented the sidebar prototype across responsive breakpoints with:
+  - desktop expanded and collapsed states
+  - tablet bottom navigation treatment
+  - mobile icon-only bottom navigation treatment
+  - Figma-aligned hover and active states for the compact nav variants
+- Added page-shell spacing so content clears the fixed tablet/mobile navigation.
+- Added a reusable button component in `apps/web/src/components/button/Button.tsx` with:
+  - `primary`
+  - `secondary`
+  - `tertiary`
+  - `destroy`
+- Added a reusable input field system in `apps/web/src/components/input/` with:
+  - basic text field
+  - field with trailing search icon
+  - field with prefix text
+  - separate select-style color-tag field component
+- Implemented real interaction states for the basic input work:
+  - hover and focus via CSS
+  - filled styling that works for both controlled and uncontrolled usage
+  - helper text and label associations for accessibility
+- Improved the select-style field to keep native select semantics while preserving the Figma placeholder treatment as closely as possible.
+- Added targeted inline comments and TODO notes in the input/select files to document current tradeoffs and next accessibility follow-ups.
 
 ## Why this matters
 
 - Keeps the current frontend milestone focused on turning approved Figma screens into a usable prototype before expanding into broader feature integration.
 - Establishes a real design-token foundation before building more screens and components.
 - Keeps visual decisions centralized so future components reuse the same colors, type scale, spacing, radii, and shadows.
-- Starts Milestone 2 with a meaningful navigation shell rather than disposable scaffold code.
-- Creates a reusable sidebar entry point that can be refined and eventually wired to route-aware navigation.
-- Validates `motion` as a practical tool for UI interactions that are awkward to express with CSS-only transforms.
-- Reduces the risk of overcomplicating the main sidebar component by testing animation ideas in isolated playground components first.
+- Creates a reusable navigation shell that now works across the primary responsive breakpoints.
+- Builds out a reusable component base so future screens can reuse buttons and field patterns instead of duplicating UI work.
+- Preserves native input and select semantics while still tracking closely to the Figma component language.
 
 ## Commands used
 
-- `Get-Content SESSION_START.md`
-- `Get-Content apps/web/src/app/globals.css`
+- `Get-Content session_start.md`
+- `Get-Content README.md`
+- `Get-Content docs/learn/milestone-2-notes.md`
 - `Get-Content apps/web/src/app/page.tsx`
 - `Get-Content apps/web/src/app/page.module.css`
-- `Get-ChildItem apps/web/public -Recurse`
-- `Get-ChildItem apps/web/src -Recurse`
-- `npm run lint`
+- `Get-Content apps/web/src/components/sidebar/Sidebar.tsx`
+- `Get-Content apps/web/src/components/sidebar/Sidebar.module.css`
+- `Get-Content apps/web/src/components/button/Button.tsx`
+- `Get-Content apps/web/src/components/button/Button.module.css`
+- `Get-Content apps/web/src/components/input/InputField.tsx`
+- `Get-Content apps/web/src/components/input/InputField.module.css`
+- `Get-Content apps/web/src/components/input/SelectField.tsx`
+- `Get-Content apps/web/src/components/input/SelectField.module.css`
 - `git status --short`
-- `git diff -- apps/web/package.json apps/web/package-lock.json apps/web/src/components/sidebar/Sidebar.tsx apps/web/src/components/sidebar/Sidebar.module.css`
+- `git commit`
 
 ## Verification
 
-- Global stylesheet read back after each token update and verified for:
-  - color tokens
-  - typography presets
-  - spacing scale
-- Sidebar component files read back and verified for:
-  - correct local asset paths
-  - collapsed state toggle
-  - nav item structure
-  - homepage render wiring
-- Motion experiment and sidebar toggle files were read back after each animation slice to verify:
-  - `motion/react` imports
-  - continuous arc path logic
-  - toggle icon motion integration
-  - homepage restoration to the real sidebar
-- `npm run lint` passed after the motion dependency install, the sidebar toggle integration, and the homepage swap back to the real sidebar.
-- Browser validation was used informally during iteration, but no automated runtime test was added in this slice.
+- Sidebar files were read back after each responsive slice to verify:
+  - desktop, tablet, and mobile layout behavior
+  - fixed bottom-nav treatment
+  - hover and active state updates
+- Button files were read back after each variant slice to verify:
+  - variant mapping
+  - primary, secondary, tertiary, and destroy styling
+  - tertiary caret behavior and hover treatment
+- Input/select files were read back after each slice to verify:
+  - basic, icon, and prefix field variants
+  - native select behavior for the color-tag field
+  - helper text and label associations
+  - real filled-state handling for controlled and uncontrolled input usage
+- Informal browser validation was used during iteration, but no automated runtime test was added in these frontend component slices.
 
 ## Related docs
 
@@ -74,6 +86,11 @@ Date: 2026-03-11
 
 ## Next implementation step
 
-- Continue the Figma-based frontend prototype work by finishing the sidebar component as a reusable navigation shell.
-- Build the mobile and tablet sidebar layouts next so the navigation pattern works across the primary responsive breakpoints.
-- Revisit selected-item treatment and route-aware active state behavior after the responsive sidebar structure is in place.
+- Continue the Figma-based frontend prototype work by implementing the next reusable component or screen slice on top of the existing sidebar, button, and input foundations.
+- Keep future form work aligned with the current input/select split:
+  - `InputField` for text-entry variants
+  - `SelectField` for dropdown/select-style variants
+- Revisit accessibility follow-ups later for:
+  - placeholder/helper contrast review
+  - future error-state semantics
+  - select API expansion for real form integration
