@@ -36,6 +36,7 @@
 @media (max-width: 900px) {
   .page {
     grid-template-columns: 1fr;
+    padding-bottom: calc(var(--space-500) + 5.5rem);
   }
 
   .preview {
