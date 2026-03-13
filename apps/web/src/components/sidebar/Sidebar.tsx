@@ -4,6 +4,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { animate, motion, useMotionValue, useTransform } from "motion/react";
 import { useEffect, useState } from "react";
+import { cn } from "@/lib/cn";
 import styles from "./Sidebar.module.css";
 
 type NavItem = {
@@ -74,7 +75,7 @@ function SidebarNavItem({
 }: SidebarNavItemProps) {
   return (
     <a
-      className={`${styles.navItem} ${active ? styles.navItemActive : ""}`.trim()}
+      className={cn(styles.navItem, active && styles.navItemActive)}
       href={href}
       aria-current={active ? "page" : undefined}
       aria-label={collapsed ? label : undefined}
@@ -137,9 +138,10 @@ function SidebarToggle({ collapsed, onToggle }: SidebarToggleProps) {
         />
       </motion.span>
       <span
-        className={`${styles.toggleLabel} ${
-          collapsed ? styles.toggleLabelCollapsed : ""
-        }`.trim()}
+        className={cn(
+          styles.toggleLabel,
+          collapsed && styles.toggleLabelCollapsed,
+        )}
         aria-hidden={collapsed}
       >
         Minimize Menu
@@ -154,7 +156,7 @@ export function Sidebar() {
 
   return (
     <aside
-      className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""}`.trim()}
+      className={cn(styles.sidebar, collapsed && styles.collapsed)}
       aria-label="Primary"
     >
       <div className={styles.logoWrap}>
