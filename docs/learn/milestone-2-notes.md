@@ -4,6 +4,7 @@ Date: 2026-03-11
 
 ## What we built
 
+- Milestone 2 frontend work is currently being treated as a Figma-driven app prototype so layout and component fidelity can be validated before deeper API wiring.
 - Replaced the default Next.js global starter styles in `apps/web/src/app/globals.css` with Figma-aligned design tokens.
 - Added shared color tokens for the app palette, including neutrals, semantic aliases, and supporting accent colors.
 - Added typography tokens based on the Figma text presets and reusable global typography utility classes.
@@ -25,6 +26,7 @@ Date: 2026-03-11
 
 ## Why this matters
 
+- Keeps the current frontend milestone focused on turning approved Figma screens into a usable prototype before expanding into broader feature integration.
 - Establishes a real design-token foundation before building more screens and components.
 - Keeps visual decisions centralized so future components reuse the same colors, type scale, spacing, radii, and shadows.
 - Starts Milestone 2 with a meaningful navigation shell rather than disposable scaffold code.
@@ -72,6 +74,6 @@ Date: 2026-03-11
 
 ## Next implementation step
 
-- Refine the desktop sidebar to match the Figma default, hover, and active states more closely.
-- Add selected-item treatment and route-aware active state behavior.
-- Decide whether the temporary motion playground components should be kept for future UI animation experiments or removed once the sidebar interaction is stable.
+- Continue the Figma-based frontend prototype work by finishing the sidebar component as a reusable navigation shell.
+- Build the mobile and tablet sidebar layouts next so the navigation pattern works across the primary responsive breakpoints.
+- Revisit selected-item treatment and route-aware active state behavior after the responsive sidebar structure is in place.

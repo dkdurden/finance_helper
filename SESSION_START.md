@@ -35,7 +35,7 @@ Constraints:
 - Use integer cents for money fields.
 - Transaction is source of truth for balances.
 - Run Django commands through Docker Compose from repo root.
-- Run `apps/web` locally during development unless told otherwise.
+- Prefer Git Bash for shell-based text editing or patch-style command work when it is more reliable than PowerShell.
 - Do not commit real secrets.
 - Keep docs updated as features are added.
 ```
