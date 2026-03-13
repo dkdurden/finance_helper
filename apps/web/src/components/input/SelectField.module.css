@@ -1,0 +1,89 @@
+.control {
+  position: relative;
+  width: 100%;
+}
+
+.select {
+  width: 100%;
+  border: 1px solid var(--color-beige-500);
+  border-radius: var(--space-100);
+  background: var(--color-white);
+  padding: var(--space-150) calc(var(--space-250) + var(--space-200) + var(--space-150)) var(--space-150) calc(var(--space-250) + var(--space-200) + var(--space-150));
+  color: var(--color-grey-900);
+  font-size: var(--text-preset-4-size);
+  font-weight: var(--text-preset-4-weight);
+  line-height: var(--text-preset-4-line-height);
+  appearance: none;
+  transition:
+    border-color var(--transition-base),
+    color var(--transition-base),
+    box-shadow var(--transition-base);
+}
+
+.select option {
+  color: var(--color-grey-900);
+}
+
+.select:hover {
+  border-color: var(--color-grey-500);
+}
+
+.select:focus,
+.select:focus-visible {
+  border-color: var(--color-grey-900);
+  outline: 2px solid transparent;
+  box-shadow: 0 0 0 2px rgb(32 31 36 / 0.08);
+}
+
+.placeholder {
+  color: transparent;
+}
+
+.placeholderOverlay {
+  position: absolute;
+  top: 50%;
+  left: calc(var(--space-250) + var(--space-200) + var(--space-150));
+  right: calc(var(--space-250) + var(--space-200) + var(--space-150));
+  overflow: hidden;
+  color: var(--color-beige-500);
+  font-size: var(--text-preset-4-size);
+  font-weight: var(--text-preset-4-weight);
+  line-height: var(--text-preset-4-line-height);
+  pointer-events: none;
+  text-overflow: ellipsis;
+  transform: translateY(-50%);
+  white-space: nowrap;
+}
+
+.swatch {
+  position: absolute;
+  top: 50%;
+  left: var(--space-250);
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.control::after {
+  position: absolute;
+  top: 50%;
+  right: var(--space-250);
+  width: 16px;
+  height: 16px;
+  background: currentColor;
+  content: "";
+  pointer-events: none;
+  transform: translateY(-50%);
+  -webkit-mask-image: url("/images/icon-caret-down.svg");
+  mask-image: url("/images/icon-caret-down.svg");
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: 16px 16px;
+  mask-size: 16px 16px;
+}
+
+/* TODO: Re-check placeholder contrast and focus-ring prominence in the final design review. */
