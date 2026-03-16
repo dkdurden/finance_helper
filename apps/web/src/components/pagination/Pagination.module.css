@@ -1,0 +1,102 @@
+.pagination {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-200);
+  padding-top: var(--space-300);
+}
+
+.pageList {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-100);
+}
+
+.navButton,
+.pageButton {
+  display: inline-flex;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-beige-500);
+  border-radius: var(--space-100);
+  background: var(--color-white);
+  color: var(--color-grey-900);
+  cursor: pointer;
+  font-size: var(--text-preset-4-size);
+  font-weight: var(--text-preset-4-weight);
+  line-height: var(--text-preset-4-line-height);
+  transition:
+    border-color var(--transition-base),
+    background-color var(--transition-base),
+    color var(--transition-base),
+    opacity var(--transition-base);
+}
+
+.navButton {
+  gap: var(--space-200);
+  padding: var(--space-200);
+}
+
+.pageButton {
+  width: 40px;
+  padding: var(--space-200);
+}
+
+.navButton:not(:disabled):hover,
+.pageButton:not(:disabled):not([data-active="true"]):hover {
+  border-color: var(--color-grey-500);
+  background: var(--color-grey-500);
+  color: var(--color-white);
+}
+
+.navButton:focus-visible,
+.pageButton:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow: 0 0 0 2px rgb(32 31 36 / 0.08);
+}
+
+.navButton:disabled,
+.pageButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.pageButton[data-active="true"] {
+  border-color: var(--color-grey-900);
+  background: var(--color-grey-900);
+  color: var(--color-white);
+}
+
+.chevron {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+  color: currentColor;
+}
+
+.chevron svg {
+  width: 6px;
+  height: 11px;
+  fill: currentColor;
+}
+
+.chevronLeft {
+  transform: rotate(180deg);
+}
+
+@media (max-width: 640px) {
+  .pagination {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .navButton {
+    width: 100%;
+  }
+}
