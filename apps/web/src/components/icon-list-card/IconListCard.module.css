@@ -1,0 +1,145 @@
+.card {
+  display: grid;
+  gap: var(--space-400);
+  border-radius: var(--space-150);
+  background: var(--color-white);
+  padding: var(--space-400);
+  box-shadow: var(--shadow-sm);
+}
+
+.title {
+  color: var(--color-grey-900);
+  font-size: var(--text-preset-2-size);
+  font-weight: var(--text-preset-2-weight);
+  line-height: var(--text-preset-2-line-height);
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-400);
+}
+
+.list {
+  display: grid;
+  gap: var(--space-150);
+  list-style: none;
+  padding: 0;
+}
+
+.item {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  gap: var(--space-200);
+}
+
+.icon {
+  position: relative;
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 999px;
+  color: var(--color-white);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12);
+}
+
+.iconImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.iconGlyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: var(--text-preset-5-bold-size);
+  font-weight: var(--text-preset-5-bold-weight);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.iconGreen {
+  background: var(--color-green);
+}
+
+.iconYellow {
+  background: var(--color-yellow);
+  color: var(--color-grey-900);
+}
+
+.iconCyan {
+  background: var(--color-cyan);
+  color: var(--color-grey-900);
+}
+
+.iconNavy {
+  background: var(--color-navy);
+}
+
+.iconRed {
+  background: var(--color-red);
+}
+
+.iconPurple {
+  background: var(--color-purple);
+}
+
+.iconPurpleAlt {
+  background: var(--color-purple-alt);
+}
+
+.iconTurquoise {
+  background: var(--color-turquoise);
+}
+
+.iconBrown {
+  background: var(--color-brown);
+}
+
+.iconMagenta {
+  background: var(--color-magenta);
+}
+
+.iconBlue {
+  background: var(--color-blue);
+}
+
+.iconNavyGrey {
+  background: var(--color-navy-grey);
+}
+
+.iconArmyGreen {
+  background: var(--color-army-green);
+}
+
+.iconGold {
+  background: var(--color-gold);
+  color: var(--color-grey-900);
+}
+
+.iconOrange {
+  background: var(--color-orange);
+}
+
+.label {
+  color: var(--color-grey-900);
+  font-size: var(--text-preset-4-bold-size);
+  font-weight: var(--text-preset-4-bold-weight);
+  line-height: var(--text-preset-4-bold-line-height);
+  text-wrap: balance;
+}
+
+@media (max-width: 720px) {
+  .columns {
+    grid-template-columns: 1fr;
+    gap: var(--space-150);
+  }
+}
