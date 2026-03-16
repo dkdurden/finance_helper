@@ -50,6 +50,8 @@ apps/web/
   - `deferred` (do not implement yet)
 - Preserve visual fidelity for `v1-ready` elements.
 - For out-of-scope design elements, keep appearance but disable behavior.
+- Accessibility is a very high priority in design implementation, not a later polish pass.
+- When translating designs, preserve semantics, keyboard support, focus visibility, screen-reader clarity, and contrast alongside visual fidelity.
 
 ## Styling Rules
 
@@ -57,6 +59,7 @@ apps/web/
 - Avoid hardcoded values repeated across components.
 - Keep CSS Module class names semantic (`container`, `title`, `actions`, etc.).
 - Ensure responsive behavior for desktop + mobile.
+- Do not rely on hover-only cues for critical interaction states.
 
 ## Quality Bar
 
@@ -64,6 +67,7 @@ apps/web/
 - Keep files small and composable.
 - Test loading/empty/error states on data-driven screens.
 - Keep naming consistent with finance domain (`receipt`, `receipt_item`, etc.).
+- Treat semantic HTML, keyboard navigation, `:focus-visible` states, labeling, and color contrast as required quality checks for web components.
 
 ## Commands and Environment
 
