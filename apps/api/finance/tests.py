@@ -1,8 +1,11 @@
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from .models import Account, Category, Product, Receipt, ReceiptItem, Transaction, Transfer
+
+User = get_user_model()
 
 
 class HealthEndpointTests(APITestCase):
@@ -11,6 +14,61 @@ class HealthEndpointTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json(), {"status": "ok"})
+
+
+class SignUpApiTests(APITestCase):
+    def test_signup_creates_user(self):
+        payload = {
+            "name": "Dana Thomas",
+            "email": "dana@example.com",
+            "password": "strong-password-123",
+        }
+
+        response = self.client.post(reverse("auth-signup"), payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["name"], payload["name"])
+        self.assertEqual(response.data["email"], payload["email"])
+        self.assertNotIn("password", response.data)
+
+        user = User.objects.get(email=payload["email"])
+        self.assertEqual(user.username, payload["email"])
+        self.assertEqual(user.first_name, payload["name"])
+        self.assertTrue(user.check_password(payload["password"]))
+
+    def test_signup_rejects_duplicate_email(self):
+        User.objects.create_user(
+            username="dana@example.com",
+            email="dana@example.com",
+            password="strong-password-123",
+        )
+
+        response = self.client.post(
+            reverse("auth-signup"),
+            {
+                "name": "Dana Thomas",
+                "email": "dana@example.com",
+                "password": "another-strong-password-123",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["email"][0], "A user with that email already exists.")
+
+    def test_signup_rejects_weak_password(self):
+        response = self.client.post(
+            reverse("auth-signup"),
+            {
+                "name": "Dana Thomas",
+                "email": "dana@example.com",
+                "password": "short",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("password", response.data)
 
 
 class AccountApiTests(APITestCase):

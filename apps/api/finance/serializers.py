@@ -1,6 +1,39 @@
+from django.contrib.auth import get_user_model, password_validation
 from rest_framework import serializers
 
 from .models import Account, Category, Product, Receipt, ReceiptItem, Transaction, Transfer
+
+User = get_user_model()
+
+
+class SignUpSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=150, trim_whitespace=True)
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True, style={"input_type": "password"}, trim_whitespace=False)
+
+    def validate_name(self, value):
+        name = value.strip()
+        if not name:
+            raise serializers.ValidationError("name is required.")
+        return name
+
+    def validate_email(self, value):
+        email = value.strip().lower()
+        if User.objects.filter(email__iexact=email).exists():
+            raise serializers.ValidationError("A user with that email already exists.")
+        return email
+
+    def validate_password(self, value):
+        password_validation.validate_password(value)
+        return value
+
+    def create(self, validated_data):
+        return User.objects.create_user(
+            username=validated_data["email"],
+            email=validated_data["email"],
+            first_name=validated_data["name"],
+            password=validated_data["password"],
+        )
 
 
 class AccountSerializer(serializers.ModelSerializer):

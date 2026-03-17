@@ -1,7 +1,12 @@
+from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import F, Q
 from django.utils import timezone
+
+
+class User(AbstractUser):
+    pass
 
 
 class Account(models.Model):
@@ -232,5 +237,3 @@ class ReceiptItem(models.Model):
 
     def __str__(self):
         return f"{self.name_snapshot} {self.line_total_cents}"
-
-

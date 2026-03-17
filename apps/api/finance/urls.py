@@ -7,6 +7,7 @@ from .views import (
     ProductViewSet,
     ReceiptItemViewSet,
     ReceiptViewSet,
+    SignUpView,
     TransactionViewSet,
     TransferViewSet,
     health,
@@ -23,5 +24,6 @@ router.register("transfers", TransferViewSet, basename="transfer")
 
 urlpatterns = [
     path("health/", health, name="health"),
+    path("auth/signup/", SignUpView.as_view(), name="auth-signup"),
     path("", include(router.urls)),
 ]

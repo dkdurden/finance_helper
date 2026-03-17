@@ -1,5 +1,7 @@
 from django.http import JsonResponse
-from rest_framework import viewsets
+from rest_framework import permissions, status, viewsets
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .models import Account, Category, Product, Receipt, ReceiptItem, Transaction, Transfer
 from .serializers import (
@@ -8,9 +10,27 @@ from .serializers import (
     ProductSerializer,
     ReceiptItemSerializer,
     ReceiptSerializer,
+    SignUpSerializer,
     TransactionSerializer,
     TransferSerializer,
 )
+
+
+class SignUpView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = SignUpSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response(
+            {
+                "id": user.id,
+                "name": user.first_name,
+                "email": user.email,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class AccountViewSet(viewsets.ModelViewSet):
