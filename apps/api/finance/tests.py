@@ -32,13 +32,12 @@ class SignUpApiTests(APITestCase):
         self.assertNotIn("password", response.data)
 
         user = User.objects.get(email=payload["email"])
-        self.assertEqual(user.username, payload["email"])
+        self.assertEqual(user.email, payload["email"])
         self.assertEqual(user.first_name, payload["name"])
         self.assertTrue(user.check_password(payload["password"]))
 
     def test_signup_rejects_duplicate_email(self):
         User.objects.create_user(
-            username="dana@example.com",
             email="dana@example.com",
             password="strong-password-123",
         )
