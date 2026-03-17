@@ -1,6 +1,6 @@
 .field {
   display: flex;
-  width: 320px;
+  width: 100%;
   flex-direction: column;
   align-items: flex-start;
   gap: var(--space-50);
@@ -87,7 +87,8 @@
   pointer-events: none;
 }
 
-.icon {
+.icon,
+.iconButton {
   position: absolute;
   top: 50%;
   right: var(--space-250);
@@ -97,7 +98,22 @@
   align-items: center;
   justify-content: center;
   transform: translateY(-50%);
+}
+
+.icon {
   pointer-events: none;
+}
+
+.iconButton {
+  padding: 0;
+  cursor: pointer;
+  color: var(--color-grey-900);
+}
+
+.iconButton:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 4px;
+  border-radius: var(--space-50);
 }
 
 .helperText {

@@ -6,12 +6,34 @@ import type { InputHTMLAttributes } from "react";
 import { cn } from "@/lib/cn";
 import styles from "./InputField.module.css";
 
-type InputFieldProps = {
+type InputFieldIcon = "search" | "show-password" | "hide-password";
+
+type InputFieldBaseProps = {
+  fieldClassName?: string;
   helperText?: string;
-  icon?: "search";
+  icon?: InputFieldIcon;
   label?: string;
   prefix?: string;
 } & InputHTMLAttributes<HTMLInputElement>;
+
+type InputFieldDecorativeIconProps = {
+  iconAriaLabel?: never;
+  onIconClick?: never;
+};
+
+type InputFieldInteractiveIconProps = {
+  iconAriaLabel: string;
+  onIconClick: () => void;
+};
+
+type InputFieldProps = InputFieldBaseProps &
+  (InputFieldDecorativeIconProps | InputFieldInteractiveIconProps);
+
+const iconSources: Record<InputFieldIcon, string> = {
+  search: "/images/icon-search.svg",
+  "show-password": "/images/icon-show-password.svg",
+  "hide-password": "/images/icon-hide-password.svg",
+};
 
 function hasInputValue(value: InputHTMLAttributes<HTMLInputElement>["value"] | undefined) {
   if (typeof value === "string") {
@@ -28,11 +50,14 @@ function hasInputValue(value: InputHTMLAttributes<HTMLInputElement>["value"] | u
 export function InputField({
   className,
   defaultValue,
+  fieldClassName,
   helperText = "Helper text",
   icon,
+  iconAriaLabel,
   id,
   label = "Basic Field",
   onChange,
+  onIconClick,
   prefix,
   type = "text",
   value,
@@ -50,9 +75,16 @@ export function InputField({
   // Controlled usage derives filled state from the current value prop. Uncontrolled
   // usage falls back to the local boolean above so the visual state stays in sync.
   const filled = value !== undefined ? hasInputValue(value) : uncontrolledFilled;
+  const iconMarkup = icon ? (
+    <Image src={iconSources[icon]} alt="" width={16} height={16} />
+  ) : null;
 
   return (
-    <label className={styles.field} data-filled={filled || undefined} htmlFor={inputId}>
+    <label
+      className={cn(styles.field, fieldClassName)}
+      data-filled={filled || undefined}
+      htmlFor={inputId}
+    >
       <span className={styles.label}>{label}</span>
       <span className={styles.control}>
         {prefix ? <span className={styles.prefix}>{prefix}</span> : null}
@@ -79,9 +111,19 @@ export function InputField({
           }}
           {...props}
         />
-        {icon === "search" ? (
+        {icon && onIconClick ? (
+          <button
+            type="button"
+            className={styles.iconButton}
+            aria-label={iconAriaLabel}
+            onClick={onIconClick}
+          >
+            {iconMarkup}
+          </button>
+        ) : null}
+        {icon && !onIconClick ? (
           <span className={styles.icon} aria-hidden="true">
-            <Image src="/images/icon-search.svg" alt="" width={16} height={16} />
+            {iconMarkup}
           </span>
         ) : null}
       </span>

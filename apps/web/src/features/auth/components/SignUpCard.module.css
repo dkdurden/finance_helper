@@ -1,0 +1,59 @@
+.card {
+  display: grid;
+  width: min(100%, 35rem);
+  gap: var(--space-400);
+}
+
+.title {
+  color: var(--color-grey-900);
+  font-size: var(--text-preset-1-size);
+  font-weight: var(--text-preset-1-weight);
+  line-height: var(--text-preset-1-line-height);
+}
+
+.fields {
+  display: grid;
+  gap: var(--space-200);
+}
+
+.field {
+  width: 100%;
+}
+
+.submitButton {
+  width: 100%;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-100);
+  text-align: center;
+}
+
+.footerText {
+  color: var(--color-grey-500);
+  font-size: var(--text-preset-4-size);
+  font-weight: var(--text-preset-4-weight);
+  line-height: var(--text-preset-4-line-height);
+}
+
+.footerLink {
+  color: var(--color-grey-900);
+  font-size: var(--text-preset-4-bold-size);
+  font-weight: var(--text-preset-4-bold-weight);
+  line-height: var(--text-preset-4-bold-line-height);
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+}
+
+.footerLink:hover {
+  color: var(--color-grey-500);
+}
+
+.footerLink:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 4px;
+  border-radius: var(--space-50);
+}

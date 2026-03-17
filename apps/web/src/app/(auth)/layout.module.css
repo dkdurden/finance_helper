@@ -1,0 +1,158 @@
+.page {
+  min-height: 100vh;
+  background: var(--color-beige-100);
+}
+
+.shell {
+  display: grid;
+  min-height: 100vh;
+}
+
+.brandPanel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  margin: 1.25rem;
+  min-height: calc(100vh - 2.5rem);
+}
+
+.artworkLayer {
+  position: absolute;
+  inset: 0;
+}
+
+.artwork {
+  object-fit: cover;
+}
+
+.brandOverlay {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100%;
+  height: 100%;
+  padding: 2.5rem;
+}
+
+.logo {
+  width: auto;
+  height: 1.375rem;
+}
+
+.brandCopy {
+  align-self: end;
+  display: grid;
+  gap: 1.5rem;
+  max-width: 25rem;
+  color: var(--color-white);
+}
+
+.brandTitle {
+  color: var(--color-white);
+  font-size: var(--text-preset-1-size);
+  font-weight: var(--text-preset-1-weight);
+  line-height: var(--text-preset-1-line-height);
+}
+
+.brandDescription {
+  color: var(--color-white);
+  max-width: 24rem;
+  font-size: var(--text-preset-4-size);
+  font-weight: var(--text-preset-4-weight);
+  line-height: var(--text-preset-4-line-height);
+}
+
+.content {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  padding: 2rem 2.5rem;
+}
+
+.intro {
+  display: grid;
+  gap: var(--space-200);
+  width: min(100%, 35rem);
+}
+
+.eyebrow {
+  color: var(--color-green);
+  font-size: var(--text-preset-5-bold-size);
+  font-weight: var(--text-preset-5-bold-weight);
+  letter-spacing: 0.08em;
+  line-height: var(--text-preset-5-bold-line-height);
+  text-transform: uppercase;
+}
+
+.title {
+  color: var(--color-grey-900);
+  font-size: var(--text-preset-1-size);
+  font-weight: var(--text-preset-1-weight);
+  line-height: var(--text-preset-1-line-height);
+}
+
+.description {
+  color: var(--color-grey-500);
+  font-size: var(--text-preset-4-size);
+  font-weight: var(--text-preset-4-weight);
+  line-height: var(--text-preset-4-line-height);
+}
+
+@media (min-width: 64rem) {
+  .shell {
+    grid-template-columns: minmax(24rem, 5fr) minmax(32rem, 7fr);
+    max-width: 112rem;
+    margin: 0 auto;
+  }
+
+  .content {
+    min-height: 100%;
+    justify-items: center;
+    padding: 2rem 2.5rem;
+  }
+}
+
+@media (max-width: 63.9375rem) {
+  .shell {
+    min-height: auto;
+    gap: 1.5rem;
+  }
+
+  .brandPanel {
+    min-height: 22rem;
+    margin: 1rem 1rem 0;
+  }
+
+  .brandOverlay {
+    padding: 2rem;
+  }
+
+  .content {
+    padding: 0 1rem 1rem;
+  }
+}
+
+@media (max-width: 47.9375rem) {
+  .brandOverlay {
+    padding: 1.5rem;
+  }
+
+  .brandCopy {
+    gap: var(--space-200);
+  }
+
+  .brandTitle {
+    font-size: clamp(1.75rem, 8vw, 2rem);
+  }
+
+  .content {
+    justify-items: stretch;
+    padding-bottom: 0.75rem;
+  }
+
+  .intro {
+    width: 100%;
+    text-align: left;
+  }
+}
