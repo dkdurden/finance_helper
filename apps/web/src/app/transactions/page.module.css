@@ -1,0 +1,115 @@
+.toolbarPanel,
+.tablePanel,
+.paginationPanel {
+  display: grid;
+  gap: var(--space-250);
+  border-radius: var(--space-150);
+  background: var(--color-white);
+  padding: var(--space-400);
+  box-shadow: var(--shadow-sm);
+}
+
+.toolbarRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-200);
+  align-items: center;
+}
+
+.toolbarActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-150);
+  justify-content: end;
+}
+
+.searchPlaceholder,
+.controlPlaceholder,
+.paginationPlaceholder,
+.rowPlaceholder {
+  display: grid;
+  place-items: center;
+  min-height: 3rem;
+  border-radius: var(--space-100);
+  border: 1px dashed var(--color-beige-500);
+  background: var(--color-beige-100);
+  color: var(--color-grey-500);
+  font-size: var(--text-preset-4-size);
+  line-height: var(--text-preset-4-line-height);
+  text-align: center;
+  padding: 0 var(--space-200);
+}
+
+.searchPlaceholder {
+  justify-items: start;
+  min-height: 3.5rem;
+}
+
+.controlPlaceholder {
+  min-width: 10rem;
+  min-height: 3.5rem;
+}
+
+.tableHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: var(--space-200);
+  padding-bottom: var(--space-200);
+  color: var(--color-grey-500);
+  font-size: var(--text-preset-5-size);
+  font-weight: var(--text-preset-5-bold-weight);
+  line-height: var(--text-preset-5-line-height);
+}
+
+.tableBody {
+  display: grid;
+  gap: var(--space-150);
+}
+
+.rowPlaceholder {
+  min-height: 4.5rem;
+}
+
+.paginationPanel {
+  padding-top: var(--space-300);
+}
+
+@media (max-width: 63.9375rem) {
+  .toolbarRow {
+    grid-template-columns: 1fr;
+  }
+
+  .toolbarActions {
+    justify-content: start;
+  }
+
+  .tableHeader {
+    grid-template-columns: repeat(4, minmax(8rem, 1fr));
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 47.9375rem) {
+  .toolbarPanel,
+  .tablePanel,
+  .paginationPanel {
+    padding: var(--space-300);
+  }
+
+  .toolbarActions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .controlPlaceholder {
+    min-width: 0;
+  }
+
+  .tableHeader {
+    display: none;
+  }
+
+  .rowPlaceholder {
+    min-height: 5rem;
+  }
+}
