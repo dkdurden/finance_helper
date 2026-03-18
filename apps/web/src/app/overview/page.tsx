@@ -4,6 +4,44 @@ import { Button } from "@/components/button/Button";
 import { OverviewSummaryCard } from "@/features/overview/components/OverviewSummaryCard";
 import styles from "./page.module.css";
 
+const recentTransactions = [
+  {
+    name: "Emma Richardson",
+    date: "19 Aug 2024",
+    amount: "+$75.50",
+    positive: true,
+    avatar: "/images/avatars/emma-richardson.jpg",
+  },
+  {
+    name: "Savory Bites Bistro",
+    date: "19 Aug 2024",
+    amount: "-$55.50",
+    positive: false,
+    avatar: "/images/avatars/savory-bites-bistro.jpg",
+  },
+  {
+    name: "Daniel Carter",
+    date: "18 Aug 2024",
+    amount: "-$42.30",
+    positive: false,
+    avatar: "/images/avatars/daniel-carter.jpg",
+  },
+  {
+    name: "Sun Park",
+    date: "17 Aug 2024",
+    amount: "+$120.00",
+    positive: true,
+    avatar: "/images/avatars/sun-park.jpg",
+  },
+  {
+    name: "Urban Services Hub",
+    date: "17 Aug 2024",
+    amount: "-$65.00",
+    positive: false,
+    avatar: "/images/avatars/urban-services-hub.jpg",
+  },
+];
+
 export default function Home() {
   return (
     <AppShell title="Overview">
@@ -82,11 +120,42 @@ export default function Home() {
           <section className={styles.panel} aria-label="Transactions section">
             <div className={styles.panelHeader}>
               <h2 className={styles.panelTitle}>Transactions</h2>
-              <button className={styles.panelAction} type="button">
-                View All
-              </button>
+              <Button variant="tertiary">View All</Button>
             </div>
-            <div className={styles.placeholderBlock}>Transactions list placeholder</div>
+
+            <div className={styles.transactionsList}>
+              {recentTransactions.map((transaction, index) => (
+                <article className={styles.transactionRow} key={`${transaction.name}-${transaction.date}`}>
+                  <div className={styles.transactionRowContent}>
+                    <div className={styles.transactionIdentity}>
+                      <Image
+                        src={transaction.avatar}
+                        alt=""
+                        width={40}
+                        height={40}
+                        className={styles.transactionAvatar}
+                      />
+                      <div className={styles.transactionDetails}>
+                        <p className={styles.transactionName}>{transaction.name}</p>
+                      </div>
+                    </div>
+
+                    <div className={styles.transactionMeta}>
+                      <p
+                        className={`${styles.transactionAmount} ${
+                          transaction.positive ? styles.transactionAmountPositive : styles.transactionAmountNegative
+                        }`}
+                      >
+                        {transaction.amount}
+                      </p>
+                      <p className={styles.transactionDate}>{transaction.date}</p>
+                    </div>
+                  </div>
+
+                  {index < recentTransactions.length - 1 ? <div className={styles.transactionDivider} aria-hidden="true" /> : null}
+                </article>
+              ))}
+            </div>
           </section>
         </div>
 

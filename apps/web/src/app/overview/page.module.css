@@ -41,15 +41,6 @@
   line-height: var(--text-preset-2-line-height);
 }
 
-.panelAction {
-  border: 0;
-  background: transparent;
-  padding: 0;
-  color: var(--color-grey-500);
-  font: inherit;
-  cursor: pointer;
-}
-
 .potsLayout {
   display: grid;
   grid-template-columns: minmax(15rem, 16.5rem) minmax(0, 1fr);
@@ -157,6 +148,92 @@
   gap: 0.125rem;
 }
 
+.transactionsList {
+  display: grid;
+}
+
+.transactionRow {
+  display: grid;
+}
+
+.transactionRowContent {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-250);
+  align-items: center;
+  min-height: 2.75rem;
+  padding-block: var(--space-200);
+}
+
+.transactionIdentity {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-200);
+  align-items: center;
+  min-width: 0;
+}
+
+.transactionAvatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.transactionDetails {
+  min-width: 0;
+}
+
+.transactionName,
+.transactionAmount,
+.transactionDate {
+  margin: 0;
+}
+
+.transactionName {
+  color: var(--color-grey-900);
+  font-size: var(--text-preset-4-bold-size);
+  font-weight: var(--text-preset-4-bold-weight);
+  line-height: var(--text-preset-4-bold-line-height);
+}
+
+.transactionDate {
+  color: var(--color-grey-500);
+  font-size: var(--text-preset-5-size);
+  font-weight: var(--text-preset-5-weight);
+  line-height: var(--text-preset-5-line-height);
+}
+
+.transactionMeta {
+  min-width: 5.5rem;
+  display: grid;
+  gap: var(--space-100);
+  justify-items: end;
+  align-content: center;
+  text-align: right;
+}
+
+.transactionAmount {
+  font-size: var(--text-preset-4-bold-size);
+  font-weight: var(--text-preset-4-bold-weight);
+  line-height: var(--text-preset-4-bold-line-height);
+  letter-spacing: -0.01em;
+}
+
+.transactionAmountPositive {
+  color: var(--color-green);
+}
+
+.transactionAmountNegative {
+  color: var(--color-grey-900);
+}
+
+.transactionDivider {
+  height: 1px;
+  margin-top: 0;
+  background: var(--color-grey-100);
+}
+
 .placeholderBlock {
   display: grid;
   place-items: center;
@@ -206,5 +283,16 @@
   .potsBreakdown {
     grid-template-columns: 1fr;
     gap: var(--space-200);
+  }
+
+  .transactionRowContent,
+  .transactionIdentity {
+    grid-template-columns: 1fr;
+  }
+
+  .transactionMeta {
+    min-width: 0;
+    justify-items: start;
+    text-align: left;
   }
 }
