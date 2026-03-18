@@ -1,45 +1,142 @@
-.page {
+.summaryGrid {
   display: grid;
-  min-height: 100vh;
-  grid-template-columns: auto 1fr;
-  background: var(--color-bg);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-300);
 }
 
-.preview {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-500);
+.summaryCard,
+.summaryCardPrimary {
+  display: grid;
+  gap: var(--space-150);
+  border-radius: var(--space-150);
+  padding: var(--space-300);
+  box-shadow: var(--shadow-sm);
 }
 
-.previewCard {
+.summaryCard {
+  background: var(--color-white);
+}
+
+.summaryCardPrimary {
+  background: var(--color-grey-900);
+}
+
+.summaryLabel {
+  margin: 0;
+  font-size: var(--text-preset-4-size);
+  font-weight: var(--text-preset-4-weight);
+  line-height: var(--text-preset-4-line-height);
+}
+
+.summaryCard .summaryLabel {
+  color: var(--color-grey-500);
+}
+
+.summaryCardPrimary .summaryLabel {
+  color: var(--color-white);
+}
+
+.summaryValue {
+  margin: 0;
+  font-size: var(--text-preset-1-size);
+  font-weight: var(--text-preset-1-weight);
+  line-height: var(--text-preset-1-line-height);
+}
+
+.summaryCard .summaryValue {
+  color: var(--color-grey-900);
+}
+
+.summaryCardPrimary .summaryValue {
+  color: var(--color-white);
+}
+
+.contentGrid {
   display: grid;
-  max-width: 30rem;
-  gap: var(--space-200);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
+  grid-template-columns: minmax(0, 1.1fr) minmax(18rem, 0.9fr);
+  gap: var(--space-300);
+  align-items: start;
+}
+
+.leftColumn,
+.rightColumn {
+  display: grid;
+  gap: var(--space-300);
+}
+
+.panel {
+  display: grid;
+  gap: var(--space-250);
+  border-radius: var(--space-150);
+  background: var(--color-white);
   padding: var(--space-400);
   box-shadow: var(--shadow-sm);
 }
 
-.previewCard h1 {
-  font-size: var(--text-preset-1-size);
-  line-height: var(--text-preset-1-line-height);
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-200);
 }
 
-.previewCard p:first-child {
-  color: var(--color-primary);
-  text-transform: uppercase;
+.panelTitle {
+  margin: 0;
+  color: var(--color-grey-900);
+  font-size: var(--text-preset-2-size);
+  font-weight: var(--text-preset-2-weight);
+  line-height: var(--text-preset-2-line-height);
 }
 
-@media (max-width: 900px) {
-  .page {
+.panelAction {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--color-grey-500);
+  font: inherit;
+  cursor: pointer;
+}
+
+.placeholderBlock {
+  display: grid;
+  place-items: center;
+  min-height: 12rem;
+  border-radius: var(--space-150);
+  border: 1px dashed var(--color-beige-500);
+  background: var(--color-beige-100);
+  color: var(--color-grey-500);
+  font-size: var(--text-preset-4-size);
+  line-height: var(--text-preset-4-line-height);
+  text-align: center;
+  padding: var(--space-300);
+}
+
+@media (max-width: 75rem) {
+  .contentGrid {
     grid-template-columns: 1fr;
-    padding-bottom: calc(var(--space-500) + 5.5rem);
+  }
+}
+
+@media (max-width: 63.9375rem) {
+  .summaryGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 47.9375rem) {
+  .leftColumn,
+  .rightColumn {
+    gap: var(--space-250);
   }
 
-  .preview {
-    justify-content: flex-start;
+  .panel,
+  .summaryCard,
+  .summaryCardPrimary {
+    padding: var(--space-300);
+  }
+
+  .panelHeader {
+    align-items: start;
+    flex-wrap: wrap;
   }
 }
