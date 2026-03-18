@@ -4,53 +4,6 @@
   gap: var(--space-300);
 }
 
-.summaryCard,
-.summaryCardPrimary {
-  display: grid;
-  gap: var(--space-150);
-  border-radius: var(--space-150);
-  padding: var(--space-300);
-  box-shadow: var(--shadow-sm);
-}
-
-.summaryCard {
-  background: var(--color-white);
-}
-
-.summaryCardPrimary {
-  background: var(--color-grey-900);
-}
-
-.summaryLabel {
-  margin: 0;
-  font-size: var(--text-preset-4-size);
-  font-weight: var(--text-preset-4-weight);
-  line-height: var(--text-preset-4-line-height);
-}
-
-.summaryCard .summaryLabel {
-  color: var(--color-grey-500);
-}
-
-.summaryCardPrimary .summaryLabel {
-  color: var(--color-white);
-}
-
-.summaryValue {
-  margin: 0;
-  font-size: var(--text-preset-1-size);
-  font-weight: var(--text-preset-1-weight);
-  line-height: var(--text-preset-1-line-height);
-}
-
-.summaryCard .summaryValue {
-  color: var(--color-grey-900);
-}
-
-.summaryCardPrimary .summaryValue {
-  color: var(--color-white);
-}
-
 .contentGrid {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(18rem, 0.9fr);
@@ -97,6 +50,113 @@
   cursor: pointer;
 }
 
+.potsLayout {
+  display: grid;
+  grid-template-columns: minmax(15rem, 16.5rem) minmax(0, 1fr);
+  gap: var(--space-250);
+  align-items: stretch;
+}
+
+.totalSavedCard {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-150);
+  align-items: center;
+  min-height: 100%;
+  border-radius: var(--space-150);
+  background: var(--color-beige-100);
+  padding: var(--space-300);
+}
+
+.totalSavedIconWrap {
+  display: grid;
+  place-items: center;
+  color: var(--color-green);
+}
+
+.totalSavedIcon {
+  width: 1.9rem;
+  height: 1.9rem;
+}
+
+.totalSavedContent {
+  display: grid;
+  gap: var(--space-050);
+}
+
+.totalSavedLabel,
+.potItemLabel {
+  margin: 0;
+  color: var(--color-grey-500);
+  font-size: var(--text-preset-4-size);
+  font-weight: var(--text-preset-4-weight);
+  line-height: var(--text-preset-4-line-height);
+}
+
+.potItemLabel {
+  font-size: var(--text-preset-5-size);
+  line-height: var(--text-preset-5-line-height);
+}
+
+.totalSavedValue,
+.potItemValue {
+  margin: 0;
+  color: var(--color-grey-900);
+  font-size: var(--text-preset-2-size);
+  font-weight: var(--text-preset-2-weight);
+  line-height: var(--text-preset-2-line-height);
+}
+
+.totalSavedValue {
+  font-size: var(--text-preset-1-size);
+  font-weight: var(--text-preset-1-weight);
+  line-height: var(--text-preset-1-line-height);
+}
+
+.potsBreakdown {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-200) var(--space-300);
+  align-content: center;
+}
+
+.potItem {
+  display: grid;
+  grid-template-columns: 0.25rem 1fr;
+  gap: var(--space-150);
+  align-items: stretch;
+  min-height: 3rem;
+}
+
+.potAccent {
+  display: block;
+  border-radius: 999px;
+  width: 0.25rem;
+  min-height: 100%;
+}
+
+.potAccentGreen {
+  background: var(--color-green);
+}
+
+.potAccentCyan {
+  background: var(--color-cyan);
+}
+
+.potAccentNavy {
+  background: var(--color-navy);
+}
+
+.potAccentGold {
+  background: var(--color-yellow);
+}
+
+.potItemContent {
+  display: grid;
+  align-content: center;
+  gap: 0.125rem;
+}
+
 .placeholderBlock {
   display: grid;
   place-items: center;
@@ -121,6 +181,11 @@
   .summaryGrid {
     grid-template-columns: 1fr;
   }
+
+  .potsLayout {
+    grid-template-columns: 1fr;
+    gap: var(--space-250);
+  }
 }
 
 @media (max-width: 47.9375rem) {
@@ -129,14 +194,17 @@
     gap: var(--space-250);
   }
 
-  .panel,
-  .summaryCard,
-  .summaryCardPrimary {
+  .panel {
     padding: var(--space-300);
   }
 
   .panelHeader {
     align-items: start;
     flex-wrap: wrap;
+  }
+
+  .potsBreakdown {
+    grid-template-columns: 1fr;
+    gap: var(--space-200);
   }
 }

@@ -1,4 +1,7 @@
+import Image from "next/image";
 import { AppShell } from "@/components/layout/AppShell";
+import { Button } from "@/components/button/Button";
+import { OverviewSummaryCard } from "@/features/overview/components/OverviewSummaryCard";
 import styles from "./page.module.css";
 
 export default function Home() {
@@ -6,20 +9,9 @@ export default function Home() {
     <AppShell title="Overview">
       {/* Overview-specific summary row */}
       <section className={styles.summaryGrid} aria-label="Summary cards">
-        <article className={styles.summaryCardPrimary}>
-          <p className={styles.summaryLabel}>Current Balance</p>
-          <p className={styles.summaryValue}>$0.00</p>
-        </article>
-
-        <article className={styles.summaryCard}>
-          <p className={styles.summaryLabel}>Income</p>
-          <p className={styles.summaryValue}>$0.00</p>
-        </article>
-
-        <article className={styles.summaryCard}>
-          <p className={styles.summaryLabel}>Expenses</p>
-          <p className={styles.summaryValue}>$0.00</p>
-        </article>
+        <OverviewSummaryCard label="Current Balance" value="$0.00" primary />
+        <OverviewSummaryCard label="Income" value="$0.00" />
+        <OverviewSummaryCard label="Expenses" value="$0.00" />
       </section>
 
       {/* Page-specific content region for the Overview dashboard */}
@@ -29,11 +21,61 @@ export default function Home() {
           <section className={styles.panel} aria-label="Pots section">
             <div className={styles.panelHeader}>
               <h2 className={styles.panelTitle}>Pots</h2>
-              <button className={styles.panelAction} type="button">
-                See Details
-              </button>
+              <Button variant="tertiary">See Details</Button>
             </div>
-            <div className={styles.placeholderBlock}>Pots content placeholder</div>
+
+            <div className={styles.potsLayout}>
+              <div className={styles.totalSavedCard}>
+                <div className={styles.totalSavedIconWrap} aria-hidden="true">
+                  <Image
+                    src="/images/icon-pot.svg"
+                    alt=""
+                    width={24}
+                    height={24}
+                    className={styles.totalSavedIcon}
+                  />
+                </div>
+
+                <div className={styles.totalSavedContent}>
+                  <p className={styles.totalSavedLabel}>Total Saved</p>
+                  <p className={styles.totalSavedValue}>$850</p>
+                </div>
+              </div>
+
+              <div className={styles.potsBreakdown} aria-label="Pot breakdown">
+                <div className={styles.potItem}>
+                  <span className={`${styles.potAccent} ${styles.potAccentGreen}`} aria-hidden="true" />
+                  <div className={styles.potItemContent}>
+                    <p className={styles.potItemLabel}>Savings</p>
+                    <p className={styles.potItemValue}>$159</p>
+                  </div>
+                </div>
+
+                <div className={styles.potItem}>
+                  <span className={`${styles.potAccent} ${styles.potAccentCyan}`} aria-hidden="true" />
+                  <div className={styles.potItemContent}>
+                    <p className={styles.potItemLabel}>Gift</p>
+                    <p className={styles.potItemValue}>$40</p>
+                  </div>
+                </div>
+
+                <div className={styles.potItem}>
+                  <span className={`${styles.potAccent} ${styles.potAccentNavy}`} aria-hidden="true" />
+                  <div className={styles.potItemContent}>
+                    <p className={styles.potItemLabel}>Concert Ticket</p>
+                    <p className={styles.potItemValue}>$110</p>
+                  </div>
+                </div>
+
+                <div className={styles.potItem}>
+                  <span className={`${styles.potAccent} ${styles.potAccentGold}`} aria-hidden="true" />
+                  <div className={styles.potItemContent}>
+                    <p className={styles.potItemLabel}>New Laptop</p>
+                    <p className={styles.potItemValue}>$10</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </section>
 
           {/* Transactions card: latest transactions list */}
@@ -53,9 +95,7 @@ export default function Home() {
           <section className={styles.panel} aria-label="Budgets section">
             <div className={styles.panelHeader}>
               <h2 className={styles.panelTitle}>Budgets</h2>
-              <button className={styles.panelAction} type="button">
-                See Details
-              </button>
+              <Button variant="tertiary">See Details</Button>
             </div>
             <div className={styles.placeholderBlock}>Budget chart placeholder</div>
           </section>
@@ -64,9 +104,7 @@ export default function Home() {
           <section className={styles.panel} aria-label="Recurring bills section">
             <div className={styles.panelHeader}>
               <h2 className={styles.panelTitle}>Recurring Bills</h2>
-              <button className={styles.panelAction} type="button">
-                See Details
-              </button>
+              <Button variant="tertiary">See Details</Button>
             </div>
             <div className={styles.placeholderBlock}>Recurring bills summary placeholder</div>
           </section>
