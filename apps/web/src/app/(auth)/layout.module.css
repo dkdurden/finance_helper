@@ -115,44 +115,62 @@
 
 @media (max-width: 63.9375rem) {
   .shell {
-    min-height: auto;
-    gap: 1.5rem;
+    grid-template-rows: auto 1fr;
+    min-height: 100vh;
   }
 
   .brandPanel {
-    min-height: 22rem;
-    margin: 1rem 1rem 0;
+    min-height: auto;
+    margin: 0;
+    border-radius: 0 0 0.5rem 0.5rem;
+    background: var(--color-grey-900);
+  }
+
+  .artworkLayer,
+  .brandCopy {
+    display: none;
   }
 
   .brandOverlay {
-    padding: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: auto;
   }
 
   .content {
-    padding: 0 1rem 1rem;
+    min-height: 0;
+    align-content: center;
   }
 }
 
 @media (max-width: 47.9375rem) {
+  .shell {
+    gap: 0;
+  }
+
   .brandOverlay {
-    padding: 1.5rem;
-  }
-
-  .brandCopy {
-    gap: var(--space-200);
-  }
-
-  .brandTitle {
-    font-size: clamp(1.75rem, 8vw, 2rem);
+    padding: 1.5rem 1rem;
   }
 
   .content {
-    justify-items: stretch;
-    padding-bottom: 0.75rem;
+    justify-items: center;
+    padding: 1.5rem 1rem;
   }
 
   .intro {
     width: 100%;
     text-align: left;
+  }
+}
+
+@media (min-width: 48rem) and (max-width: 63.9375rem) {
+  .brandOverlay {
+    padding: 1.5rem 2.5rem;
+  }
+
+  .content {
+    justify-items: center;
+    padding: 2rem 2.5rem;
   }
 }

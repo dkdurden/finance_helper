@@ -78,3 +78,13 @@
   outline-offset: 4px;
   border-radius: var(--space-50);
 }
+
+@media (max-width: 47.9375rem) {
+  .card {
+    padding: var(--space-300) var(--space-250);
+  }
+
+  .form {
+    gap: var(--space-300);
+  }
+}

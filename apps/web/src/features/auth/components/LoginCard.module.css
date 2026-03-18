@@ -57,3 +57,9 @@
 .field {
   width: 100%;
 }
+
+@media (max-width: 47.9375rem) {
+  .card {
+    padding: var(--space-300) var(--space-250);
+  }
+}
