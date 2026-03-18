@@ -1,6 +1,6 @@
 # Session Start Guide (for New AI Context)
 
-Last updated: 2026-03-13
+Last updated: 2026-03-18
 
 Use this file at the beginning of any new chat/session so the assistant can start with full project context and minimal back-and-forth.
 
@@ -62,11 +62,17 @@ Constraints:
   - responsive sidebar navigation for desktop, tablet, and mobile
   - reusable button component with primary, secondary, tertiary, and destroy variants
   - reusable text input and select-style field components under `apps/web/src/components/input`
+  - shared app shell layout under `apps/web/src/components/layout/`
+  - `/overview` route split from `/`, with `/` redirecting into the app overview
+  - Overview summary cards implemented and extracted into an Overview-specific component
+  - Overview `Pots` panel implemented and polished
+  - Overview `Transactions` panel implemented and aligned to the direct Figma component
+  - `/transactions` route skeleton created for the full transactions page
 - Local development workflow is Docker for `db`/`api` and local Next.js dev for `apps/web`.
 
 ## Next Recommended Step
 
-Continue Milestone 2 by implementing the next Figma-driven frontend component or screen slice in `apps/web`, building on the existing sidebar, button, and input foundations.
+Continue Milestone 2 by implementing the `Budgets` panel on `/overview`, keeping the slice Figma-driven and scoped to one dashboard section at a time.
 
 ## Definition of Done Per Milestone
 

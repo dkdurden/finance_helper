@@ -1,6 +1,6 @@
 # Milestone 2 Notes (Next.js UI Foundation)
 
-Date: 2026-03-13
+Date: 2026-03-18
 
 ## What we built
 
@@ -37,6 +37,13 @@ Date: 2026-03-13
   - `apps/web/src/features/auth/components/SignUpCard.tsx` now submits a real form
   - `apps/web/src/app/api/auth/signup/route.ts` proxies signup requests through Next.js to the Django backend
   - successful signup now creates a real backend user from the frontend flow
+- Extracted a shared app shell for authenticated app pages in `apps/web/src/components/layout/` and moved sidebar layout concerns under that shared area.
+- Split the dashboard route so `/` redirects to `/overview` and the app overview lives on its own page route.
+- Added the first real Overview dashboard slices:
+  - summary cards row with an `OverviewSummaryCard` component under `apps/web/src/features/overview/components/`
+  - `Pots` panel using the existing pot icon asset and Figma-aligned spacing
+  - `Transactions` panel using existing avatar assets and spacing refined against the direct Figma component
+- Added a dedicated `/transactions` page skeleton using the shared app shell, ready for later toolbar/table implementation.
 
 ## Why this matters
 
@@ -47,6 +54,7 @@ Date: 2026-03-13
 - Builds out a reusable component base so future screens can reuse buttons and field patterns instead of duplicating UI work.
 - Preserves native input and select semantics while still tracking closely to the Figma component language.
 - Introduces the first thin backend-for-frontend layer in Next.js, which keeps backend URLs server-side and creates a clean pattern for future auth/API integration.
+- Establishes the first reusable app-page frame and proves the Overview dashboard can be built incrementally as a set of Figma-driven sections instead of one large page rewrite.
 
 ## Commands used
 
@@ -63,6 +71,14 @@ Date: 2026-03-13
 - `Get-Content apps/web/src/components/input/InputField.module.css`
 - `Get-Content apps/web/src/components/input/SelectField.tsx`
 - `Get-Content apps/web/src/components/input/SelectField.module.css`
+- `Get-Content apps/web/src/components/layout/AppShell.tsx`
+- `Get-Content apps/web/src/components/layout/AppShell.module.css`
+- `Get-Content apps/web/src/app/overview/page.tsx`
+- `Get-Content apps/web/src/app/overview/page.module.css`
+- `Get-Content apps/web/src/features/overview/components/OverviewSummaryCard.tsx`
+- `Get-Content apps/web/src/features/overview/components/OverviewSummaryCard.module.css`
+- `Get-Content apps/web/src/app/transactions/page.tsx`
+- `Get-Content apps/web/src/app/transactions/page.module.css`
 - `git status --short`
 - `git commit`
 
@@ -85,7 +101,13 @@ Date: 2026-03-13
   - auth route structure and metadata
   - shared auth layout behavior
   - signup form submission flow through the Next.js proxy route
-- Informal browser validation was used during iteration, including successful end-to-end account creation through the signup page, but no automated frontend runtime test was added in these frontend slices.
+- Overview shell and section files were read back after each slice to verify:
+  - `/overview` route structure
+  - shared app shell usage
+  - summary card component extraction
+  - `Pots` panel structure and icon usage
+  - `Transactions` panel structure and alignment against the direct Figma component
+- Informal browser validation was used during iteration, but no automated frontend runtime test was added in these frontend slices.
 
 ## Related docs
 
@@ -96,8 +118,8 @@ Date: 2026-03-13
 
 ## Next implementation step
 
-- Keep the Next.js proxy-route pattern for future auth flows so the browser does not need direct knowledge of backend service URLs.
-- Add backend throttling to the signup endpoint before expanding auth further, since signup now works end to end and abuse protection is the next meaningful hardening step.
+- Build the `Budgets` panel on `/overview` as the next small Figma-driven dashboard slice.
+- Keep the shared app shell and tertiary-button pattern for future overview sections so panel actions stay consistent.
 - Continue future form work aligned with the current input/select split:
   - `InputField` for text-entry variants
   - `SelectField` for dropdown/select-style variants
