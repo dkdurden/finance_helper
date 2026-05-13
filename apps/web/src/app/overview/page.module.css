@@ -402,40 +402,29 @@
 @media (max-width: 47.9375rem) {
   .leftColumn,
   .rightColumn {
-    gap: var(--space-250);
+    gap: var(--space-200);
   }
 
   .panel {
-    padding: var(--space-300);
+    padding: var(--space-300) var(--space-250);
   }
 
   .panelHeader {
-    align-items: start;
-    flex-wrap: wrap;
+    align-items: center;
+    flex-wrap: nowrap;
   }
 
   .potsBreakdown {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-200);
   }
 
   .budgetBreakdown {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .billSummaryRow {
-    align-items: start;
-    flex-direction: column;
-  }
-
-  .transactionRowContent,
-  .transactionIdentity {
-    grid-template-columns: 1fr;
-  }
-
-  .transactionMeta {
-    min-width: 0;
-    justify-items: start;
-    text-align: left;
+    align-items: center;
+    flex-direction: row;
   }
 }
