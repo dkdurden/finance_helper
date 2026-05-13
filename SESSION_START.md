@@ -67,12 +67,16 @@ Constraints:
   - Overview summary cards implemented and extracted into an Overview-specific component
   - Overview `Pots` panel implemented and polished
   - Overview `Transactions` panel implemented and aligned to the direct Figma component
+  - Overview `Budgets` panel implemented with a Recharts donut chart and category breakdown
+  - Overview `Recurring Bills` panel implemented with Figma-aligned summary rows
+  - Overview responsive behavior tuned against desktop/mobile Figma frames
   - `/transactions` route skeleton created for the full transactions page
+- `apps/web/TODOS.md` tracks follow-up frontend polish, including Overview responsiveness review items.
 - Local development workflow is Docker for `db`/`api` and local Next.js dev for `apps/web`.
 
 ## Next Recommended Step
 
-Continue Milestone 2 by implementing the `Budgets` panel on `/overview`, keeping the slice Figma-driven and scoped to one dashboard section at a time.
+Continue Milestone 2 by implementing the full `/transactions` page, keeping the slice Figma-driven and scoped to one screen section at a time.
 
 ## Definition of Done Per Milestone
 

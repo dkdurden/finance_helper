@@ -43,6 +43,15 @@ Date: 2026-03-18
   - summary cards row with an `OverviewSummaryCard` component under `apps/web/src/features/overview/components/`
   - `Pots` panel using the existing pot icon asset and Figma-aligned spacing
   - `Transactions` panel using existing avatar assets and spacing refined against the direct Figma component
+- Completed the remaining Overview dashboard slices:
+  - `Budgets` panel with a reusable Recharts donut component under `apps/web/src/features/overview/components/`
+  - data-accurate budget allocation segments based on the visible category limits
+  - `Recurring Bills` summary panel with Figma-aligned status rows
+- Tuned Overview responsive behavior against the mobile Figma frame:
+  - aligned the sidebar bottom-nav breakpoint with the app shell tablet breakpoint
+  - preserved compact two-column micro layouts where the mobile design expects them
+  - kept transaction and recurring bill rows horizontal on mobile
+- Added `apps/web/TODOS.md` for follow-up frontend notes, including future Overview responsiveness tuning.
 - Added a dedicated `/transactions` page skeleton using the shared app shell, ready for later toolbar/table implementation.
 
 ## Why this matters
@@ -107,6 +116,9 @@ Date: 2026-03-18
   - summary card component extraction
   - `Pots` panel structure and icon usage
   - `Transactions` panel structure and alignment against the direct Figma component
+  - `Budgets` panel structure, Recharts donut geometry, and data-driven category segment sizing
+  - `Recurring Bills` panel row structure and mobile behavior
+- Frontend lint was run after recent Overview slices with `npm run lint`.
 - Informal browser validation was used during iteration, but no automated frontend runtime test was added in these frontend slices.
 
 ## Related docs
@@ -118,8 +130,9 @@ Date: 2026-03-18
 
 ## Next implementation step
 
-- Build the `Budgets` panel on `/overview` as the next small Figma-driven dashboard slice.
-- Keep the shared app shell and tertiary-button pattern for future overview sections so panel actions stay consistent.
+- Begin the full `/transactions` page implementation as the next small Figma-driven screen slice.
+- Keep the shared app shell, tertiary-button pattern, and established responsive breakpoints consistent as the transactions page grows.
+- Revisit `/overview` responsiveness later using `apps/web/TODOS.md` as the follow-up checklist.
 - Continue future form work aligned with the current input/select split:
   - `InputField` for text-entry variants
   - `SelectField` for dropdown/select-style variants
