@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/button/Button";
+import { BudgetDonutChart } from "@/features/overview/components/BudgetDonutChart";
 import { OverviewSummaryCard } from "@/features/overview/components/OverviewSummaryCard";
 import styles from "./page.module.css";
 
@@ -39,6 +40,29 @@ const recentTransactions = [
     amount: "-$65.00",
     positive: false,
     avatar: "/images/avatars/urban-services-hub.jpg",
+  },
+];
+
+const budgetCategories = [
+  {
+    name: "Entertainment",
+    amount: "$50.00",
+    accentClass: styles.budgetAccentGreen,
+  },
+  {
+    name: "Bills",
+    amount: "$750.00",
+    accentClass: styles.budgetAccentCyan,
+  },
+  {
+    name: "Dining Out",
+    amount: "$75.00",
+    accentClass: styles.budgetAccentGold,
+  },
+  {
+    name: "Personal Care",
+    amount: "$100.00",
+    accentClass: styles.budgetAccentNavy,
   },
 ];
 
@@ -166,7 +190,24 @@ export default function Home() {
               <h2 className={styles.panelTitle}>Budgets</h2>
               <Button variant="tertiary">See Details</Button>
             </div>
-            <div className={styles.placeholderBlock}>Budget chart placeholder</div>
+
+            <div className={styles.budgetsLayout}>
+              <div className={styles.budgetChartWrap}>
+                <BudgetDonutChart />
+              </div>
+
+              <div className={styles.budgetBreakdown} aria-label="Budget breakdown">
+                {budgetCategories.map((category) => (
+                  <div className={styles.budgetItem} key={category.name}>
+                    <span className={`${styles.budgetAccent} ${category.accentClass}`} aria-hidden="true" />
+                    <div className={styles.budgetItemContent}>
+                      <p className={styles.budgetItemLabel}>{category.name}</p>
+                      <p className={styles.budgetItemValue}>{category.amount}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </section>
 
           {/* Recurring bills card: paid, upcoming, due soon summary */}
