@@ -70,13 +70,13 @@ Constraints:
   - Overview `Budgets` panel implemented with a Recharts donut chart and category breakdown
   - Overview `Recurring Bills` panel implemented with Figma-aligned summary rows
   - Overview responsive behavior tuned against desktop/mobile Figma frames
-  - `/transactions` route skeleton created for the full transactions page
-- `apps/web/TODOS.md` tracks follow-up frontend polish, including Overview responsiveness review items.
+  - first draft of the full `/transactions` page implemented with toolbar, static rows, custom dropdowns, pagination, and mobile responsive treatment
+- `apps/web/TODOS.md` tracks follow-up frontend polish, including Overview responsiveness and Transactions table responsiveness review items.
 - Local development workflow is Docker for `db`/`api` and local Next.js dev for `apps/web`.
 
 ## Next Recommended Step
 
-Continue Milestone 2 by implementing the full `/transactions` page, keeping the slice Figma-driven and scoped to one screen section at a time.
+Continue Milestone 2 by reviewing and tuning `/transactions` responsiveness and interaction details against the desktop and mobile Figma frames.
 
 ## Definition of Done Per Milestone
 

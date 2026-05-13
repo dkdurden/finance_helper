@@ -140,6 +140,15 @@ export default function TransactionsPage() {
               />
             </div>
           </div>
+
+          <div className={styles.mobileFilterButtons} aria-label="Mobile transaction controls">
+            <button className={styles.mobileIconButton} type="button" aria-label="Sort transactions">
+              <Image src="/images/icon-sort-mobile.svg" alt="" width={20} height={20} aria-hidden="true" />
+            </button>
+            <button className={styles.mobileIconButton} type="button" aria-label="Filter transactions by category">
+              <Image src="/images/icon-filter-mobile.svg" alt="" width={20} height={20} aria-hidden="true" />
+            </button>
+          </div>
         </div>
 
         <div className={styles.tableHeader} aria-hidden="true">
@@ -172,7 +181,7 @@ export default function TransactionsPage() {
           ))}
         </div>
 
-        <Pagination />
+        <Pagination mobileCompact />
       </section>
     </AppShell>
   );

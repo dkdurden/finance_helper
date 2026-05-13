@@ -8,6 +8,7 @@ type PaginationProps = {
   className?: string;
   currentPage?: number;
   defaultPage?: number;
+  mobileCompact?: boolean;
   onPageChange?: (page: number) => void;
   totalPages?: number;
 };
@@ -33,6 +34,7 @@ export function Pagination({
   className,
   currentPage,
   defaultPage = 2,
+  mobileCompact = false,
   onPageChange,
   totalPages = 5,
 }: PaginationProps) {
@@ -72,7 +74,7 @@ export function Pagination({
         <span>Prev</span>
       </button>
 
-      <div className={styles.pageList}>
+      <div className={styles.pageList} data-mobile-compact={mobileCompact || undefined}>
         {pages.map((page) => (
           <button
             key={page}
@@ -87,6 +89,44 @@ export function Pagination({
           </button>
         ))}
       </div>
+
+      {mobileCompact ? (
+        <div className={styles.compactPageList}>
+          <button
+            type="button"
+            className={styles.pageButton}
+            aria-label={activePage === 1 ? "Page 1, current page" : "Go to page 1"}
+            data-active={activePage === 1 || undefined}
+            aria-current={activePage === 1 ? "page" : undefined}
+            onClick={() => handlePageChange(1)}
+          >
+            1
+          </button>
+          <button
+            type="button"
+            className={styles.pageButton}
+            aria-label={activePage === 2 ? "Page 2, current page" : "Go to page 2"}
+            data-active={activePage === 2 || undefined}
+            aria-current={activePage === 2 ? "page" : undefined}
+            onClick={() => handlePageChange(2)}
+          >
+            2
+          </button>
+          <span className={styles.pageButton} aria-hidden="true">
+            ...
+          </span>
+          <button
+            type="button"
+            className={styles.pageButton}
+            aria-label={activePage === safeTotalPages ? `Page ${safeTotalPages}, current page` : `Go to page ${safeTotalPages}`}
+            data-active={activePage === safeTotalPages || undefined}
+            aria-current={activePage === safeTotalPages ? "page" : undefined}
+            onClick={() => handlePageChange(safeTotalPages)}
+          >
+            {safeTotalPages}
+          </button>
+        </div>
+      ) : null}
 
       <button
         type="button"

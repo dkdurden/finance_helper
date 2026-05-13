@@ -15,6 +15,10 @@
   gap: var(--space-100);
 }
 
+.compactPageList {
+  display: none;
+}
+
 .navButton,
 .pageButton {
   display: inline-flex;
@@ -92,11 +96,32 @@
 
 @media (max-width: 640px) {
   .pagination {
-    flex-direction: column;
-    align-items: stretch;
+    align-items: center;
   }
 
   .navButton {
-    width: 100%;
+    width: 40px;
+    padding: var(--space-200);
+  }
+
+  .navButton span:not(.chevron) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .pageList[data-mobile-compact="true"] {
+    display: none;
+  }
+
+  .compactPageList {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-100);
   }
 }

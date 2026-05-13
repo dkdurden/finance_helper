@@ -14,6 +14,10 @@
   align-items: center;
 }
 
+.mobileFilterButtons {
+  display: none;
+}
+
 .searchField {
   position: relative;
   display: block;
@@ -106,6 +110,23 @@
   font-weight: var(--text-preset-4-weight);
   line-height: var(--text-preset-4-line-height);
   white-space: nowrap;
+}
+
+.mobileIconButton {
+  display: inline-flex;
+  width: 1.25rem;
+  height: 1.25rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: var(--color-grey-900);
+  cursor: pointer;
+}
+
+.mobileIconButton:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 4px;
+  border-radius: var(--space-50);
 }
 
 .tableHeader {
@@ -217,14 +238,18 @@
     padding: var(--space-300) var(--space-250);
   }
 
-  .filters {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-150);
+  .toolbar {
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
-  .filterControl {
-    justify-content: space-between;
+  .filters {
+    display: none;
+  }
+
+  .mobileFilterButtons {
+    display: flex;
+    align-items: center;
+    gap: var(--space-300);
   }
 
   .tableHeader {
@@ -233,7 +258,7 @@
 
   .transactionRow {
     grid-template-columns: minmax(0, 1fr) auto;
-    gap: var(--space-200);
+    gap: var(--space-150);
     padding: var(--space-200) 0;
   }
 
@@ -242,18 +267,31 @@
     height: 2rem;
   }
 
+  .recipientCell {
+    display: grid;
+    grid-template-columns: 2rem minmax(0, 1fr);
+    align-items: flex-start;
+    gap: var(--space-150);
+  }
+
+  .recipientName {
+    grid-column: 2;
+  }
+
   .categoryCell {
-    display: none;
+    grid-column: 1;
+    padding-left: calc(2rem + var(--space-150));
   }
 
   .dateCell {
-    grid-column: 1;
-    padding-left: calc(2rem + var(--space-200));
+    grid-column: 2;
+    justify-self: end;
+    text-align: right;
   }
 
   .amountCell {
     grid-column: 2;
-    grid-row: 1 / span 2;
-    align-self: center;
+    grid-row: 1;
+    align-self: start;
   }
 }
