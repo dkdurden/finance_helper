@@ -66,6 +66,24 @@ const budgetCategories = [
   },
 ];
 
+const recurringBills = [
+  {
+    label: "Paid Bills",
+    amount: "$190.00",
+    accentClass: styles.billAccentGreen,
+  },
+  {
+    label: "Total Upcoming",
+    amount: "$194.98",
+    accentClass: styles.billAccentGold,
+  },
+  {
+    label: "Due Soon",
+    amount: "$59.98",
+    accentClass: styles.billAccentCyan,
+  },
+];
+
 export default function Home() {
   return (
     <AppShell title="Overview">
@@ -216,7 +234,15 @@ export default function Home() {
               <h2 className={styles.panelTitle}>Recurring Bills</h2>
               <Button variant="tertiary">See Details</Button>
             </div>
-            <div className={styles.placeholderBlock}>Recurring bills summary placeholder</div>
+
+            <div className={styles.recurringBillsList} aria-label="Recurring bills summary">
+              {recurringBills.map((bill) => (
+                <div className={`${styles.billSummaryRow} ${bill.accentClass}`} key={bill.label}>
+                  <p className={styles.billSummaryLabel}>{bill.label}</p>
+                  <p className={styles.billSummaryAmount}>{bill.amount}</p>
+                </div>
+              ))}
+            </div>
           </section>
         </div>
       </section>

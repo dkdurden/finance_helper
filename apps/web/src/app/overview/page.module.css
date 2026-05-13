@@ -311,6 +311,54 @@
   line-height: var(--text-preset-4-bold-line-height);
 }
 
+.recurringBillsList {
+  display: grid;
+  gap: var(--space-150);
+  width: 100%;
+}
+
+.billSummaryRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-200);
+  border-left: 0.25rem solid var(--color-green);
+  border-radius: var(--space-100);
+  background: var(--color-beige-100);
+  padding: var(--space-250) var(--space-200);
+}
+
+.billAccentGreen {
+  border-left-color: var(--color-green);
+}
+
+.billAccentGold {
+  border-left-color: var(--color-yellow);
+}
+
+.billAccentCyan {
+  border-left-color: var(--color-cyan);
+}
+
+.billSummaryLabel,
+.billSummaryAmount {
+  margin: 0;
+  font-size: var(--text-preset-4-size);
+  line-height: var(--text-preset-4-line-height);
+}
+
+.billSummaryLabel {
+  color: var(--color-grey-500);
+  font-weight: var(--text-preset-4-weight);
+}
+
+.billSummaryAmount {
+  flex: none;
+  color: var(--color-grey-900);
+  font-weight: var(--text-preset-4-bold-weight);
+  text-align: right;
+}
+
 .placeholderBlock {
   display: grid;
   place-items: center;
@@ -373,6 +421,11 @@
 
   .budgetBreakdown {
     grid-template-columns: 1fr;
+  }
+
+  .billSummaryRow {
+    align-items: start;
+    flex-direction: column;
   }
 
   .transactionRowContent,
