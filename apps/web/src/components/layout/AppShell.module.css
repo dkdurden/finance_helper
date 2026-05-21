@@ -20,6 +20,8 @@
 .pageHeader {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: var(--space-300);
   min-height: 3.5rem;
 }
 
@@ -29,6 +31,13 @@
   font-size: var(--text-preset-1-size);
   font-weight: var(--text-preset-1-weight);
   line-height: var(--text-preset-1-line-height);
+}
+
+.pageHeaderAction {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 @media (max-width: 63.9375rem) {
@@ -49,5 +58,9 @@
 
   .appShellInner {
     gap: var(--space-250);
+  }
+
+  .pageHeader {
+    gap: var(--space-200);
   }
 }
