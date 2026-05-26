@@ -42,3 +42,16 @@
 - Refine add money and withdraw action behavior, including amount entry and confirmation states.
 - Wire modal values to pot card data once the API/data shape is ready.
 - Add validation for required pot name, target amount format, transaction amount format, and unavailable/used theme colors.
+
+## Recurring Bills Responsiveness
+
+- Revisit `/recurring-bills` across mobile, tablet, and desktop widths with the Figma frames side by side.
+- Tune summary card layout, table row spacing, search/sort controls, and mobile row wrapping.
+- Pay special attention to long bill names, due-date status icon alignment, amount alignment, and bottom navigation clearance.
+
+## Recurring Bills Functionality
+
+- Refine search and sort behavior beyond the static prototype.
+- Decide whether recurring bills need add/edit/delete actions or remain derived from transactions.
+- Wire bill rows, totals, and summary counts to real recurring transaction data once the API/data shape is ready.
+- Add empty, loading, and no-results states for filtered recurring bills.
