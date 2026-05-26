@@ -25,6 +25,8 @@ docs/
   - Endpoints: accounts, categories, transactions, transfers, products, receipts, receipt-items
   - Validation tests passing (`docker compose run --rm api python manage.py test finance`)
 - Milestone 2 in progress: Next.js web foundation in `apps/web`.
+  - Primary authenticated page coverage is complete for the static Figma-driven prototype.
+  - Current focus: responsive polish, interaction shells, and later API-backed state.
 - Current local development workflow:
   - `db` and `api` run through Docker Compose
   - `web` runs locally for reliable hot reload on Windows

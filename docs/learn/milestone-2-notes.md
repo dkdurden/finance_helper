@@ -69,6 +69,24 @@ Date: 2026-03-18
   - shared Budget modal shell for add, edit, and delete confirmation states
   - custom modal dropdowns for Budget Category and Theme selection
   - static modal close/submit behavior, with data persistence deferred
+- Built the first draft of the full `/pots` page:
+  - Figma-aligned app page route using the shared app shell
+  - static pot cards for Savings, Concert Ticket, Gift, New Laptop, and Holiday
+  - total saved amounts, target text, progress bars, and repeated add/withdraw action buttons
+  - initial desktop layout plus basic tablet/mobile stacking behavior
+  - follow-up notes for responsiveness and pot modal/action functionality tracked in `apps/web/TODOS.md`
+- Built the first draft of the full `/recurring-bills` page:
+  - Figma-aligned total bills and summary cards using existing recurring bill assets
+  - search and sort controls aligned with the existing Transactions page patterns
+  - static recurring bill rows using existing avatar assets and bill status icons
+  - initial desktop layout plus basic tablet/mobile stacking behavior
+  - follow-up notes for responsiveness and recurring bill behavior tracked in `apps/web/TODOS.md`
+- Completed starter coverage for every primary authenticated app route:
+  - `/overview`
+  - `/transactions`
+  - `/budgets`
+  - `/pots`
+  - `/recurring-bills`
 
 ## Why this matters
 
@@ -80,6 +98,8 @@ Date: 2026-03-18
 - Preserves native input and select semantics while still tracking closely to the Figma component language.
 - Introduces the first thin backend-for-frontend layer in Next.js, which keeps backend URLs server-side and creates a clean pattern for future auth/API integration.
 - Establishes the first reusable app-page frame and proves the Overview dashboard can be built incrementally as a set of Figma-driven sections instead of one large page rewrite.
+- Moves the project past the first page-coverage checkpoint for Milestone 2: all primary app pages now have a visible Figma-driven starter implementation.
+- Creates a clear split between Milestone 2A page coverage and Milestone 2B polish/interaction work before deeper API-backed state is introduced.
 
 ## Commands used
 
@@ -104,6 +124,15 @@ Date: 2026-03-18
 - `Get-Content apps/web/src/features/overview/components/OverviewSummaryCard.module.css`
 - `Get-Content apps/web/src/app/transactions/page.tsx`
 - `Get-Content apps/web/src/app/transactions/page.module.css`
+- `Get-Content apps/web/src/app/budgets/page.tsx`
+- `Get-Content apps/web/src/app/budgets/page.module.css`
+- `Get-Content apps/web/src/features/budgets/components/BudgetCard.tsx`
+- `Get-Content apps/web/src/features/budgets/components/BudgetModal.tsx`
+- `Get-Content apps/web/src/app/pots/page.tsx`
+- `Get-Content apps/web/src/app/pots/page.module.css`
+- `Get-Content apps/web/src/app/recurring-bills/page.tsx`
+- `Get-Content apps/web/src/app/recurring-bills/page.module.css`
+- `Get-Content apps/web/TODOS.md`
 - `git status --short`
 - `git commit`
 
@@ -145,8 +174,19 @@ Date: 2026-03-18
   - static spending rows and existing avatar asset usage
   - desktop, tablet, and mobile screenshot checks with headless Chrome
   - budget action dropdown and add/edit/delete modal shell behavior
+- Pots page files were read back after the starter slice to verify:
+  - `/pots` route structure
+  - shared app shell usage
+  - static pot card data and progress values
+  - local icon usage and initial responsive stacking behavior
+- Recurring Bills page files were read back after the starter slice to verify:
+  - `/recurring-bills` route structure
+  - shared app shell usage
+  - summary card, search/sort control, and recurring bill row structure
+  - local avatar and bill status icon usage
 - Frontend lint was run after recent Overview slices with `npm run lint`.
 - Frontend lint was run after the Budgets page slice with `npm run lint`.
+- Frontend lint was run after the Pots and Recurring Bills starter slices with `npm run lint`.
 - Informal browser validation was used during iteration, but no automated frontend runtime test was added in these frontend slices.
 
 ## Related docs
@@ -158,8 +198,9 @@ Date: 2026-03-18
 
 ## Next implementation step
 
-- Continue Milestone 2 by reviewing `/budgets` responsiveness follow-ups or returning to `/transactions` responsiveness against the Figma frames.
-- Keep `apps/web/TODOS.md` as the follow-up checklist for Overview, Transactions, and Budgets responsiveness items.
+- Continue Milestone 2B by reviewing responsiveness follow-ups across `/overview`, `/transactions`, `/budgets`, `/pots`, and `/recurring-bills` against the Figma frames.
+- Add the remaining interaction prototype shells, especially Pots add/edit/delete/add-money/withdraw behavior and any chosen Recurring Bills behavior.
+- Keep `apps/web/TODOS.md` as the follow-up checklist for page-level responsiveness and functionality items.
 - Continue future form work aligned with the current input/select split:
   - `InputField` for text-entry variants
   - `SelectField` for dropdown/select-style variants
