@@ -47,7 +47,7 @@
   }
 
   .appShell {
-    padding: var(--space-400) var(--space-300);
+    padding: var(--space-400) var(--space-500);
   }
 }
 

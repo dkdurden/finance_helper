@@ -59,6 +59,12 @@ Date: 2026-03-18
   - shared pagination component with an opt-in compact mobile mode
   - mobile toolbar treatment with icon-only sort/filter buttons
 - Added `apps/web/TODOS.md` follow-up notes for `/transactions` table responsiveness between mobile and desktop widths.
+- Built the first draft of the full `/budgets` page:
+  - Figma-aligned spending summary panel using the existing budget donut chart
+  - shared app shell header action support for the add-budget button
+  - reusable static `BudgetCard` component for the repeated budget card pattern
+  - desktop and tablet layout tuning against the provided Figma frames
+  - first mobile Budget card CSS pass, with remaining responsiveness follow-up tracked in `apps/web/TODOS.md`
 
 ## Why this matters
 
@@ -129,7 +135,13 @@ Date: 2026-03-18
   - static row data and avatar usage
   - pagination placement
   - mobile-specific toolbar, row, and pagination behavior
+- Budgets page files were read back after each slice to verify:
+  - summary panel and budget card structure
+  - reusable Budget card component extraction
+  - static spending rows and existing avatar asset usage
+  - desktop, tablet, and mobile screenshot checks with headless Chrome
 - Frontend lint was run after recent Overview slices with `npm run lint`.
+- Frontend lint was run after the Budgets page slice with `npm run lint`.
 - Informal browser validation was used during iteration, but no automated frontend runtime test was added in these frontend slices.
 
 ## Related docs
@@ -141,8 +153,8 @@ Date: 2026-03-18
 
 ## Next implementation step
 
-- Continue Milestone 2 by reviewing `/transactions` responsiveness and interaction details against the desktop and mobile Figma frames.
-- Keep `apps/web/TODOS.md` as the follow-up checklist for Overview and Transactions responsiveness items.
+- Continue Milestone 2 by reviewing `/budgets` responsiveness follow-ups or returning to `/transactions` responsiveness against the Figma frames.
+- Keep `apps/web/TODOS.md` as the follow-up checklist for Overview, Transactions, and Budgets responsiveness items.
 - Continue future form work aligned with the current input/select split:
   - `InputField` for text-entry variants
   - `SelectField` for dropdown/select-style variants
