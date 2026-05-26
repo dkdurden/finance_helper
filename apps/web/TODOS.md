@@ -20,4 +20,12 @@
 
 - Revisit `/budgets` across mobile, tablet, and desktop widths with the Figma frames side by side.
 - Tune the mobile header action and latest-spending row content so narrow widths do not clip text or controls.
+- Handle add/edit/delete budget modals in mobile view, including overlay spacing, modal height, dropdown overflow, and bottom navigation clearance.
 - Pay special attention to summary chart sizing, budget card padding, latest-spending row spacing, and bottom navigation clearance.
+
+## Budgets Functionality
+
+- Refine add/edit/delete budget modal behavior beyond the static prototype.
+- Wire modal values to budget card data once the API/data shape is ready.
+- Add validation for required category, maximum spend format, and unavailable/used theme colors.
+- Decide how delete confirmation should update local/UI state before backend persistence exists.

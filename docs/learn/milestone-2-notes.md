@@ -65,6 +65,10 @@ Date: 2026-03-18
   - reusable static `BudgetCard` component for the repeated budget card pattern
   - desktop and tablet layout tuning against the provided Figma frames
   - first mobile Budget card CSS pass, with remaining responsiveness follow-up tracked in `apps/web/TODOS.md`
+  - card-level Edit/Delete dropdown shell for budget actions
+  - shared Budget modal shell for add, edit, and delete confirmation states
+  - custom modal dropdowns for Budget Category and Theme selection
+  - static modal close/submit behavior, with data persistence deferred
 
 ## Why this matters
 
@@ -140,6 +144,7 @@ Date: 2026-03-18
   - reusable Budget card component extraction
   - static spending rows and existing avatar asset usage
   - desktop, tablet, and mobile screenshot checks with headless Chrome
+  - budget action dropdown and add/edit/delete modal shell behavior
 - Frontend lint was run after recent Overview slices with `npm run lint`.
 - Frontend lint was run after the Budgets page slice with `npm run lint`.
 - Informal browser validation was used during iteration, but no automated frontend runtime test was added in these frontend slices.

@@ -1,6 +1,9 @@
+"use client";
+
+import { useState } from "react";
 import { Button } from "@/components/button/Button";
 import { AppShell } from "@/components/layout/AppShell";
-import { BudgetCard } from "@/features/budgets/components";
+import { BudgetCard, BudgetModal } from "@/features/budgets/components";
 import { BudgetDonutChart } from "@/features/overview/components/BudgetDonutChart";
 import styles from "./page.module.css";
 
@@ -146,11 +149,19 @@ const budgetCards = [
   },
 ];
 
+type BudgetModalMode = "add" | "delete" | "edit";
+
 export default function BudgetsPage() {
+  const [budgetModalMode, setBudgetModalMode] = useState<BudgetModalMode | null>(null);
+
   return (
     <AppShell
       title="Budgets"
-      headerAction={<Button>+ Add New Budget</Button>}
+      headerAction={
+        <Button onClick={() => setBudgetModalMode("add")}>
+          + Add New Budget
+        </Button>
+      }
     >
       <section className={styles.contentGrid} aria-label="Budgets overview">
         <aside className={styles.summaryPanel} aria-label="Spending summary">
@@ -192,10 +203,22 @@ export default function BudgetsPage() {
 
         <div className={styles.budgetCards} aria-label="Budget cards">
           {budgetCards.map((budget) => (
-            <BudgetCard key={budget.title} {...budget} />
+            <BudgetCard
+              key={budget.title}
+              {...budget}
+              onDelete={() => setBudgetModalMode("delete")}
+              onEdit={() => setBudgetModalMode("edit")}
+            />
           ))}
         </div>
       </section>
+
+      {budgetModalMode ? (
+        <BudgetModal
+          mode={budgetModalMode}
+          onClose={() => setBudgetModalMode(null)}
+        />
+      ) : null}
     </AppShell>
   );
 }

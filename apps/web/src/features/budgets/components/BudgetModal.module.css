@@ -1,0 +1,292 @@
+.overlay {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgb(0 0 0 / 0.5);
+  padding: var(--space-300);
+}
+
+.modal {
+  display: grid;
+  width: min(100%, 35rem);
+  gap: var(--space-250);
+  border-radius: var(--space-150);
+  background: var(--color-white);
+  padding: var(--space-400);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-250);
+}
+
+.title,
+.description {
+  margin: 0;
+}
+
+.title {
+  color: var(--color-grey-900);
+  font-size: var(--text-preset-1-size);
+  font-weight: var(--text-preset-1-weight);
+  line-height: var(--text-preset-1-line-height);
+}
+
+.closeButton {
+  display: inline-grid;
+  width: 2rem;
+  height: 2rem;
+  flex: none;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+}
+
+.closeButton:focus-visible {
+  border-radius: 999px;
+  outline: 2px solid var(--color-primary);
+  outline-offset: 4px;
+}
+
+.description {
+  color: var(--color-grey-500);
+  font-size: var(--text-preset-4-size);
+  font-weight: var(--text-preset-4-weight);
+  line-height: var(--text-preset-4-line-height);
+}
+
+.form {
+  display: grid;
+  gap: var(--space-200);
+}
+
+.field {
+  display: grid;
+  gap: var(--space-50);
+}
+
+.label {
+  color: var(--color-grey-500);
+  font-size: var(--text-preset-5-bold-size);
+  font-weight: var(--text-preset-5-bold-weight);
+  line-height: var(--text-preset-5-bold-line-height);
+}
+
+.selectWrap,
+.amountWrap {
+  position: relative;
+  display: block;
+}
+
+.select,
+.input {
+  width: 100%;
+  border: 1px solid var(--color-beige-500);
+  border-radius: var(--space-100);
+  background: var(--color-white);
+  color: var(--color-grey-900);
+  font-size: var(--text-preset-4-size);
+  font-weight: var(--text-preset-4-weight);
+  line-height: var(--text-preset-4-line-height);
+}
+
+.select {
+  appearance: none;
+  padding: var(--space-150) calc(var(--space-250) + var(--space-200) + var(--space-150)) var(--space-150) var(--space-250);
+}
+
+.selectWithSwatch {
+  padding-left: calc(var(--space-250) + var(--space-200) + var(--space-150));
+}
+
+.selectWrap::after {
+  position: absolute;
+  top: 50%;
+  right: var(--space-250);
+  width: var(--space-200);
+  height: var(--space-200);
+  background: var(--color-grey-900);
+  content: "";
+  pointer-events: none;
+  transform: translateY(-50%);
+  -webkit-mask-image: url("/images/icon-caret-down.svg");
+  mask-image: url("/images/icon-caret-down.svg");
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: var(--space-200) var(--space-200);
+  mask-size: var(--space-200) var(--space-200);
+}
+
+.selectWrap:has(.dropdown)::after {
+  top: 1.5rem;
+}
+
+.input {
+  padding: var(--space-150) var(--space-250) var(--space-150) calc(var(--space-250) + var(--space-100) + 1ch);
+}
+
+.input::placeholder {
+  color: var(--color-beige-500);
+}
+
+.select:hover,
+.input:hover {
+  border-color: var(--color-grey-500);
+}
+
+.select:focus-visible,
+.input:focus-visible {
+  border-color: var(--color-grey-900);
+  outline: 2px solid transparent;
+  box-shadow: 0 0 0 2px rgb(32 31 36 / 0.08);
+}
+
+.prefix {
+  position: absolute;
+  top: 50%;
+  left: var(--space-250);
+  color: var(--color-beige-500);
+  font-size: var(--text-preset-4-size);
+  font-weight: var(--text-preset-4-weight);
+  line-height: var(--text-preset-4-line-height);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.themeSwatch {
+  width: var(--space-200);
+  height: var(--space-200);
+  flex: none;
+  border-radius: 999px;
+  background: var(--budget-theme-color);
+}
+
+.submitButton {
+  width: 100%;
+  margin-top: var(--space-50);
+}
+
+.dropdownButton,
+.themeButton {
+  display: flex;
+  align-items: center;
+  padding-right: calc(var(--space-250) + var(--space-200) + var(--space-150));
+  text-align: left;
+  cursor: pointer;
+}
+
+.dropdownButton {
+  padding-left: var(--space-250);
+}
+
+.themeButton {
+  gap: var(--space-150);
+  padding-left: var(--space-250);
+}
+
+.dropdown {
+  position: absolute;
+  z-index: 2;
+  top: calc(100% + var(--space-100));
+  right: 0;
+  left: 0;
+  display: grid;
+  max-height: 21.875rem;
+  overflow-y: auto;
+  border-radius: var(--space-100);
+  background: var(--color-white);
+  padding: var(--space-150) var(--space-250);
+  box-shadow: 0 4px 24px rgb(0 0 0 / 0.25);
+}
+
+.dropdownOptionWrap {
+  display: grid;
+}
+
+.dropdownOption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-200);
+  padding-block: var(--space-100);
+  color: var(--color-grey-900);
+  font-size: var(--text-preset-4-size);
+  font-weight: var(--text-preset-4-weight);
+  line-height: var(--text-preset-4-line-height);
+  text-align: left;
+  cursor: pointer;
+}
+
+.dropdownOptionMain {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-150);
+  font-size: var(--text-preset-4-size);
+  font-weight: var(--text-preset-4-weight);
+  line-height: var(--text-preset-4-line-height);
+}
+
+.themeOptionUsed {
+  color: var(--color-grey-500);
+  cursor: not-allowed;
+}
+
+.themeOptionUsed .themeSwatch {
+  opacity: 0.25;
+}
+
+.themeUsedLabel {
+  flex: none;
+  color: var(--color-grey-500);
+  font-size: var(--text-preset-5-size);
+  font-weight: var(--text-preset-5-weight);
+  line-height: var(--text-preset-5-line-height);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.dropdownDivider {
+  height: 1px;
+  background: var(--color-grey-100);
+}
+
+.dropdownOption:focus-visible,
+.dropdownButton:focus-visible,
+.themeButton:focus-visible {
+  border-radius: var(--space-50);
+  outline: 2px solid var(--color-primary);
+  outline-offset: 4px;
+}
+
+.deleteActions {
+  display: grid;
+  gap: var(--space-250);
+  width: 100%;
+}
+
+.cancelButton {
+  width: 100%;
+  justify-self: center;
+}
+
+@media (max-width: 47.9375rem) {
+  .overlay {
+    align-items: start;
+    padding: var(--space-300) var(--space-200);
+  }
+
+  .modal {
+    padding: var(--space-300) var(--space-250);
+  }
+
+  .title {
+    white-space: normal;
+  }
+}

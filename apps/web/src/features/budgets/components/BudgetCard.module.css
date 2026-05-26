@@ -1,4 +1,5 @@
 .card {
+  position: relative;
   display: grid;
   gap: var(--space-250);
   border-radius: var(--space-150);
@@ -63,6 +64,51 @@
   place-items: center;
   padding: 0;
   cursor: pointer;
+}
+
+.actions {
+  position: relative;
+  flex: none;
+}
+
+.actionsMenu {
+  position: absolute;
+  z-index: 2;
+  top: calc(100% + var(--space-100));
+  right: 0;
+  display: grid;
+  min-width: 8.375rem;
+  gap: var(--space-150);
+  border-radius: var(--space-100);
+  background: var(--color-white);
+  padding: var(--space-150) var(--space-250);
+  box-shadow: 0 4px 24px rgb(0 0 0 / 0.25);
+}
+
+.actionsMenuItem {
+  padding: 0;
+  color: var(--color-grey-900);
+  font-size: var(--text-preset-4-size);
+  font-weight: var(--text-preset-4-weight);
+  line-height: var(--text-preset-4-line-height);
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.actionsMenuItemDanger {
+  color: var(--color-red);
+}
+
+.actionsMenuItem:focus-visible {
+  border-radius: var(--space-50);
+  outline: 2px solid var(--color-primary);
+  outline-offset: 4px;
+}
+
+.actionsMenuDivider {
+  height: 1px;
+  background: var(--color-grey-100);
 }
 
 .moreButton:focus-visible,
