@@ -29,3 +29,16 @@
 - Wire modal values to budget card data once the API/data shape is ready.
 - Add validation for required category, maximum spend format, and unavailable/used theme colors.
 - Decide how delete confirmation should update local/UI state before backend persistence exists.
+
+## Pots Responsiveness
+
+- Revisit `/pots` across mobile, tablet, and desktop widths with the Figma frames side by side.
+- Tune pot card spacing, action button fit, and progress row alignment across narrow widths.
+- Pay special attention to bottom navigation clearance and modal spacing on mobile.
+
+## Pots Functionality
+
+- Refine add/edit/delete pot modal behavior beyond the static prototype.
+- Refine add money and withdraw action behavior, including amount entry and confirmation states.
+- Wire modal values to pot card data once the API/data shape is ready.
+- Add validation for required pot name, target amount format, transaction amount format, and unavailable/used theme colors.
