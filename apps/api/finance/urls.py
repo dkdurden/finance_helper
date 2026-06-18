@@ -4,6 +4,9 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     AccountViewSet,
     CategoryViewSet,
+    CurrentUserView,
+    LoginView,
+    LogoutView,
     ProductViewSet,
     ReceiptItemViewSet,
     ReceiptViewSet,
@@ -24,6 +27,9 @@ router.register("transfers", TransferViewSet, basename="transfer")
 
 urlpatterns = [
     path("health/", health, name="health"),
+    path("auth/login/", LoginView.as_view(), name="auth-login"),
+    path("auth/logout/", LogoutView.as_view(), name="auth-logout"),
+    path("auth/me/", CurrentUserView.as_view(), name="auth-me"),
     path("auth/signup/", SignUpView.as_view(), name="auth-signup"),
     path("", include(router.urls)),
 ]

@@ -257,8 +257,9 @@
   }
 
   .transactionRow {
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: var(--space-150);
+    grid-template-columns: minmax(0, 1fr) 7rem;
+    column-gap: var(--space-150);
+    row-gap: var(--space-50);
     padding: var(--space-200) 0;
   }
 
@@ -270,7 +271,7 @@
   .recipientCell {
     display: grid;
     grid-template-columns: 2rem minmax(0, 1fr);
-    align-items: flex-start;
+    align-items: center;
     gap: var(--space-150);
   }
 

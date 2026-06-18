@@ -1,4 +1,4 @@
-from django.contrib.auth import get_user_model, password_validation
+from django.contrib.auth import authenticate, get_user_model, password_validation
 from rest_framework import serializers
 
 from .models import Account, Category, Product, Receipt, ReceiptItem, Transaction, Transfer
@@ -33,6 +33,23 @@ class SignUpSerializer(serializers.Serializer):
             first_name=validated_data["name"],
             password=validated_data["password"],
         )
+
+
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True, style={"input_type": "password"}, trim_whitespace=False)
+
+    def validate(self, attrs):
+        email = attrs["email"].strip().lower()
+        password = attrs["password"]
+        request = self.context.get("request")
+        user = authenticate(request=request, username=email, password=password)
+
+        if user is None:
+            raise serializers.ValidationError({"detail": "Invalid email or password."})
+
+        attrs["user"] = user
+        return attrs
 
 
 class AccountSerializer(serializers.ModelSerializer):

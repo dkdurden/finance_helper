@@ -37,6 +37,11 @@ Date: 2026-03-18
   - `apps/web/src/features/auth/components/SignUpCard.tsx` now submits a real form
   - `apps/web/src/app/api/auth/signup/route.ts` proxies signup requests through Next.js to the Django backend
   - successful signup now creates a real backend user from the frontend flow
+- Added the backend-only session auth foundation:
+  - `POST /api/auth/login/` authenticates the email/password user and creates a Django session
+  - `POST /api/auth/logout/` clears the Django session
+  - `GET /api/auth/me/` returns the current session user or `401` when unauthenticated
+  - focused API tests cover login success/failure, logout, and current-user lookup
 - Extracted a shared app shell for authenticated app pages in `apps/web/src/components/layout/` and moved sidebar layout concerns under that shared area.
 - Split the dashboard route so `/` redirects to `/overview` and the app overview lives on its own page route.
 - Added the first real Overview dashboard slices:
@@ -97,6 +102,8 @@ Date: 2026-03-18
 - Builds out a reusable component base so future screens can reuse buttons and field patterns instead of duplicating UI work.
 - Preserves native input and select semantics while still tracking closely to the Figma component language.
 - Introduces the first thin backend-for-frontend layer in Next.js, which keeps backend URLs server-side and creates a clean pattern for future auth/API integration.
+- Establishes Django session auth endpoints before wiring the frontend login flow, keeping auth implementation incremental and easier to verify.
+- Captures the CSRF follow-up before frontend auth wiring: logout and future authenticated unsafe requests must send Django's CSRF token with the session cookie.
 - Establishes the first reusable app-page frame and proves the Overview dashboard can be built incrementally as a set of Figma-driven sections instead of one large page rewrite.
 - Moves the project past the first page-coverage checkpoint for Milestone 2: all primary app pages now have a visible Figma-driven starter implementation.
 - Creates a clear split between Milestone 2A page coverage and Milestone 2B polish/interaction work before deeper API-backed state is introduced.
@@ -155,6 +162,12 @@ Date: 2026-03-18
   - auth route structure and metadata
   - shared auth layout behavior
   - signup form submission flow through the Next.js proxy route
+- Backend auth session endpoints were covered with focused API tests for:
+  - login success
+  - invalid login credentials
+  - current-user lookup while unauthenticated
+  - current-user lookup after login
+  - logout clearing the session
 - Overview shell and section files were read back after each slice to verify:
   - `/overview` route structure
   - shared app shell usage
@@ -208,3 +221,5 @@ Date: 2026-03-18
   - field-level validation display
   - signup success redirect or post-signup flow
   - login/session integration
+  - CSRF token handling for logout and authenticated write requests
+  - login throttling before the auth flow ships beyond the local prototype

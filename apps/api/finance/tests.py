@@ -70,6 +70,74 @@ class SignUpApiTests(APITestCase):
         self.assertIn("password", response.data)
 
 
+class AuthSessionApiTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email="dana@example.com",
+            first_name="Dana Thomas",
+            password="strong-password-123",
+        )
+
+    def test_login_creates_session(self):
+        response = self.client.post(
+            reverse("auth-login"),
+            {
+                "email": "dana@example.com",
+                "password": "strong-password-123",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["id"], self.user.id)
+        self.assertEqual(response.data["name"], self.user.first_name)
+        self.assertEqual(response.data["email"], self.user.email)
+        self.assertNotIn("password", response.data)
+
+        me_response = self.client.get(reverse("auth-me"))
+        self.assertEqual(me_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(me_response.data["email"], self.user.email)
+
+    def test_login_rejects_invalid_credentials(self):
+        response = self.client.post(
+            reverse("auth-login"),
+            {
+                "email": "dana@example.com",
+                "password": "wrong-password",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["detail"][0], "Invalid email or password.")
+
+    def test_me_requires_authenticated_session(self):
+        response = self.client.get(reverse("auth-me"))
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.data["detail"], "Authentication credentials were not provided.")
+
+    def test_me_returns_current_user(self):
+        self.client.login(email="dana@example.com", password="strong-password-123")
+
+        response = self.client.get(reverse("auth-me"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["id"], self.user.id)
+        self.assertEqual(response.data["name"], self.user.first_name)
+        self.assertEqual(response.data["email"], self.user.email)
+
+    def test_logout_clears_session(self):
+        self.client.login(email="dana@example.com", password="strong-password-123")
+
+        response = self.client.post(reverse("auth-logout"))
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        me_response = self.client.get(reverse("auth-me"))
+        self.assertEqual(me_response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
 class AccountApiTests(APITestCase):
     def test_create_account(self):
         payload = {
