@@ -42,6 +42,14 @@ Date: 2026-03-18
   - `POST /api/auth/logout/` clears the Django session
   - `GET /api/auth/me/` returns the current session user or `401` when unauthenticated
   - focused API tests cover login success/failure, logout, and current-user lookup
+- Wired the frontend login form:
+  - `apps/web/src/app/api/auth/login/route.ts` proxies login requests through Next.js to Django
+  - the login proxy forwards Django's session cookie back to the browser
+  - `LoginCard` submits email/password, displays concise errors, and redirects successful logins to `/overview`
+- Added narrow frontend session proxies:
+  - `apps/web/src/app/api/auth/me/route.ts` forwards browser cookies to Django for current-user lookup
+  - `apps/web/src/app/api/auth/logout/route.ts` forwards browser cookies to Django logout and passes clearing cookies back to the browser
+  - logout UI wiring and CSRF token forwarding remain deferred
 - Extracted a shared app shell for authenticated app pages in `apps/web/src/components/layout/` and moved sidebar layout concerns under that shared area.
 - Split the dashboard route so `/` redirects to `/overview` and the app overview lives on its own page route.
 - Added the first real Overview dashboard slices:
@@ -168,6 +176,17 @@ Date: 2026-03-18
   - current-user lookup while unauthenticated
   - current-user lookup after login
   - logout clearing the session
+- Login route and form files were read back after the Phase 3 slice to verify:
+  - proxy route target and response handling
+  - session cookie forwarding
+  - controlled form state and submit behavior
+  - invalid-login error display
+  - successful redirect target
+- Session proxy files were read back after the Phase 4 narrow slice to verify:
+  - cookie forwarding to Django for `/api/auth/me`
+  - cookie forwarding to Django for `/api/auth/logout`
+  - clearing `Set-Cookie` forwarding on logout
+  - explicit TODO for future CSRF token forwarding
 - Overview shell and section files were read back after each slice to verify:
   - `/overview` route structure
   - shared app shell usage

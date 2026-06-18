@@ -40,6 +40,14 @@ This document is a handoff plan for adding authentication after the current Mile
   - logout will need a valid `X-CSRFToken` once the browser has a session cookie
   - future authenticated `POST`, `PUT`, `PATCH`, and `DELETE` requests to finance endpoints will need the same handling
 - Login throttling is intentionally deferred, but should be added before this auth flow ships beyond the local prototype.
+- Phase 3 frontend login wiring was implemented on 2026-06-18:
+  - `apps/web/src/app/api/auth/login/route.ts` proxies login requests to Django and forwards the session cookie
+  - `LoginCard` submits email/password to the route handler, shows concise errors, and redirects to `/overview` on success
+  - route protection, logout proxying, and current-user proxying remain deferred to later phases
+- Phase 4 narrow frontend proxies were implemented on 2026-06-18:
+  - `apps/web/src/app/api/auth/me/route.ts` forwards browser cookies to Django and returns the current user or `401`
+  - `apps/web/src/app/api/auth/logout/route.ts` forwards browser cookies to Django and forwards any clearing session cookie
+  - logout UI wiring and end-to-end CSRF token forwarding remain deferred
 
 ## Target V1 auth shape
 
