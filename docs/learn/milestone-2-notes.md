@@ -50,6 +50,12 @@ Date: 2026-03-18
   - `apps/web/src/app/api/auth/me/route.ts` forwards browser cookies to Django for current-user lookup
   - `apps/web/src/app/api/auth/logout/route.ts` forwards browser cookies to Django logout and passes clearing cookies back to the browser
   - logout UI wiring and CSRF token forwarding remain deferred
+- Added a tiny CSRF initializer:
+  - `GET /api/auth/csrf/` tells Django to set or refresh the `csrftoken` cookie
+  - `GET /api/auth/csrf` proxies the CSRF initializer through Next.js and forwards the cookie to the browser
+  - the logout proxy forwards `X-CSRFToken` from the initialized `csrftoken` cookie when present
+  - auth proxy routes append forwarded `Set-Cookie` headers so multiple cookies are not collapsed
+  - forwarding `X-CSRFToken` from future write proxies remains a follow-up
 - Extracted a shared app shell for authenticated app pages in `apps/web/src/components/layout/` and moved sidebar layout concerns under that shared area.
 - Split the dashboard route so `/` redirects to `/overview` and the app overview lives on its own page route.
 - Added the first real Overview dashboard slices:
@@ -112,6 +118,7 @@ Date: 2026-03-18
 - Introduces the first thin backend-for-frontend layer in Next.js, which keeps backend URLs server-side and creates a clean pattern for future auth/API integration.
 - Establishes Django session auth endpoints before wiring the frontend login flow, keeping auth implementation incremental and easier to verify.
 - Captures the CSRF follow-up before frontend auth wiring: logout and future authenticated unsafe requests must send Django's CSRF token with the session cookie.
+- Captures the HTTPS deployment follow-up for Django CSRF Origin/Referer checks, including future `CSRF_TRUSTED_ORIGINS` and proxy SSL settings.
 - Establishes the first reusable app-page frame and proves the Overview dashboard can be built incrementally as a set of Figma-driven sections instead of one large page rewrite.
 - Moves the project past the first page-coverage checkpoint for Milestone 2: all primary app pages now have a visible Figma-driven starter implementation.
 - Creates a clear split between Milestone 2A page coverage and Milestone 2B polish/interaction work before deeper API-backed state is introduced.
@@ -187,6 +194,12 @@ Date: 2026-03-18
   - cookie forwarding to Django for `/api/auth/logout`
   - clearing `Set-Cookie` forwarding on logout
   - explicit TODO for future CSRF token forwarding
+- CSRF initializer files were read back after the tiny CSRF slice to verify:
+  - Django endpoint response and cookie-setting decorator
+  - backend URL route registration
+  - focused API test for the `csrftoken` cookie
+  - Next.js proxy target and `Set-Cookie` forwarding
+  - logout proxy forwarding of `X-CSRFToken` from the `csrftoken` cookie
 - Overview shell and section files were read back after each slice to verify:
   - `/overview` route structure
   - shared app shell usage

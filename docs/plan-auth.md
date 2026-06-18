@@ -48,6 +48,15 @@ This document is a handoff plan for adding authentication after the current Mile
   - `apps/web/src/app/api/auth/me/route.ts` forwards browser cookies to Django and returns the current user or `401`
   - `apps/web/src/app/api/auth/logout/route.ts` forwards browser cookies to Django and forwards any clearing session cookie
   - logout UI wiring and end-to-end CSRF token forwarding remain deferred
+- A tiny CSRF initializer was implemented on 2026-06-18:
+  - `GET /api/auth/csrf/` asks Django to set or refresh the `csrftoken` cookie
+  - `GET /api/auth/csrf` proxies that request through Next.js and forwards the CSRF cookie to the browser
+  - logout now forwards `X-CSRFToken` from the initialized `csrftoken` cookie when present
+  - auth proxy routes append forwarded `Set-Cookie` headers so multiple cookies are not collapsed into a single malformed header
+  - future authenticated write proxies still need to send `X-CSRFToken`
+- Before HTTPS deployment, revisit Django CSRF Origin/Referer behavior:
+  - proxy requests may need to forward `Origin` or `Referer`
+  - deployment settings should define `CSRF_TRUSTED_ORIGINS` and proxy SSL handling deliberately
 
 ## Target V1 auth shape
 

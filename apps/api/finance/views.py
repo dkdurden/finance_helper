@@ -1,5 +1,7 @@
 from django.contrib.auth import login, logout
 from django.http import JsonResponse
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import permissions, status, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -67,6 +69,14 @@ class CurrentUserView(APIView):
             )
 
         return Response(user_payload(request.user), status=status.HTTP_200_OK)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class CsrfCookieView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        return Response({"detail": "CSRF cookie set."}, status=status.HTTP_200_OK)
 
 
 class AccountViewSet(viewsets.ModelViewSet):

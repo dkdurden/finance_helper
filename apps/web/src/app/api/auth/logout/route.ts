@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { appendSetCookieHeaders } from "../cookieHeaders";
 
 function getBackendLogoutUrl() {
   const apiBaseUrl = process.env.API_BASE_URL;
@@ -10,15 +11,25 @@ function getBackendLogoutUrl() {
   return new URL("/api/auth/logout/", apiBaseUrl).toString();
 }
 
+function getCookieValue(cookieHeader: string, name: string) {
+  return cookieHeader
+    .split(";")
+    .map((cookie) => cookie.trim())
+    .find((cookie) => cookie.startsWith(`${name}=`))
+    ?.slice(name.length + 1);
+}
+
 export async function POST(request: Request) {
   let backendResponse: Response;
+  const cookieHeader = request.headers.get("cookie") ?? "";
+  const csrfToken = getCookieValue(cookieHeader, "csrftoken");
 
   try {
     backendResponse = await fetch(getBackendLogoutUrl(), {
       method: "POST",
       headers: {
-        cookie: request.headers.get("cookie") ?? "",
-        // TODO: Forward X-CSRFToken once the frontend CSRF token flow is wired.
+        cookie: cookieHeader,
+        ...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
       },
       cache: "no-store",
     });
@@ -36,11 +47,7 @@ export async function POST(request: Request) {
           { detail: "Logout failed." },
           { status: backendResponse.status },
         );
-  const sessionCookie = backendResponse.headers.get("set-cookie");
-
-  if (sessionCookie) {
-    response.headers.set("set-cookie", sessionCookie);
-  }
+  appendSetCookieHeaders(response, backendResponse.headers);
 
   return response;
 }

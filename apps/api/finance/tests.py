@@ -137,6 +137,13 @@ class AuthSessionApiTests(APITestCase):
         me_response = self.client.get(reverse("auth-me"))
         self.assertEqual(me_response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_csrf_endpoint_sets_csrf_cookie(self):
+        response = self.client.get(reverse("auth-csrf"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["detail"], "CSRF cookie set.")
+        self.assertIn("csrftoken", response.cookies)
+
 
 class AccountApiTests(APITestCase):
     def test_create_account(self):

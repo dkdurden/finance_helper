@@ -1,42 +1,27 @@
 import { NextResponse } from "next/server";
 import { appendSetCookieHeaders } from "../cookieHeaders";
 
-function getBackendLoginUrl() {
+function getBackendCsrfUrl() {
   const apiBaseUrl = process.env.API_BASE_URL;
 
   if (!apiBaseUrl) {
     throw new Error("API_BASE_URL is not configured.");
   }
 
-  return new URL("/api/auth/login/", apiBaseUrl).toString();
+  return new URL("/api/auth/csrf/", apiBaseUrl).toString();
 }
 
-export async function POST(request: Request) {
-  let body: unknown;
-
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { detail: "Invalid login request body." },
-      { status: 400 },
-    );
-  }
-
+export async function GET() {
   let backendResponse: Response;
 
   try {
-    backendResponse = await fetch(getBackendLoginUrl(), {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
+    backendResponse = await fetch(getBackendCsrfUrl(), {
+      method: "GET",
       cache: "no-store",
     });
   } catch {
     return NextResponse.json(
-      { detail: "Unable to reach the login service." },
+      { detail: "Unable to reach the CSRF service." },
       { status: 502 },
     );
   }
@@ -52,7 +37,7 @@ export async function POST(request: Request) {
   const response = NextResponse.json(
     backendResponse.ok
       ? responseData
-      : responseData ?? { detail: "Login failed." },
+      : responseData ?? { detail: "Unable to initialize CSRF." },
     { status: backendResponse.status },
   );
   appendSetCookieHeaders(response, backendResponse.headers);
