@@ -62,6 +62,10 @@ This document is a handoff plan for adding authentication after the current Mile
   - `apps/web/src/app/(app)/layout.tsx` checks the Django session before rendering app pages
   - unauthenticated users are redirected to `/login`
   - pages keep their per-page `AppShell` wrappers for title/header action ownership
+- Next session note:
+  - add a shared frontend `backendUrl(path)` helper to consolidate `API_BASE_URL` URL construction across auth helpers/routes
+  - redirect authenticated users away from `/login` and `/signup` to `/overview`
+  - keep this as a narrow auth-page redirect slice before adding logout UI
 
 ## Target V1 auth shape
 
