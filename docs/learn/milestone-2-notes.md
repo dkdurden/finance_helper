@@ -56,6 +56,11 @@ Date: 2026-03-18
   - the logout proxy forwards `X-CSRFToken` from the initialized `csrftoken` cookie when present
   - auth proxy routes append forwarded `Set-Cookie` headers so multiple cookies are not collapsed
   - forwarding `X-CSRFToken` from future write proxies remains a follow-up
+- Added Phase 5A app route protection:
+  - moved `/overview`, `/transactions`, `/budgets`, `/pots`, and `/recurring-bills` under the URL-neutral `(app)` route group
+  - added an `(app)` layout that checks the Django session before rendering app pages
+  - unauthenticated app-route requests redirect to `/login`
+  - retained per-page `AppShell` wrappers so page title and header action ownership stays local
 - Extracted a shared app shell for authenticated app pages in `apps/web/src/components/layout/` and moved sidebar layout concerns under that shared area.
 - Split the dashboard route so `/` redirects to `/overview` and the app overview lives on its own page route.
 - Added the first real Overview dashboard slices:
@@ -200,6 +205,11 @@ Date: 2026-03-18
   - focused API test for the `csrftoken` cookie
   - Next.js proxy target and `Set-Cookie` forwarding
   - logout proxy forwarding of `X-CSRFToken` from the `csrftoken` cookie
+- Protected app route files were read back after the Phase 5A slice to verify:
+  - app routes live under `(app)` while keeping public URLs unchanged
+  - `(auth)` routes remain outside the protected route group
+  - the protected layout redirects only when the Django session check returns unauthenticated
+  - backend session lookup failures are not converted into login redirects
 - Overview shell and section files were read back after each slice to verify:
   - `/overview` route structure
   - shared app shell usage

@@ -57,6 +57,11 @@ This document is a handoff plan for adding authentication after the current Mile
 - Before HTTPS deployment, revisit Django CSRF Origin/Referer behavior:
   - proxy requests may need to forward `Origin` or `Referer`
   - deployment settings should define `CSRF_TRUSTED_ORIGINS` and proxy SSL handling deliberately
+- Phase 5A app route protection was implemented on 2026-06-18:
+  - primary app routes were moved under the URL-neutral `(app)` route group
+  - `apps/web/src/app/(app)/layout.tsx` checks the Django session before rendering app pages
+  - unauthenticated users are redirected to `/login`
+  - pages keep their per-page `AppShell` wrappers for title/header action ownership
 
 ## Target V1 auth shape
 
