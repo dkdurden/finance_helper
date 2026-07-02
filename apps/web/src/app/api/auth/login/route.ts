@@ -1,15 +1,6 @@
 import { NextResponse } from "next/server";
+import { backendUrl } from "@/lib/backendUrl";
 import { appendSetCookieHeaders } from "../cookieHeaders";
-
-function getBackendLoginUrl() {
-  const apiBaseUrl = process.env.API_BASE_URL;
-
-  if (!apiBaseUrl) {
-    throw new Error("API_BASE_URL is not configured.");
-  }
-
-  return new URL("/api/auth/login/", apiBaseUrl).toString();
-}
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -26,7 +17,7 @@ export async function POST(request: Request) {
   let backendResponse: Response;
 
   try {
-    backendResponse = await fetch(getBackendLoginUrl(), {
+    backendResponse = await fetch(backendUrl("/api/auth/login/"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -1,14 +1,5 @@
 import { NextResponse } from "next/server";
-
-function getBackendSignupUrl() {
-  const apiBaseUrl = process.env.API_BASE_URL;
-
-  if (!apiBaseUrl) {
-    throw new Error("API_BASE_URL is not configured.");
-  }
-
-  return new URL("/api/auth/signup/", apiBaseUrl).toString();
-}
+import { backendUrl } from "@/lib/backendUrl";
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -25,7 +16,7 @@ export async function POST(request: Request) {
   let backendResponse: Response;
 
   try {
-    backendResponse = await fetch(getBackendSignupUrl(), {
+    backendResponse = await fetch(backendUrl("/api/auth/signup/"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

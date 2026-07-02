@@ -207,9 +207,10 @@
   .navItem,
   .collapsed .navItem {
     min-height: auto;
-    width: 104px;
+    width: auto;
     min-width: 0;
-    flex: 0 1 104px;
+    max-width: 104px;
+    flex: 1 1 0;
     flex-direction: column;
     justify-content: flex-start;
     gap: var(--space-50);
@@ -264,6 +265,103 @@
     padding-bottom: var(--space-100);
   }
 
+  .navLabel {
+    display: none;
+  }
+}
+
+.navButton {
+  width: 100%;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  background: rgb(0 0 0 / 0.4);
+  padding: var(--space-300);
+}
+
+.settingsDialog {
+  position: relative;
+  width: min(100%, 480px);
+  border-radius: var(--space-100);
+  background: var(--color-white);
+  box-shadow: var(--shadow-lg);
+  color: var(--color-grey-900);
+}
+
+.modalClose {
+  position: absolute;
+  top: var(--space-250);
+  right: var(--space-250);
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.modalClose:hover {
+  background: var(--color-beige-100);
+}
+
+.modalClose:focus-visible {
+  outline-color: var(--color-cyan);
+}
+
+.settingsContent {
+  display: grid;
+  gap: var(--space-300);
+  padding: var(--space-400);
+}
+
+.settingsTitle {
+  margin: 0;
+  color: var(--color-grey-900);
+  font-size: var(--text-preset-2-size);
+  font-weight: var(--text-preset-2-weight);
+  line-height: var(--text-preset-2-line-height);
+}
+
+.settingsDescription {
+  margin: var(--space-100) 0 0;
+  color: var(--color-grey-500);
+  font-size: var(--text-preset-4-size);
+  font-weight: var(--text-preset-4-weight);
+  line-height: var(--text-preset-4-line-height);
+}
+
+.logoutError {
+  margin: 0;
+  color: var(--color-red);
+  font-size: var(--text-preset-4-size);
+  font-weight: var(--text-preset-4-weight);
+  line-height: var(--text-preset-4-line-height);
+}
+
+.settingsActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-200);
+}
+
+.logoutButton {
+  min-width: 120px;
+}
+
+@media (max-width: 44rem) {
   .navLabel {
     display: none;
   }

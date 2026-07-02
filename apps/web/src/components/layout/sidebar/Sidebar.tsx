@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { animate, motion, useMotionValue, useTransform } from "motion/react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/cn";
+import { SettingsModal } from "./SettingsModal";
 import styles from "./Sidebar.module.css";
 
 type NavItem = {
@@ -94,6 +95,42 @@ function SidebarNavItem({
   );
 }
 
+type SidebarSettingsItemProps = {
+  collapsed: boolean;
+  onOpen: () => void;
+  open: boolean;
+};
+
+function SidebarSettingsItem({
+  collapsed,
+  onOpen,
+  open,
+}: SidebarSettingsItemProps) {
+  const label = "Settings";
+
+  return (
+    <button
+      type="button"
+      className={cn(styles.navItem, styles.navButton, open && styles.navItemActive)}
+      onClick={onOpen}
+      aria-expanded={open}
+      aria-haspopup="dialog"
+      aria-label={collapsed ? label : undefined}
+      title={collapsed ? label : undefined}
+    >
+      <Image
+        className={styles.icon}
+        src="/images/icon-ellipsis.svg"
+        alt=""
+        width={24}
+        height={24}
+        aria-hidden="true"
+      />
+      {!collapsed ? <span className={styles.navLabel}>{label}</span> : null}
+    </button>
+  );
+}
+
 type SidebarToggleProps = {
   collapsed: boolean;
   onToggle: () => void;
@@ -152,41 +189,53 @@ function SidebarToggle({ collapsed, onToggle }: SidebarToggleProps) {
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const pathname = usePathname();
 
   return (
-    <aside
-      className={cn(styles.sidebar, collapsed && styles.collapsed)}
-      aria-label="Primary"
-    >
-      <div className={styles.logoWrap}>
-        <Image
-          src={collapsed ? "/images/logo-small.svg" : "/images/logo-large.svg"}
-          alt="finance"
-          width={collapsed ? 13 : 122}
-          height={22}
-          priority
-        />
-      </div>
-
-      <nav className={styles.nav} aria-label="Main navigation">
-        {navItems.map((item) => (
-          <SidebarNavItem
-            key={item.label}
-            active={
-              pathname === item.href ||
-              (pathname === "/" && item.href === "/overview")
-            }
-            collapsed={collapsed}
-            {...item}
+    <>
+      <aside
+        className={cn(styles.sidebar, collapsed && styles.collapsed)}
+        aria-label="Primary"
+      >
+        <div className={styles.logoWrap}>
+          <Image
+            src={collapsed ? "/images/logo-small.svg" : "/images/logo-large.svg"}
+            alt="finance"
+            width={collapsed ? 13 : 122}
+            height={22}
+            priority
           />
-        ))}
-      </nav>
+        </div>
 
-      <SidebarToggle
-        collapsed={collapsed}
-        onToggle={() => setCollapsed((current) => !current)}
+        <nav className={styles.nav} aria-label="Main navigation">
+          {navItems.map((item) => (
+            <SidebarNavItem
+              key={item.label}
+              active={
+                pathname === item.href ||
+                (pathname === "/" && item.href === "/overview")
+              }
+              collapsed={collapsed}
+              {...item}
+            />
+          ))}
+          <SidebarSettingsItem
+            collapsed={collapsed}
+            onOpen={() => setIsSettingsOpen(true)}
+            open={isSettingsOpen}
+          />
+        </nav>
+
+        <SidebarToggle
+          collapsed={collapsed}
+          onToggle={() => setCollapsed((current) => !current)}
+        />
+      </aside>
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
       />
-    </aside>
+    </>
   );
 }

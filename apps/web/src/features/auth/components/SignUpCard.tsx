@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useId, useState, type FormEvent } from "react";
 import { cn } from "@/lib/cn";
 import { Button } from "@/components/button/Button";
@@ -24,20 +25,19 @@ function flattenErrorMessages(value: unknown): string[] {
 }
 
 export function SignUpCard() {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const titleId = useId();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSubmitting(true);
     setErrorMessage(null);
-    setSuccessMessage(null);
 
     try {
       const response = await fetch("/api/auth/signup", {
@@ -59,12 +59,7 @@ export function SignUpCard() {
         setErrorMessage(message);
         return;
       }
-
-      setSuccessMessage("Account created. You can log in once login is wired up.");
-      setName("");
-      setEmail("");
-      setPassword("");
-      setShowPassword(false);
+      router.push("/login");
     } catch {
       setErrorMessage("Unable to create your account right now.");
     } finally {
@@ -117,8 +112,6 @@ export function SignUpCard() {
             {errorMessage}
           </p>
         ) : null}
-
-        {successMessage ? <p className={styles.successMessage}>{successMessage}</p> : null}
 
         <Button className={styles.submitButton} disabled={isSubmitting} type="submit">
           {isSubmitting ? "Creating Account..." : "Create Account"}

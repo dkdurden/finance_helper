@@ -62,10 +62,17 @@ This document is a handoff plan for adding authentication after the current Mile
   - `apps/web/src/app/(app)/layout.tsx` checks the Django session before rendering app pages
   - unauthenticated users are redirected to `/login`
   - pages keep their per-page `AppShell` wrappers for title/header action ownership
+- Auth cleanup slices were implemented on 2026-07-02:
+  - added `apps/web/src/lib/backendUrl.ts` to consolidate `API_BASE_URL` URL construction across auth helpers/routes
+  - redirected authenticated users away from `/login` and `/signup` to `/overview` in the shared `(auth)` layout
+  - updated successful signup to redirect to `/login` because signup creates a user but does not create a session
+- Settings/logout UI was added as a work-in-progress access point on 2026-07-02:
+  - added a Settings nav item that opens a modal
+  - made logout available from that modal by initializing CSRF, posting to logout, and redirecting to `/login`
+  - this is not the final settings UX; reevaluate the final placement, icon, and account/settings treatment later
 - Next session note:
-  - add a shared frontend `backendUrl(path)` helper to consolidate `API_BASE_URL` URL construction across auth helpers/routes
-  - redirect authenticated users away from `/login` and `/signup` to `/overview`
-  - keep this as a narrow auth-page redirect slice before adding logout UI
+  - reevaluate the work-in-progress Settings/logout UI before finalizing the app navigation/account UX
+  - consider auto-login-after-signup only as a separate backend/frontend slice
 
 ## Target V1 auth shape
 

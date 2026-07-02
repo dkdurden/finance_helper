@@ -1,21 +1,12 @@
 import { NextResponse } from "next/server";
+import { backendUrl } from "@/lib/backendUrl";
 import { appendSetCookieHeaders } from "../cookieHeaders";
-
-function getBackendCsrfUrl() {
-  const apiBaseUrl = process.env.API_BASE_URL;
-
-  if (!apiBaseUrl) {
-    throw new Error("API_BASE_URL is not configured.");
-  }
-
-  return new URL("/api/auth/csrf/", apiBaseUrl).toString();
-}
 
 export async function GET() {
   let backendResponse: Response;
 
   try {
-    backendResponse = await fetch(getBackendCsrfUrl(), {
+    backendResponse = await fetch(backendUrl("/api/auth/csrf/"), {
       method: "GET",
       cache: "no-store",
     });

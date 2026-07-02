@@ -1,15 +1,6 @@
 import { NextResponse } from "next/server";
+import { backendUrl } from "@/lib/backendUrl";
 import { appendSetCookieHeaders } from "../cookieHeaders";
-
-function getBackendLogoutUrl() {
-  const apiBaseUrl = process.env.API_BASE_URL;
-
-  if (!apiBaseUrl) {
-    throw new Error("API_BASE_URL is not configured.");
-  }
-
-  return new URL("/api/auth/logout/", apiBaseUrl).toString();
-}
 
 function getCookieValue(cookieHeader: string, name: string) {
   return cookieHeader
@@ -25,7 +16,7 @@ export async function POST(request: Request) {
   const csrfToken = getCookieValue(cookieHeader, "csrftoken");
 
   try {
-    backendResponse = await fetch(getBackendLogoutUrl(), {
+    backendResponse = await fetch(backendUrl("/api/auth/logout/"), {
       method: "POST",
       headers: {
         cookie: cookieHeader,

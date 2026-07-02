@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cookies } from "next/headers";
+import { backendUrl } from "./backendUrl";
 
 type CurrentUser = {
   email: string;
@@ -8,22 +9,12 @@ type CurrentUser = {
   name: string;
 };
 
-function getBackendMeUrl() {
-  const apiBaseUrl = process.env.API_BASE_URL;
-
-  if (!apiBaseUrl) {
-    throw new Error("API_BASE_URL is not configured.");
-  }
-
-  return new URL("/api/auth/me/", apiBaseUrl).toString();
-}
-
 export async function getCurrentUser(): Promise<CurrentUser | null> {
   const cookieStore = await cookies();
   let response: Response;
 
   try {
-    response = await fetch(getBackendMeUrl(), {
+    response = await fetch(backendUrl("/api/auth/me/"), {
       method: "GET",
       headers: {
         cookie: cookieStore.toString(),

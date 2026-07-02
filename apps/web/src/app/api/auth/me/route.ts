@@ -1,20 +1,11 @@
 import { NextResponse } from "next/server";
-
-function getBackendMeUrl() {
-  const apiBaseUrl = process.env.API_BASE_URL;
-
-  if (!apiBaseUrl) {
-    throw new Error("API_BASE_URL is not configured.");
-  }
-
-  return new URL("/api/auth/me/", apiBaseUrl).toString();
-}
+import { backendUrl } from "@/lib/backendUrl";
 
 export async function GET(request: Request) {
   let backendResponse: Response;
 
   try {
-    backendResponse = await fetch(getBackendMeUrl(), {
+    backendResponse = await fetch(backendUrl("/api/auth/me/"), {
       method: "GET",
       headers: {
         cookie: request.headers.get("cookie") ?? "",

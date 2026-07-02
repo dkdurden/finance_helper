@@ -1,12 +1,20 @@
 import Image from "next/image";
+import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
+import { getCurrentUser } from "@/lib/auth";
 import styles from "./layout.module.css";
 
-export default function AuthLayout({
+export default async function AuthLayout({
   children,
 }: Readonly<{
   children: ReactNode;
 }>) {
+  const user = await getCurrentUser();
+
+  if (user) {
+    redirect("/overview");
+  }
+
   return (
     <main className={styles.page}>
       <section className={styles.shell}>

@@ -37,6 +37,7 @@ Date: 2026-03-18
   - `apps/web/src/features/auth/components/SignUpCard.tsx` now submits a real form
   - `apps/web/src/app/api/auth/signup/route.ts` proxies signup requests through Next.js to the Django backend
   - successful signup now creates a real backend user from the frontend flow
+  - successful signup redirects to `/login` because the signup endpoint does not create a session
 - Added the backend-only session auth foundation:
   - `POST /api/auth/login/` authenticates the email/password user and creates a Django session
   - `POST /api/auth/logout/` clears the Django session
@@ -61,6 +62,14 @@ Date: 2026-03-18
   - added an `(app)` layout that checks the Django session before rendering app pages
   - unauthenticated app-route requests redirect to `/login`
   - retained per-page `AppShell` wrappers so page title and header action ownership stays local
+- Added auth cleanup slices:
+  - centralized backend URL construction in `apps/web/src/lib/backendUrl.ts`
+  - updated auth proxy routes and `getCurrentUser()` to use the shared backend URL helper
+  - redirected authenticated users away from `/login` and `/signup` to `/overview`
+- Added a work-in-progress Settings/logout UI:
+  - Settings nav item opens a modal
+  - logout initializes CSRF, posts to the logout proxy, and redirects to `/login`
+  - current placement and presentation are intentionally provisional so logout is available during auth iteration
 - Extracted a shared app shell for authenticated app pages in `apps/web/src/components/layout/` and moved sidebar layout concerns under that shared area.
 - Split the dashboard route so `/` redirects to `/overview` and the app overview lives on its own page route.
 - Added the first real Overview dashboard slices:
@@ -159,7 +168,11 @@ Date: 2026-03-18
 - `Get-Content apps/web/src/app/pots/page.module.css`
 - `Get-Content apps/web/src/app/recurring-bills/page.tsx`
 - `Get-Content apps/web/src/app/recurring-bills/page.module.css`
+- `Get-Content docs/plan-auth.md`
+- `Get-Content apps/web/src/lib/auth.ts`
+- `Get-Content apps/web/src/features/auth/components/SignUpCard.tsx`
 - `Get-Content apps/web/TODOS.md`
+- `npm run lint`
 - `git status --short`
 - `git commit`
 
@@ -210,6 +223,11 @@ Date: 2026-03-18
   - `(auth)` routes remain outside the protected route group
   - the protected layout redirects only when the Django session check returns unauthenticated
   - backend session lookup failures are not converted into login redirects
+- Auth cleanup files were read back after the 2026-07-02 slices to verify:
+  - auth proxy routes use the shared `backendUrl(path)` helper
+  - authenticated users are redirected away from public auth pages
+  - successful signup redirects to `/login`
+  - Settings modal logout keeps the CSRF initializer before the logout POST
 - Overview shell and section files were read back after each slice to verify:
   - `/overview` route structure
   - shared app shell usage
@@ -242,6 +260,7 @@ Date: 2026-03-18
 - Frontend lint was run after recent Overview slices with `npm run lint`.
 - Frontend lint was run after the Budgets page slice with `npm run lint`.
 - Frontend lint was run after the Pots and Recurring Bills starter slices with `npm run lint`.
+- Frontend lint was run after the 2026-07-02 auth cleanup slices with `npm run lint`.
 - Informal browser validation was used during iteration, but no automated frontend runtime test was added in these frontend slices.
 
 ## Related docs
@@ -261,7 +280,8 @@ Date: 2026-03-18
   - `SelectField` for dropdown/select-style variants
 - Revisit accessibility and auth follow-ups later for:
   - field-level validation display
-  - signup success redirect or post-signup flow
+  - final Settings/logout placement, icon, and account/settings UX
+  - optional auto-login-after-signup flow
   - login/session integration
   - CSRF token handling for logout and authenticated write requests
   - login throttling before the auth flow ships beyond the local prototype
