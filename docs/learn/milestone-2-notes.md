@@ -120,6 +120,9 @@ Date: 2026-03-18
   - `/budgets`
   - `/pots`
   - `/recurring-bills`
+- Accepted the current responsive implementation as sufficient for the Milestone 2 UI foundation.
+- Deferred further breakpoint-by-breakpoint responsive refinement without marking it complete.
+- Centralized the deferred responsive work in `docs/post-mvp-todos.md` and kept `apps/web/TODOS.md` focused on remaining functionality work.
 
 ## Why this matters
 
@@ -136,6 +139,7 @@ Date: 2026-03-18
 - Establishes the first reusable app-page frame and proves the Overview dashboard can be built incrementally as a set of Figma-driven sections instead of one large page rewrite.
 - Moves the project past the first page-coverage checkpoint for Milestone 2: all primary app pages now have a visible Figma-driven starter implementation.
 - Creates a clear split between Milestone 2A page coverage and Milestone 2B polish/interaction work before deeper API-backed state is introduced.
+- Makes milestone completion criteria explicit: the existing responsive baseline is accepted for Milestone 2, while known visual refinements remain actionable post-MVP work rather than being treated as finished.
 
 ## Commands used
 
@@ -272,9 +276,10 @@ Date: 2026-03-18
 
 ## Next implementation step
 
-- Continue Milestone 2B by reviewing responsiveness follow-ups across `/overview`, `/transactions`, `/budgets`, `/pots`, and `/recurring-bills` against the Figma frames.
-- Add the remaining interaction prototype shells, especially Pots add/edit/delete/add-money/withdraw behavior and any chosen Recurring Bills behavior.
-- Keep `apps/web/TODOS.md` as the follow-up checklist for page-level responsiveness and functionality items.
+- Add one authenticated server-side Django API read to a single Next.js page or feature layer, including loading, empty, and error behavior.
+- Keep the first data-integration slice read-only so session forwarding and the API response shape can be validated before authenticated mutations and CSRF handling are introduced.
+- Continue tracking deferred responsive refinement in `docs/post-mvp-todos.md`; it no longer blocks Milestone 2 completion.
+- Keep `apps/web/TODOS.md` focused on remaining functionality work, including Pots actions and the chosen Recurring Bills behavior.
 - Continue future form work aligned with the current input/select split:
   - `InputField` for text-entry variants
   - `SelectField` for dropdown/select-style variants
@@ -282,6 +287,5 @@ Date: 2026-03-18
   - field-level validation display
   - final Settings/logout placement, icon, and account/settings UX
   - optional auto-login-after-signup flow
-  - login/session integration
-  - CSRF token handling for logout and authenticated write requests
+  - CSRF token handling for future authenticated finance write requests
   - login throttling before the auth flow ships beyond the local prototype

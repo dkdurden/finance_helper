@@ -1,21 +1,29 @@
-# Authentication Plan
+# Authentication Plan and Status
 
-Date: 2026-05-29
+Created: 2026-05-29
 
-This document is a handoff plan for adding authentication after the current Milestone 2 frontend prototype work. It is intentionally sliced so an agent can pause between steps and avoid turning auth into a broad, end-to-end rewrite.
+Status updated: 2026-07-15
 
+This document records the incremental authentication work added during Milestone 2. The original five implementation phases are complete; the remaining work is split between Milestone 2 integration follow-ups and later deployment/security hardening.
 ## Current state
 
 - The project is a Next.js + Django + Postgres monorepo.
-- Django and DRF are already scaffolded in `apps/api`.
-- The current API exposes finance resources under `/api/`.
-- The frontend has `/login` and `/signup` routes.
-- Signup is partially wired through a Next.js route handler:
-  - `apps/web/src/app/api/auth/signup/route.ts`
-  - `apps/web/src/features/auth/components/SignUpCard.tsx`
-- The signup flow can create a backend user.
-- Login, logout, current-user lookup, and protected app routes are not complete.
-- The preferred V1 auth direction in `docs/plan.md` is Django auth with cookie-based sessions.
+- Django owns users, passwords, authentication, and cookie-based sessions.
+- Signup, login, logout, current-user lookup, and CSRF initialization are implemented in Django and exposed through narrow Next.js route-handler proxies.
+- `/login` and `/signup` are public to unauthenticated users and redirect authenticated users to `/overview`.
+- `/overview`, `/transactions`, `/budgets`, `/pots`, and `/recurring-bills` are protected by a server-side session check in the `(app)` route-group layout.
+- Logout is available through a work-in-progress Settings modal in the sidebar.
+- Focused backend tests cover signup, login success/failure, authenticated and unauthenticated current-user lookup, logout, and CSRF cookie initialization.
+- The finance resource viewsets do not yet declare authenticated permissions, and finance records are not scoped to a user. This is acceptable only while the project retains its explicit single-user V1 scope and must be revisited before broader deployment.
+- Future authenticated finance write proxies must forward Django's CSRF token, following the existing logout proxy pattern.
+
+## Phase status
+
+- [x] Phase 1: inspect the existing auth surface.
+- [x] Phase 2: add backend session endpoints.
+- [x] Phase 3: wire the frontend login proxy and form.
+- [x] Phase 4: add logout and current-user proxies, plus CSRF initialization.
+- [x] Phase 5: protect app routes and redirect authenticated users away from auth pages.
 
 ## Working notes
 
@@ -84,9 +92,9 @@ This document is a handoff plan for adding authentication after the current Mile
   - authenticated users should be redirected into the app
 - This is still a single-user/manual-entry V1; avoid roles, teams, OAuth, password reset, and multi-user permissions until explicitly scoped.
 
-## Suggested phases
+## Completed implementation phases
 
-### Phase 1: Inspect existing auth surface
+### Phase 1: Inspect existing auth surface (complete)
 
 Goal: understand what is already present before editing.
 
@@ -108,7 +116,7 @@ Deliverable:
 - identify the smallest backend endpoint slice
 - stop and ask: `Proceed with this step?`
 
-### Phase 2: Backend session endpoints
+### Phase 2: Backend session endpoints (complete)
 
 Goal: add a minimal Django session-auth API.
 
@@ -149,7 +157,7 @@ Docs:
 - update `docs/learn/milestone-2-notes.md` with what changed
 - consider adding `docs/how-to/auth-flow.md` only after the flow is wired end to end
 
-### Phase 3: Frontend login proxy
+### Phase 3: Frontend login proxy (complete)
 
 Goal: wire the existing login page to the backend without protecting app routes yet.
 
@@ -179,7 +187,7 @@ Manual browser check:
 - invalid credentials show an error
 - valid credentials reach `/overview`
 
-### Phase 4: Logout and current-user proxy
+### Phase 4: Logout and current-user proxy (complete)
 
 Goal: expose frontend route handlers for logout and session lookup.
 
@@ -194,7 +202,7 @@ Expected behavior:
 - `me` returns the current user or `401`
 - existing app shell can later use this to drive account UI
 
-### Phase 5: Protect app routes
+### Phase 5: Protect app routes (complete)
 
 Goal: prevent unauthenticated app access.
 
@@ -230,23 +238,37 @@ Frontend:
 - manual browser verification for login and route redirects
 - add component or route tests later only if a test framework is already present or approved
 
-## Constraints for the next agent
+## Remaining Milestone 2 auth work
+
+- Reevaluate the provisional Settings/logout placement as part of final app navigation and account UX.
+- Complete modal accessibility behavior, especially initial focus, focus containment, and focus restoration.
+- Reuse the CSRF initialization and forwarding pattern when authenticated finance mutation proxies are introduced.
+- Manually verify signup, login, protected-route redirects, authenticated-user redirects, and logout as part of the final Milestone 2 browser pass.
+- Keep auth integrated with the first server-side Django API reads rather than creating a second client-side authentication state.
+
+These items support the Milestone 2 Next.js foundation. They should not block responsive page polish or the first authenticated server-side finance reads.
+
+## Later security and deployment hardening
+
+- Add login throttling before the auth flow is exposed beyond the local prototype.
+- Configure `CSRF_TRUSTED_ORIGINS`, secure cookie settings, and proxy SSL handling for the final HTTPS deployment topology.
+- Decide when DRF finance resource endpoints should require authentication directly.
+- If the product expands beyond single-user V1, add explicit user ownership and queryset scoping for finance records before supporting multiple users.
+- Add broader frontend auth tests when a frontend test framework is selected.
+
+## Constraints for future auth work
 
 - Work incrementally.
 - Inspect and summarize before editing.
 - Propose one small next step only.
 - Stop and ask: `Proceed with this step?`
 - Do not run broad test suites without approval.
-- Do not introduce OAuth, password reset, role-based permissions, or multi-user finance scoping in this auth pass.
-- Keep architecture aligned with Next.js route handlers + Django session auth.
+- Do not introduce OAuth, password reset, role-based permissions, or multi-user finance scoping unless explicitly approved.
+- Keep architecture aligned with Next.js route handlers and Django session auth.
 - Run Django commands through Docker Compose from the repo root.
 - Keep frontend commands local inside `apps/web`.
-- Do not commit secrets or edit local env files.
+- Do not commit secrets or edit local environment files.
 
-## Recommended first implementation slice
+## Recommended next auth-related slice
 
-Start with Phase 1 inspection, then propose Phase 2 as a backend-only slice:
-
-> Add `POST /api/auth/login/`, `POST /api/auth/logout/`, and `GET /api/auth/me/` with focused backend tests.
-
-This gives the project a real session foundation before the frontend route protection work begins.
+When Milestone 2 begins replacing static page data, add one authenticated server-side read from a Next.js page or feature layer to Django. Keep that slice read-only and limited to one resource so session forwarding, loading, empty, and error behavior can be validated before introducing authenticated mutations and CSRF handling.

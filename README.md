@@ -26,7 +26,9 @@ docs/
   - Validation tests passing (`docker compose run --rm api python manage.py test finance`)
 - Milestone 2 in progress: Next.js web foundation in `apps/web`.
   - Primary authenticated page coverage is complete for the static Figma-driven prototype.
-  - Current focus: responsive polish, interaction shells, and later API-backed state.
+  - Django session auth, Next.js auth proxies, and protected app routes are implemented.
+  - The current responsive baseline is accepted for Milestone 2; further visual refinement is deferred in `docs/post-mvp-todos.md` and is not considered finished.
+  - Current focus: authenticated server-side API reads and remaining interaction functionality.
 - Current local development workflow:
   - `db` and `api` run through Docker Compose
   - `web` runs locally for reliable hot reload on Windows
@@ -50,4 +52,6 @@ docs/
 - `docs/how-to/api-bootstrap.md`
 - `docs/how-to/api-core-endpoints.md`
 - `docs/learn/milestone-1-notes.md`
+- `docs/learn/milestone-2-notes.md`
+- `docs/post-mvp-todos.md`
 - `docs/decisions/2026-03-10-web-local-dev.md`

@@ -1,6 +1,6 @@
 # Session Start Guide (for New AI Context)
 
-Last updated: 2026-03-18
+Last updated: 2026-07-15
 
 Use this file at the beginning of any new chat/session so the assistant can start with full project context and minimal back-and-forth.
 
@@ -20,6 +20,8 @@ Read these files first:
 7. docs/how-to/ledger-transfer-model.md
 8. apps/web/AGENTS_STYLE_GUIDE.md
 9. docs/decisions/2026-03-10-web-local-dev.md
+10. docs/plan-auth.md
+11. docs/post-mvp-todos.md
 
 Then do the following:
 
@@ -57,7 +59,7 @@ Constraints:
   - `products`, `receipts`, `receipt-items`
 - Admin registrations exist for current finance models.
 - Current API test status: `Ran 21 tests ... OK`.
-- Current Milestone 2 work in `apps/web` is being handled as a Figma-driven frontend prototype.
+- Current Milestone 2 work in `apps/web` combines the Figma-driven frontend foundation with Django session authentication and initial API integration.
 - Completed frontend prototype slices so far:
   - responsive sidebar navigation for desktop, tablet, and mobile
   - reusable button component with primary, secondary, tertiary, and destroy variants
@@ -71,12 +73,16 @@ Constraints:
   - Overview `Recurring Bills` panel implemented with Figma-aligned summary rows
   - Overview responsive behavior tuned against desktop/mobile Figma frames
   - first draft of the full `/transactions` page implemented with toolbar, static rows, custom dropdowns, pagination, and mobile responsive treatment
-- `apps/web/TODOS.md` tracks follow-up frontend polish, including Overview responsiveness and Transactions table responsiveness review items.
+  - Django session signup, login, logout, current-user lookup, and CSRF initialization
+  - Next.js auth proxies, protected app routes, and authenticated-user redirects
+- The current responsive baseline and out-of-scope feature shells are accepted for Milestone 2.
+- Remaining responsive refinement and deferred Budgets, Pots, and Recurring Bills functionality are incomplete post-MVP work tracked in `docs/post-mvp-todos.md`.
+- `apps/web/TODOS.md` points to the central post-MVP tracker.
 - Local development workflow is Docker for `db`/`api` and local Next.js dev for `apps/web`.
 
 ## Next Recommended Step
 
-Continue Milestone 2 by reviewing and tuning `/transactions` responsiveness and interaction details against the desktop and mobile Figma frames.
+Continue Milestone 2 with one authenticated, read-only server-side Django API integration in a single Next.js page or feature layer. Include loading, empty, and error behavior before introducing authenticated mutations and CSRF forwarding for finance writes.
 
 ## Definition of Done Per Milestone
 
