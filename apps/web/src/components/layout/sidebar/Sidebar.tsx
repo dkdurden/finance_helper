@@ -25,21 +25,6 @@ const navItems: NavItem[] = [
     icon: "/images/icon-nav-transactions.svg",
     label: "Transactions",
   },
-  {
-    href: "/budgets",
-    icon: "/images/icon-nav-budgets.svg",
-    label: "Budgets",
-  },
-  {
-    href: "/pots",
-    icon: "/images/icon-nav-pots.svg",
-    label: "Pots",
-  },
-  {
-    href: "/recurring-bills",
-    icon: "/images/icon-nav-recurring-bills.svg",
-    label: "Recurring bills",
-  },
 ];
 
 const TOGGLE_ARC_RADIUS = 8;
