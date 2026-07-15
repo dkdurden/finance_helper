@@ -1,10 +1,12 @@
 # Milestone 2 Notes (Next.js UI Foundation)
 
 Date: 2026-03-18
+Completed: 2026-07-15
+Status: Complete
 
 ## What we built
 
-- Milestone 2 frontend work is currently being treated as a Figma-driven app prototype so layout and component fidelity can be validated before deeper API wiring.
+- Milestone 2 delivered the Figma-driven app foundation, Django session authentication, protected app routes, and the first authenticated server-side finance read.
 - Replaced the default Next.js global starter styles in `apps/web/src/app/globals.css` with Figma-aligned design tokens.
 - Added shared color tokens for the app palette, including neutrals, semantic aliases, and supporting accent colors.
 - Added typography tokens based on the Figma text presets and reusable global typography utility classes.
@@ -122,7 +124,7 @@ Date: 2026-03-18
   - `/recurring-bills`
 - Accepted the current responsive implementation as sufficient for the Milestone 2 UI foundation.
 - Deferred further breakpoint-by-breakpoint responsive refinement without marking it complete.
-- Centralized the deferred responsive work in `docs/post-mvp-todos.md` and kept `apps/web/TODOS.md` focused on remaining functionality work.
+- Centralized deferred responsive and out-of-scope functionality work in `docs/post-mvp-todos.md` and kept `apps/web/TODOS.md` as its pointer.
 - Added the first authenticated server-side finance read through the `/transactions` page:
   - protected `TransactionViewSet` with `IsAuthenticated`
   - added read-only `category_name` and `account_name` response fields
@@ -280,6 +282,8 @@ Date: 2026-03-18
 - Informal browser validation was used during iteration, but no automated frontend runtime test was added in these frontend slices.
 - Focused transaction API verification ran 5 tests successfully, including authenticated list access, display-name fields, and unauthenticated rejection.
 - Frontend lint passed after the API-backed Transactions page and route loading boundary were added.
+- The full Django finance suite passed all 31 tests with no system-check issues after the Transactions integration.
+- The Transactions loading, API-backed row, and empty presentations were reviewed manually; the inline error presentation remains code- and lint-verified.
 
 ## Related docs
 
@@ -288,10 +292,10 @@ Date: 2026-03-18
 - `docs/decisions/2026-03-11-sidebar-toggle-motion.md`
 - `apps/web/README.md`
 
-## Next implementation step
+## Milestone 3 handoff
 
-- Manually validate `/transactions` with representative backend rows, plus its loading, empty, and error presentations.
-- Review Milestone 2 against its definition of done and decide whether to close it before beginning Milestone 3 transaction/account flows.
+- Milestone 2 is complete under the accepted scope.
+- Begin Milestone 3 by inspecting the current Account and Transaction APIs and proposing one small accounts/transactions flow slice.
 - Continue tracking deferred responsive refinement in `docs/post-mvp-todos.md`; it no longer blocks Milestone 2 completion.
 - Keep `apps/web/TODOS.md` as the pointer to the central post-MVP tracker.
 - Continue future form work aligned with the current input/select split:

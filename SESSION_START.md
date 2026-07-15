@@ -58,8 +58,8 @@ Constraints:
   - `accounts`, `categories`, `transactions`, `transfers`
   - `products`, `receipts`, `receipt-items`
 - Admin registrations exist for current finance models.
-- Current API test status: `Ran 21 tests ... OK`.
-- Current Milestone 2 work in `apps/web` combines the Figma-driven frontend foundation with Django session authentication and initial API integration.
+- Current API test status: `Ran 31 tests ... OK`.
+- Milestone 2 is complete in `apps/web`, including the Figma-driven frontend foundation, Django session authentication, protected app routes, and the first authenticated server-side finance read.
 - Completed frontend prototype slices so far:
   - responsive sidebar navigation for desktop, tablet, and mobile
   - reusable button component with primary, secondary, tertiary, and destroy variants
@@ -72,7 +72,7 @@ Constraints:
   - Overview `Budgets` panel implemented with a Recharts donut chart and category breakdown
   - Overview `Recurring Bills` panel implemented with Figma-aligned summary rows
   - Overview responsive behavior tuned against desktop/mobile Figma frames
-  - first draft of the full `/transactions` page implemented with toolbar, static rows, custom dropdowns, pagination, and mobile responsive treatment
+  - `/transactions` page implemented with an authenticated Django API read, formatted rows, loading/empty/error states, custom dropdown shells, pagination shell, and mobile responsive treatment
   - Django session signup, login, logout, current-user lookup, and CSRF initialization
   - Next.js auth proxies, protected app routes, and authenticated-user redirects
 - The current responsive baseline and out-of-scope feature shells are accepted for Milestone 2.
@@ -82,7 +82,7 @@ Constraints:
 
 ## Next Recommended Step
 
-Continue Milestone 2 with one authenticated, read-only server-side Django API integration in a single Next.js page or feature layer. Include loading, empty, and error behavior before introducing authenticated mutations and CSRF forwarding for finance writes.
+Begin Milestone 3 by inspecting the current Account and Transaction APIs and proposing one small accounts/transactions flow slice before implementing CRUD, derived balances, or authenticated mutations.
 
 ## Definition of Done Per Milestone
 

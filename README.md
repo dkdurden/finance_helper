@@ -24,11 +24,12 @@ docs/
   - DRF serializers + viewsets + routes
   - Endpoints: accounts, categories, transactions, transfers, products, receipts, receipt-items
   - Validation tests passing (`docker compose run --rm api python manage.py test finance`)
-- Milestone 2 in progress: Next.js web foundation in `apps/web`.
+- Milestone 2 complete: Next.js web foundation in `apps/web`.
   - Primary authenticated page coverage is complete for the static Figma-driven prototype.
   - Django session auth, Next.js auth proxies, and protected app routes are implemented.
   - The current responsive baseline is accepted for Milestone 2; further visual refinement is deferred in `docs/post-mvp-todos.md` and is not considered finished.
-  - Current focus: authenticated server-side API reads and remaining interaction functionality.
+  - `/transactions` performs an authenticated server-side Django API read with loading, empty, and error states.
+  - Next focus: Milestone 3 accounts and transactions flows.
 - Current local development workflow:
   - `db` and `api` run through Docker Compose
   - `web` runs locally for reliable hot reload on Windows
