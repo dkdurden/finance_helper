@@ -1,9 +1,52 @@
 import Image from "next/image";
+import { cookies } from "next/headers";
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/button/Button";
 import { BudgetDonutChart } from "@/features/overview/components/BudgetDonutChart";
 import { OverviewSummaryCard } from "@/features/overview/components/OverviewSummaryCard";
+import { backendUrl } from "@/lib/backendUrl";
 import styles from "./page.module.css";
+
+type AccountApiRecord = {
+  id: number;
+  is_liability: boolean;
+  balance_cents: number;
+};
+
+const currencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+});
+
+async function getCurrentBalanceCents(): Promise<number | null> {
+  try {
+    const cookieStore = await cookies();
+    const response = await fetch(backendUrl("/api/accounts/"), {
+      headers: {
+        cookie: cookieStore.toString(),
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data: unknown = await response.json();
+
+    if (!Array.isArray(data)) {
+      return null;
+    }
+
+    return (data as AccountApiRecord[]).reduce(
+      (total, account) =>
+        total + (account.is_liability ? -account.balance_cents : account.balance_cents),
+      0,
+    );
+  } catch {
+    return null;
+  }
+}
 
 const recentTransactions = [
   {
@@ -84,12 +127,18 @@ const recurringBills = [
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const currentBalanceCents = await getCurrentBalanceCents();
+  const currentBalance =
+    currentBalanceCents === null
+      ? "Unavailable"
+      : currencyFormatter.format(currentBalanceCents / 100);
+
   return (
     <AppShell title="Overview">
       {/* Overview-specific summary row */}
       <section className={styles.summaryGrid} aria-label="Summary cards">
-        <OverviewSummaryCard label="Current Balance" value="$0.00" primary />
+        <OverviewSummaryCard label="Current Balance" value={currentBalance} primary />
         <OverviewSummaryCard label="Income" value="$0.00" />
         <OverviewSummaryCard label="Expenses" value="$0.00" />
       </section>
