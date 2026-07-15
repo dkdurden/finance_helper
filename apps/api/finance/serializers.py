@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate, get_user_model, password_validation
+from django.db.models import Sum
 from rest_framework import serializers
 
 from .models import Account, Category, Product, Receipt, ReceiptItem, Transaction, Transfer
@@ -53,6 +54,8 @@ class LoginSerializer(serializers.Serializer):
 
 
 class AccountSerializer(serializers.ModelSerializer):
+    balance_cents = serializers.SerializerMethodField()
+
     class Meta:
         model = Account
         fields = [
@@ -61,11 +64,21 @@ class AccountSerializer(serializers.ModelSerializer):
             "account_type",
             "is_liability",
             "opening_balance_cents",
+            "balance_cents",
             "opening_balance_date",
             "created_at",
             "updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
+
+    def get_balance_cents(self, obj):
+        if hasattr(obj, "balance_cents"):
+            return obj.balance_cents
+
+        transaction_total = obj.transactions.aggregate(
+            total=Sum("signed_amount_cents")
+        )["total"]
+        return obj.opening_balance_cents + (transaction_total or 0)
 
 
 class CategorySerializer(serializers.ModelSerializer):

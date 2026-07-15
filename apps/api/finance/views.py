@@ -1,4 +1,6 @@
 from django.contrib.auth import login, logout
+from django.db.models import BigIntegerField, ExpressionWrapper, F, Sum, Value
+from django.db.models.functions import Coalesce
 from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -80,7 +82,13 @@ class CsrfCookieView(APIView):
 
 
 class AccountViewSet(viewsets.ModelViewSet):
-    queryset = Account.objects.all()
+    queryset = Account.objects.annotate(
+        balance_cents=ExpressionWrapper(
+            F("opening_balance_cents")
+            + Coalesce(Sum("transactions__signed_amount_cents"), Value(0)),
+            output_field=BigIntegerField(),
+        )
+    )
     serializer_class = AccountSerializer
     permission_classes = [permissions.IsAuthenticated]
 

@@ -167,6 +167,7 @@ class AccountApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["name"], payload["name"])
         self.assertEqual(response.data["opening_balance_cents"], payload["opening_balance_cents"])
+        self.assertEqual(response.data["balance_cents"], payload["opening_balance_cents"])
 
     def test_list_accounts(self):
         self.client.post(
@@ -175,7 +176,7 @@ class AccountApiTests(APITestCase):
                 "name": "Savings",
                 "account_type": "savings",
                 "is_liability": False,
-                "opening_balance_cents": 0,
+                "opening_balance_cents": 2500,
                 "opening_balance_date": "2026-01-01T00:00:00Z",
             },
             format="json",
@@ -186,6 +187,34 @@ class AccountApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["name"], "Savings")
+        self.assertEqual(response.data[0]["balance_cents"], 2500)
+
+    def test_list_accounts_includes_derived_balance(self):
+        account = Account.objects.create(
+            name="Transaction Account",
+            account_type=Account.AccountType.CHECKING,
+            is_liability=False,
+            opening_balance_cents=10000,
+            opening_balance_date="2026-01-01T00:00:00Z",
+        )
+        category = Category.objects.create(name="Balance Test")
+        Transaction.objects.create(
+            date="2026-01-02",
+            signed_amount_cents=5000,
+            category=category,
+            account=account,
+        )
+        Transaction.objects.create(
+            date="2026-01-03",
+            signed_amount_cents=-2500,
+            category=category,
+            account=account,
+        )
+
+        response = self.client.get(reverse("account-list"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data[0]["balance_cents"], 12500)
 
     def test_list_accounts_requires_authentication(self):
         self.client.force_authenticate(user=None)
