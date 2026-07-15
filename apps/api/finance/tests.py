@@ -460,6 +460,11 @@ class TransferApiTests(APITestCase):
 
 class TransactionApiTests(APITestCase):
     def setUp(self):
+        self.user = User.objects.create_user(
+            email="transaction-tests@example.com",
+            password="strong-password-123",
+        )
+        self.client.force_authenticate(user=self.user)
         self.account = Account.objects.create(
             name="Primary Checking",
             account_type=Account.AccountType.CHECKING,
@@ -519,6 +524,15 @@ class TransactionApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["signed_amount_cents"], -1000)
+        self.assertEqual(response.data[0]["category_name"], self.category.name)
+        self.assertEqual(response.data[0]["account_name"], self.account.name)
+
+    def test_list_transactions_requires_authentication(self):
+        self.client.force_authenticate(user=None)
+
+        response = self.client.get(reverse("transaction-list"))
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_transfer_type_requires_transfer_id(self):
         payload = {

@@ -169,12 +169,19 @@
   gap: var(--space-200);
 }
 
-.avatar {
+.avatarFallback {
+  display: inline-flex;
   width: 2.5rem;
   height: 2.5rem;
   flex: none;
+  align-items: center;
+  justify-content: center;
   border-radius: 999px;
-  object-fit: cover;
+  background: var(--color-beige-100);
+  color: var(--color-grey-900);
+  font-size: var(--text-preset-5-size);
+  font-weight: var(--text-preset-4-bold-weight);
+  line-height: 1;
 }
 
 .recipientName,
@@ -210,6 +217,19 @@
 
 .amountPositive {
   color: var(--color-green);
+}
+
+.stateMessage {
+  margin: 0;
+  padding: var(--space-400) var(--space-200);
+  color: var(--color-grey-500);
+  font-size: var(--text-preset-4-size);
+  line-height: var(--text-preset-4-line-height);
+  text-align: center;
+}
+
+.errorMessage {
+  color: var(--color-danger);
 }
 
 @media (max-width: 63.9375rem) {
@@ -263,7 +283,7 @@
     padding: var(--space-200) 0;
   }
 
-  .avatar {
+  .avatarFallback {
     width: 2rem;
     height: 2rem;
   }

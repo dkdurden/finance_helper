@@ -110,8 +110,9 @@ class TransferViewSet(viewsets.ModelViewSet):
 
 
 class TransactionViewSet(viewsets.ModelViewSet):
-    queryset = Transaction.objects.all()
+    queryset = Transaction.objects.select_related("category", "account").all()
     serializer_class = TransactionSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
 
 def health(request):

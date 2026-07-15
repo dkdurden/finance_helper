@@ -192,6 +192,9 @@ class TransferSerializer(serializers.ModelSerializer):
 
 
 class TransactionSerializer(serializers.ModelSerializer):
+    category_name = serializers.CharField(source="category.name", read_only=True)
+    account_name = serializers.CharField(source="account.name", read_only=True)
+
     class Meta:
         model = Transaction
         fields = [
@@ -203,7 +206,9 @@ class TransactionSerializer(serializers.ModelSerializer):
             "merchant",
             "note",
             "category",
+            "category_name",
             "account",
+            "account_name",
             "transfer",
             "created_at",
             "updated_at",

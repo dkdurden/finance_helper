@@ -123,6 +123,15 @@ Date: 2026-03-18
 - Accepted the current responsive implementation as sufficient for the Milestone 2 UI foundation.
 - Deferred further breakpoint-by-breakpoint responsive refinement without marking it complete.
 - Centralized the deferred responsive work in `docs/post-mvp-todos.md` and kept `apps/web/TODOS.md` focused on remaining functionality work.
+- Added the first authenticated server-side finance read through the `/transactions` page:
+  - protected `TransactionViewSet` with `IsAuthenticated`
+  - added read-only `category_name` and `account_name` response fields
+  - used `select_related("category", "account")` for the related display data
+  - forwarded the Django session cookie from the Next.js server component
+  - replaced static transaction rows with API-backed rows
+  - formatted integer cents and ISO dates for display
+  - added merchant fallbacks, generic initials, and empty/error states
+  - added a dedicated route loading boundary with accessible status markup
 
 ## Why this matters
 
@@ -140,6 +149,8 @@ Date: 2026-03-18
 - Moves the project past the first page-coverage checkpoint for Milestone 2: all primary app pages now have a visible Figma-driven starter implementation.
 - Creates a clear split between Milestone 2A page coverage and Milestone 2B polish/interaction work before deeper API-backed state is introduced.
 - Makes milestone completion criteria explicit: the existing responsive baseline is accepted for Milestone 2, while known visual refinements remain actionable post-MVP work rather than being treated as finished.
+- Validates the planned Next.js-to-Django server request flow with a real protected finance resource instead of only authentication endpoints.
+- Keeps related category/account display data efficient by joining those foreign-key rows in the transaction queryset.
 
 ## Commands used
 
@@ -177,6 +188,7 @@ Date: 2026-03-18
 - `Get-Content apps/web/src/features/auth/components/SignUpCard.tsx`
 - `Get-Content apps/web/TODOS.md`
 - `npm run lint`
+- `docker compose run --rm api python manage.py test finance.tests.TransactionApiTests`
 - `git status --short`
 - `git commit`
 
@@ -266,6 +278,8 @@ Date: 2026-03-18
 - Frontend lint was run after the Pots and Recurring Bills starter slices with `npm run lint`.
 - Frontend lint was run after the 2026-07-02 auth cleanup slices with `npm run lint`.
 - Informal browser validation was used during iteration, but no automated frontend runtime test was added in these frontend slices.
+- Focused transaction API verification ran 5 tests successfully, including authenticated list access, display-name fields, and unauthenticated rejection.
+- Frontend lint passed after the API-backed Transactions page and route loading boundary were added.
 
 ## Related docs
 
@@ -276,10 +290,10 @@ Date: 2026-03-18
 
 ## Next implementation step
 
-- Add one authenticated server-side Django API read to a single Next.js page or feature layer, including loading, empty, and error behavior.
-- Keep the first data-integration slice read-only so session forwarding and the API response shape can be validated before authenticated mutations and CSRF handling are introduced.
+- Manually validate `/transactions` with representative backend rows, plus its loading, empty, and error presentations.
+- Review Milestone 2 against its definition of done and decide whether to close it before beginning Milestone 3 transaction/account flows.
 - Continue tracking deferred responsive refinement in `docs/post-mvp-todos.md`; it no longer blocks Milestone 2 completion.
-- Keep `apps/web/TODOS.md` focused on remaining functionality work, including Pots actions and the chosen Recurring Bills behavior.
+- Keep `apps/web/TODOS.md` as the pointer to the central post-MVP tracker.
 - Continue future form work aligned with the current input/select split:
   - `InputField` for text-entry variants
   - `SelectField` for dropdown/select-style variants

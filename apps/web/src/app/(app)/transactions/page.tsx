@@ -1,91 +1,98 @@
 import Image from "next/image";
+import { cookies } from "next/headers";
 import { AppShell } from "@/components/layout/AppShell";
 import { Pagination } from "@/components/pagination/Pagination";
 import { SortDropdown } from "@/features/transactions/components/SortDropdown";
+import { backendUrl } from "@/lib/backendUrl";
 import styles from "./page.module.css";
 
-const transactions = [
-  {
-    name: "Emma Richardson",
-    category: "General",
-    date: "19 Aug 2024",
-    amount: "+$75.50",
-    positive: true,
-    avatar: "/images/avatars/emma-richardson.jpg",
-  },
-  {
-    name: "Savory Bites Bistro",
-    category: "Dining Out",
-    date: "19 Aug 2024",
-    amount: "-$55.50",
-    positive: false,
-    avatar: "/images/avatars/savory-bites-bistro.jpg",
-  },
-  {
-    name: "Daniel Carter",
-    category: "General",
-    date: "18 Aug 2024",
-    amount: "-$42.30",
-    positive: false,
-    avatar: "/images/avatars/daniel-carter.jpg",
-  },
-  {
-    name: "Sun Park",
-    category: "General",
-    date: "17 Aug 2024",
-    amount: "+$120.00",
-    positive: true,
-    avatar: "/images/avatars/sun-park.jpg",
-  },
-  {
-    name: "Urban Services Hub",
-    category: "General",
-    date: "17 Aug 2024",
-    amount: "-$65.00",
-    positive: false,
-    avatar: "/images/avatars/urban-services-hub.jpg",
-  },
-  {
-    name: "Liam Hughes",
-    category: "Groceries",
-    date: "15 Aug 2024",
-    amount: "+$65.75",
-    positive: true,
-    avatar: "/images/avatars/liam-hughes.jpg",
-  },
-  {
-    name: "Lily Ramirez",
-    category: "General",
-    date: "14 Aug 2024",
-    amount: "+$50.00",
-    positive: true,
-    avatar: "/images/avatars/lily-ramirez.jpg",
-  },
-  {
-    name: "Ethan Clark",
-    category: "Dining Out",
-    date: "13 Aug 2024",
-    amount: "-$32.50",
-    positive: false,
-    avatar: "/images/avatars/ethan-clark.jpg",
-  },
-  {
-    name: "James Thompson",
-    category: "Entertainment",
-    date: "11 Aug 2024",
-    amount: "-$5.00",
-    positive: false,
-    avatar: "/images/avatars/james-thompson.jpg",
-  },
-  {
-    name: "Pixel Playground",
-    category: "Entertainment",
-    date: "11 Aug 2024",
-    amount: "-$10.00",
-    positive: false,
-    avatar: "/images/avatars/pixel-playground.jpg",
-  },
-];
+type TransactionApiRecord = {
+  id: number;
+  date: string;
+  signed_amount_cents: number;
+  transaction_type: "normal" | "adjustment" | "transfer";
+  merchant: string | null;
+  category_name: string;
+};
+
+type TransactionLoadResult = {
+  data: TransactionApiRecord[];
+  error: string | null;
+};
+
+const currencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  signDisplay: "always",
+});
+
+const dateFormatter = new Intl.DateTimeFormat("en-GB", {
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+});
+
+async function getTransactions(): Promise<TransactionLoadResult> {
+  try {
+    const cookieStore = await cookies();
+    const response = await fetch(backendUrl("/api/transactions/"), {
+      headers: {
+        cookie: cookieStore.toString(),
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return { data: [], error: "Unable to load transactions right now." };
+    }
+
+    const data: unknown = await response.json();
+
+    if (!Array.isArray(data)) {
+      return { data: [], error: "The transaction service returned an unexpected response." };
+    }
+
+    return { data: data as TransactionApiRecord[], error: null };
+  } catch {
+    return { data: [], error: "Unable to load transactions right now." };
+  }
+}
+
+function formatAmount(amountCents: number) {
+  return currencyFormatter.format(amountCents / 100);
+}
+
+function formatDate(date: string) {
+  return dateFormatter.format(new Date(date + "T00:00:00Z"));
+}
+
+function getTransactionName(transaction: TransactionApiRecord) {
+  if (transaction.merchant?.trim()) {
+    return transaction.merchant.trim();
+  }
+
+  if (transaction.transaction_type === "adjustment") {
+    return "Balance adjustment";
+  }
+
+  if (transaction.transaction_type === "transfer") {
+    return "Transfer";
+  }
+
+  return "Transaction";
+}
+
+function getInitials(name: string) {
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((word) => word.charAt(0))
+      .join("")
+      .toUpperCase() || "T"
+  );
+}
 
 const sortOptions = [
   { label: "Latest", value: "latest" },
@@ -110,7 +117,8 @@ const categoryOptions = [
   { label: "General", value: "general" },
 ];
 
-export default function TransactionsPage() {
+export default async function TransactionsPage() {
+  const { data: transactions, error } = await getTransactions();
   return (
     <AppShell title="Transactions">
       <section className={styles.panel} aria-label="Transactions list and controls">
@@ -159,29 +167,47 @@ export default function TransactionsPage() {
         </div>
 
         <div className={styles.transactionList}>
-          {transactions.map((transaction) => (
-            <article className={styles.transactionRow} key={`${transaction.name}-${transaction.date}-${transaction.amount}`}>
-              <div className={styles.recipientCell}>
-                <Image
-                  className={styles.avatar}
-                  src={transaction.avatar}
-                  alt=""
-                  width={40}
-                  height={40}
-                />
-                <p className={styles.recipientName}>{transaction.name}</p>
-              </div>
+          {error ? (
+            <p
+              className={[styles.stateMessage, styles.errorMessage].join(" ")}
+              role="alert"
+            >
+              {error}
+            </p>
+          ) : transactions.length === 0 ? (
+            <p className={styles.stateMessage}>No transactions yet.</p>
+          ) : (
+            transactions.map((transaction) => {
+              const name = getTransactionName(transaction);
 
-              <p className={styles.categoryCell}>{transaction.category}</p>
-              <p className={styles.dateCell}>{transaction.date}</p>
-              <p className={`${styles.amountCell} ${transaction.positive ? styles.amountPositive : ""}`}>
-                {transaction.amount}
-              </p>
-            </article>
-          ))}
+              return (
+                <article className={styles.transactionRow} key={transaction.id}>
+                  <div className={styles.recipientCell}>
+                    <span className={styles.avatarFallback} aria-hidden="true">
+                      {getInitials(name)}
+                    </span>
+                    <p className={styles.recipientName}>{name}</p>
+                  </div>
+
+                  <p className={styles.categoryCell}>{transaction.category_name}</p>
+                  <p className={styles.dateCell}>{formatDate(transaction.date)}</p>
+                  <p
+                    className={[
+                      styles.amountCell,
+                      transaction.signed_amount_cents > 0 ? styles.amountPositive : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                  >
+                    {formatAmount(transaction.signed_amount_cents)}
+                  </p>
+                </article>
+              );
+            })
+          )}
         </div>
 
-        <Pagination mobileCompact />
+        {!error && transactions.length > 0 ? <Pagination mobileCompact /> : null}
       </section>
     </AppShell>
   );
