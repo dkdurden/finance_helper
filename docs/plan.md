@@ -29,6 +29,8 @@ Represents a financial account (checking, savings, cash, credit card, loan, inve
 
 `balance = opening_balance_cents + sum(transaction.signed_amount_cents)`
 
+`opening_balance_cents` is the account's initial baseline when tracking begins. It is stored on the account and is not represented as a `Transaction` or `Transfer`. After account creation, balance changes are recorded as transactions; corrections use an `adjustment` transaction.
+
 If `is_liability = true`, the balance represents amount owed.
 
 ---
