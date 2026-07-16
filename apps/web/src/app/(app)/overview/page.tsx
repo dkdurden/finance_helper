@@ -2,7 +2,6 @@ import Image from "next/image";
 import { cookies } from "next/headers";
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/button/Button";
-import { AccountCreateControl } from "@/features/accounts/components/AccountCreateControl";
 import { BudgetDonutChart } from "@/features/overview/components/BudgetDonutChart";
 import { OverviewSummaryCard } from "@/features/overview/components/OverviewSummaryCard";
 import { backendUrl } from "@/lib/backendUrl";
@@ -136,7 +135,7 @@ export default async function Home() {
       : currencyFormatter.format(currentBalanceCents / 100);
 
   return (
-    <AppShell title="Overview" headerAction={<AccountCreateControl />}>
+    <AppShell title="Overview">
       {/* Overview-specific summary row */}
       <section className={styles.summaryGrid} aria-label="Summary cards">
         <OverviewSummaryCard label="Current Balance" value={currentBalance} primary />

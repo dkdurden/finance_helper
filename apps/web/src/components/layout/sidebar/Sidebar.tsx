@@ -21,6 +21,11 @@ const navItems: NavItem[] = [
     label: "Overview",
   },
   {
+    href: "/accounts",
+    icon: "/images/icon-nav-accounts.svg",
+    label: "Accounts",
+  },
+  {
     href: "/transactions",
     icon: "/images/icon-nav-transactions.svg",
     label: "Transactions",

@@ -1,0 +1,159 @@
+.panel {
+  display: grid;
+  gap: var(--space-300);
+  border-radius: var(--space-150);
+  background: var(--color-white);
+  padding: var(--space-400);
+  box-shadow: var(--shadow-sm);
+}
+
+.tableHeader,
+.accountRow {
+  display: grid;
+  grid-template-columns: minmax(14rem, 1fr) 9rem 8rem 10rem;
+  gap: var(--space-400);
+  align-items: center;
+}
+
+.tableHeader {
+  border-bottom: 1px solid var(--color-grey-100);
+  padding: var(--space-150) var(--space-200);
+  color: var(--color-grey-500);
+  font-size: var(--text-preset-5-size);
+  font-weight: var(--text-preset-5-weight);
+  line-height: var(--text-preset-5-line-height);
+}
+
+.balanceHeader,
+.balance {
+  text-align: right;
+}
+
+.accountList {
+  display: grid;
+}
+
+.accountRow {
+  border-bottom: 1px solid var(--color-grey-100);
+  padding: var(--space-200);
+}
+
+.accountRow:last-child {
+  border-bottom: 0;
+}
+
+.accountIdentity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-200);
+}
+
+.accountInitials {
+  display: inline-flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--color-beige-100);
+  color: var(--color-grey-900);
+  font-size: var(--text-preset-5-size);
+  font-weight: var(--text-preset-4-bold-weight);
+  line-height: 1;
+}
+
+.accountName,
+.accountType,
+.classification,
+.balance,
+.stateMessage {
+  margin: 0;
+}
+
+.accountName,
+.balance {
+  color: var(--color-grey-900);
+  font-size: var(--text-preset-4-bold-size);
+  font-weight: var(--text-preset-4-bold-weight);
+  line-height: var(--text-preset-4-bold-line-height);
+}
+
+.accountName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accountType,
+.classification {
+  color: var(--color-grey-500);
+  font-size: var(--text-preset-5-size);
+  font-weight: var(--text-preset-5-weight);
+  line-height: var(--text-preset-5-line-height);
+}
+
+.stateMessage {
+  padding: var(--space-400) var(--space-200);
+  color: var(--color-grey-500);
+  font-size: var(--text-preset-4-size);
+  line-height: var(--text-preset-4-line-height);
+  text-align: center;
+}
+
+.errorMessage {
+  color: var(--color-danger);
+}
+
+@media (max-width: 63.9375rem) {
+  .tableHeader,
+  .accountRow {
+    grid-template-columns: minmax(12rem, 1fr) 8rem 7rem 8rem;
+    gap: var(--space-300);
+  }
+}
+
+@media (max-width: 47.9375rem) {
+  .panel {
+    padding: var(--space-300) var(--space-250);
+  }
+
+  .tableHeader {
+    display: none;
+  }
+
+  .accountRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: var(--space-150);
+    row-gap: var(--space-50);
+    padding: var(--space-200) 0;
+  }
+
+  .accountIdentity {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .accountInitials {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .accountType {
+    grid-column: 1;
+    grid-row: 2;
+    padding-left: calc(2rem + var(--space-200));
+  }
+
+  .classification {
+    grid-column: 2;
+    grid-row: 2;
+    text-align: right;
+  }
+
+  .balance {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
