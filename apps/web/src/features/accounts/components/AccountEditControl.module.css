@@ -50,3 +50,7 @@
 .actionsMenuItem:hover {
   background: var(--color-beige-100);
 }
+
+.actionsMenuItemDanger {
+  color: var(--color-red);
+}

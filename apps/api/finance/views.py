@@ -1,5 +1,6 @@
 from django.contrib.auth import login, logout
 from django.db.models import BigIntegerField, ExpressionWrapper, F, Sum, Value
+from django.db.models.deletion import ProtectedError
 from django.db.models.functions import Coalesce
 from django.http import JsonResponse
 from django.utils.decorators import method_decorator
@@ -91,6 +92,19 @@ class AccountViewSet(viewsets.ModelViewSet):
     )
     serializer_class = AccountSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except ProtectedError:
+            return Response(
+                {
+                    "detail": (
+                        "Accounts with transactions or transfers cannot be deleted."
+                    )
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
 
 
 class CategoryViewSet(viewsets.ModelViewSet):

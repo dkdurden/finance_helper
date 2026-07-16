@@ -223,6 +223,54 @@ class AccountApiTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_delete_unused_account(self):
+        account = Account.objects.create(name="Unused Account")
+
+        response = self.client.delete(reverse("account-detail", args=[account.id]))
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Account.objects.filter(id=account.id).exists())
+
+    def test_delete_account_with_transaction_returns_conflict(self):
+        account = Account.objects.create(name="Used Account")
+        category = Category.objects.create(name="Account Delete Test")
+        Transaction.objects.create(
+            date="2026-07-16",
+            signed_amount_cents=-100,
+            category=category,
+            account=account,
+        )
+
+        response = self.client.delete(reverse("account-detail", args=[account.id]))
+
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertEqual(
+            response.data["detail"],
+            "Accounts with transactions or transfers cannot be deleted.",
+        )
+        self.assertTrue(Account.objects.filter(id=account.id).exists())
+
+    def test_delete_account_with_transfer_returns_conflict(self):
+        from_account = Account.objects.create(name="Transfer Source")
+        to_account = Account.objects.create(name="Transfer Destination")
+        Transfer.objects.create(
+            date="2026-07-16",
+            amount_cents=100,
+            from_account=from_account,
+            to_account=to_account,
+        )
+
+        response = self.client.delete(
+            reverse("account-detail", args=[from_account.id])
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertEqual(
+            response.data["detail"],
+            "Accounts with transactions or transfers cannot be deleted.",
+        )
+        self.assertTrue(Account.objects.filter(id=from_account.id).exists())
+
 
 class CategoryApiTests(APITestCase):
     def test_create_category(self):

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { AccountDeleteModal } from "./AccountDeleteModal";
 import { AccountModal, type EditableAccount } from "./AccountModal";
 import styles from "./AccountEditControl.module.css";
 
@@ -14,10 +15,10 @@ export function AccountEditControl({ account }: AccountEditControlProps) {
   const controlRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [activeModal, setActiveModal] = useState<"delete" | "edit" | null>(null);
 
   const closeModal = useCallback(() => {
-    setModalOpen(false);
+    setActiveModal(null);
     requestAnimationFrame(() => menuButtonRef.current?.focus());
   }, []);
 
@@ -57,7 +58,7 @@ export function AccountEditControl({ account }: AccountEditControlProps) {
         aria-controls={menuId}
         aria-expanded={menuOpen}
         aria-haspopup="menu"
-        aria-label={`Open ${account.name} account actions`}
+        aria-label={"Open " + account.name + " account actions"}
         onClick={() => setMenuOpen((current) => !current)}
       >
         <Image src="/images/icon-ellipsis.svg" alt="" width={16} height={16} aria-hidden="true" />
@@ -71,16 +72,30 @@ export function AccountEditControl({ account }: AccountEditControlProps) {
             role="menuitem"
             onClick={() => {
               setMenuOpen(false);
-              setModalOpen(true);
+              setActiveModal("edit");
             }}
           >
             Edit Account
           </button>
+          <button
+            className={[styles.actionsMenuItem, styles.actionsMenuItemDanger].join(" ")}
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setMenuOpen(false);
+              setActiveModal("delete");
+            }}
+          >
+            Delete Account
+          </button>
         </div>
       ) : null}
 
-      {modalOpen ? (
+      {activeModal === "edit" ? (
         <AccountModal account={account} mode="edit" onClose={closeModal} />
+      ) : null}
+      {activeModal === "delete" ? (
+        <AccountDeleteModal account={account} onClose={closeModal} />
       ) : null}
     </div>
   );
