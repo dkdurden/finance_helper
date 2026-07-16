@@ -10,7 +10,7 @@
 .tableHeader,
 .accountRow {
   display: grid;
-  grid-template-columns: minmax(14rem, 1fr) 9rem 8rem 10rem;
+  grid-template-columns: minmax(14rem, 1fr) 9rem 8rem 10rem 2rem;
   gap: var(--space-400);
   align-items: center;
 }
@@ -27,6 +27,18 @@
 .balanceHeader,
 .balance {
   text-align: right;
+}
+
+.actionsHeader {
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+.accountActions {
+  justify-self: end;
 }
 
 .accountList {
@@ -109,7 +121,7 @@
 @media (max-width: 63.9375rem) {
   .tableHeader,
   .accountRow {
-    grid-template-columns: minmax(12rem, 1fr) 8rem 7rem 8rem;
+    grid-template-columns: minmax(12rem, 1fr) 8rem 7rem 8rem 2rem;
     gap: var(--space-300);
   }
 }
@@ -124,7 +136,7 @@
   }
 
   .accountRow {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto 2rem;
     column-gap: var(--space-150);
     row-gap: var(--space-50);
     padding: var(--space-200) 0;
@@ -155,5 +167,11 @@
   .balance {
     grid-column: 2;
     grid-row: 1;
+  }
+
+  .accountActions {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    align-self: center;
   }
 }

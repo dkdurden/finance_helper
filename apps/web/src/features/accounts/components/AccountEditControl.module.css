@@ -1,0 +1,52 @@
+.actions {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.moreButton {
+  display: inline-grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.moreButton:hover {
+  background: var(--color-beige-100);
+}
+
+.moreButton:focus-visible,
+.actionsMenuItem:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.actionsMenu {
+  position: absolute;
+  z-index: 3;
+  top: calc(100% + var(--space-50));
+  right: 0;
+  min-width: 9rem;
+  border-radius: var(--space-100);
+  background: var(--color-white);
+  padding: var(--space-100);
+  box-shadow: var(--shadow-lg);
+}
+
+.actionsMenuItem {
+  width: 100%;
+  border-radius: var(--space-50);
+  padding: var(--space-100) var(--space-150);
+  color: var(--color-grey-900);
+  font-size: var(--text-preset-4-size);
+  font-weight: var(--text-preset-4-weight);
+  line-height: var(--text-preset-4-line-height);
+  text-align: left;
+  cursor: pointer;
+}
+
+.actionsMenuItem:hover {
+  background: var(--color-beige-100);
+}

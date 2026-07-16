@@ -1,6 +1,6 @@
 # Post-MVP TODOs
 
-Last updated: 2026-07-15
+Last updated: 2026-07-16
 
 This document tracks product work that remains incomplete but is intentionally not required to close the current MVP milestone. Deferring an item means the current milestone accepts the existing implementation; it does not mean the underlying work is complete.
 
@@ -91,6 +91,18 @@ Recurring bills do not have a dedicated V1 data model. The product must first de
 - Decide whether recurring bills need add, edit, and delete actions or remain derived from transactions.
 - Connect rows, totals, and summary counts to the eventual data source.
 - Add empty, loading, and no-results states.
+
+## Deferred from Milestone 3
+
+### Accessibility
+
+#### Account actions menu
+
+Status: `deferred`
+
+- Improve the visual separation between the white account actions pop-up menu and the white account panel behind it.
+- Add a clearly visible border, contrasting shadow, or background treatment without relying on color alone.
+- Verify sufficient contrast in supported themes and confirm that keyboard focus remains clearly visible on the ellipsis trigger and menu actions.
 
 ## Adding future items
 

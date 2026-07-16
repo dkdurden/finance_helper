@@ -1,17 +1,11 @@
 import { cookies } from "next/headers";
 import { AppShell } from "@/components/layout/AppShell";
 import { AccountCreateControl } from "@/features/accounts/components/AccountCreateControl";
+import { AccountEditControl } from "@/features/accounts/components/AccountEditControl";
+import type { AccountType } from "@/features/accounts/components/AccountModal";
 import { backendUrl } from "@/lib/backendUrl";
 import styles from "./page.module.css";
 
-type AccountType =
-  | "checking"
-  | "savings"
-  | "cash"
-  | "credit_card"
-  | "loan"
-  | "investment"
-  | "other";
 
 type AccountApiRecord = {
   id: number;
@@ -93,6 +87,7 @@ export default async function AccountsPage() {
           <span>Type</span>
           <span>Classification</span>
           <span className={styles.balanceHeader}>Balance</span>
+          <span className={styles.actionsHeader}>Actions</span>
         </div>
 
         <div className={styles.accountList}>
@@ -116,6 +111,16 @@ export default async function AccountsPage() {
                   {account.is_liability ? "Liability" : "Asset"}
                 </p>
                 <p className={styles.balance}>{formatBalance(account.balance_cents)}</p>
+                <div className={styles.accountActions}>
+                  <AccountEditControl
+                    account={{
+                      id: account.id,
+                      name: account.name,
+                      accountType: account.account_type,
+                      isLiability: account.is_liability,
+                    }}
+                  />
+                </div>
               </article>
             ))
           )}
