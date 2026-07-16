@@ -273,6 +273,13 @@ class AccountApiTests(APITestCase):
 
 
 class CategoryApiTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email="category-tests@example.com",
+            password="strong-password-123",
+        )
+        self.client.force_authenticate(user=self.user)
+
     def test_create_category(self):
         payload = {
             "name": "Groceries",
@@ -300,6 +307,13 @@ class CategoryApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["name"], "Rent")
+
+    def test_list_categories_requires_authentication(self):
+        self.client.force_authenticate(user=None)
+
+        response = self.client.get(reverse("category-list"))
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
 class ProductApiTests(APITestCase):

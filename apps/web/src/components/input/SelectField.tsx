@@ -1,11 +1,16 @@
 "use client";
 
-import { useId, useState } from "react";
+import {
+  useId,
+  useState,
+  type ChangeEventHandler,
+  type SelectHTMLAttributes,
+} from "react";
 import { cn } from "@/lib/cn";
 import fieldStyles from "./InputField.module.css";
 import styles from "./SelectField.module.css";
 
-type SelectOption = {
+export type SelectOption = {
   color: string;
   label: string;
   value: string;
@@ -13,13 +18,19 @@ type SelectOption = {
 
 type SelectFieldProps = {
   className?: string;
+  defaultValue?: string;
   helperText?: string;
   id?: string;
   label?: string;
   noneLabel?: string;
+  onChange?: ChangeEventHandler<HTMLSelectElement>;
   options?: SelectOption[];
   placeholder?: string;
-};
+  value?: string;
+} & Omit<
+  SelectHTMLAttributes<HTMLSelectElement>,
+  "children" | "className" | "defaultValue" | "id" | "onChange" | "value"
+>;
 
 const defaultOptions: SelectOption[] = [
   { value: "entertainment", label: "Entertainment", color: "var(--color-green)" },
@@ -29,17 +40,22 @@ const defaultOptions: SelectOption[] = [
 
 export function SelectField({
   className,
+  defaultValue = "",
   helperText = "Helper text",
   id,
   label = "Field With Color Tag",
   noneLabel = "None",
+  onChange,
   options = defaultOptions,
   placeholder = "Placeholder",
+  value,
+  ...selectProps
 }: SelectFieldProps) {
   const generatedId = useId();
   const selectId = id ?? generatedId;
-  const helperTextId = `${selectId}-help`;
-  const [selectedValue, setSelectedValue] = useState("");
+  const helperTextId = selectId + "-help";
+  const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue);
+  const selectedValue = value ?? uncontrolledValue;
   const selectedOption = options.find((option) => option.value === selectedValue);
 
   return (
@@ -61,7 +77,14 @@ export function SelectField({
           aria-describedby={helperText ? helperTextId : undefined}
           className={cn(styles.select, !selectedOption && styles.placeholder)}
           value={selectedValue}
-          onChange={(event) => setSelectedValue(event.target.value)}
+          onChange={(event) => {
+            if (value === undefined) {
+              setUncontrolledValue(event.target.value);
+            }
+
+            onChange?.(event);
+          }}
+          {...selectProps}
         >
           <option value="">{noneLabel}</option>
           {options.map((option) => (
@@ -78,7 +101,6 @@ export function SelectField({
           </span>
         ) : null}
       </div>
-      {/* TODO: Add a standard controlled/uncontrolled API plus error-state semantics when this moves from preview usage into real forms. */}
       <span className={fieldStyles.helperText} id={helperText ? helperTextId : undefined}>
         {helperText}
       </span>
