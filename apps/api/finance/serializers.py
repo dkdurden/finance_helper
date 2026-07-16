@@ -228,6 +228,13 @@ class TransactionSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
 
+    def validate_signed_amount_cents(self, value):
+        if value == 0:
+            raise serializers.ValidationError(
+                "signed_amount_cents must not be zero."
+            )
+        return value
+
     def validate(self, attrs):
         transaction_type = attrs.get("transaction_type", getattr(self.instance, "transaction_type", None))
         transfer = attrs.get("transfer", getattr(self.instance, "transfer", None))

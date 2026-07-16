@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { AppShell } from "@/components/layout/AppShell";
 import { Pagination } from "@/components/pagination/Pagination";
 import { SortDropdown } from "@/features/transactions/components/SortDropdown";
+import { TransactionCreateControl } from "@/features/transactions/components/TransactionCreateControl";
 import { backendUrl } from "@/lib/backendUrl";
 import styles from "./page.module.css";
 
@@ -17,6 +18,24 @@ type TransactionApiRecord = {
 
 type TransactionLoadResult = {
   data: TransactionApiRecord[];
+  error: string | null;
+};
+
+type AccountOptionApiRecord = {
+  id: number;
+  is_liability: boolean;
+  name: string;
+};
+
+type CategoryOptionApiRecord = {
+  id: number;
+  is_archived: boolean;
+  name: string;
+};
+
+type TransactionFormOptions = {
+  accounts: Array<{ id: number; isLiability: boolean; name: string }>;
+  categories: Array<{ id: number; name: string }>;
   error: string | null;
 };
 
@@ -55,6 +74,54 @@ async function getTransactions(): Promise<TransactionLoadResult> {
     return { data: data as TransactionApiRecord[], error: null };
   } catch {
     return { data: [], error: "Unable to load transactions right now." };
+  }
+}
+
+async function getTransactionFormOptions(): Promise<TransactionFormOptions> {
+  try {
+    const cookieStore = await cookies();
+    const headers = { cookie: cookieStore.toString() };
+    const [accountsResponse, categoriesResponse] = await Promise.all([
+      fetch(backendUrl("/api/accounts/"), { headers, cache: "no-store" }),
+      fetch(backendUrl("/api/categories/"), { headers, cache: "no-store" }),
+    ]);
+
+    if (!accountsResponse.ok || !categoriesResponse.ok) {
+      return {
+        accounts: [],
+        categories: [],
+        error: "Unable to load transaction form options right now.",
+      };
+    }
+
+    const accountsData: unknown = await accountsResponse.json();
+    const categoriesData: unknown = await categoriesResponse.json();
+
+    if (!Array.isArray(accountsData) || !Array.isArray(categoriesData)) {
+      return {
+        accounts: [],
+        categories: [],
+        error: "The transaction form services returned an unexpected response.",
+      };
+    }
+
+    return {
+      accounts: (accountsData as AccountOptionApiRecord[]).map((account) => ({
+        id: account.id,
+        isLiability: account.is_liability,
+        name: account.name,
+      })),
+      categories: (categoriesData as CategoryOptionApiRecord[])
+        .filter((category) => !category.is_archived)
+        .map((category) => ({ id: category.id, name: category.name })),
+      error: null,
+    };
+  } catch {
+    return {
+      accounts: [],
+      categories: [],
+      error: "Unable to load transaction form options right now.",
+    };
   }
 }
 
@@ -118,9 +185,21 @@ const categoryOptions = [
 ];
 
 export default async function TransactionsPage() {
-  const { data: transactions, error } = await getTransactions();
+  const [{ data: transactions, error }, formOptions] = await Promise.all([
+    getTransactions(),
+    getTransactionFormOptions(),
+  ]);
   return (
-    <AppShell title="Transactions">
+    <AppShell
+      title="Transactions"
+      headerAction={
+        <TransactionCreateControl
+          accounts={formOptions.accounts}
+          categories={formOptions.categories}
+          optionsError={formOptions.error}
+        />
+      }
+    >
       <section className={styles.panel} aria-label="Transactions list and controls">
         <div className={styles.toolbar} aria-label="Transaction controls">
           <label className={styles.searchField}>

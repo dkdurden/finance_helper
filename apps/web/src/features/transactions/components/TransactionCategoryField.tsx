@@ -16,6 +16,7 @@ export type TransactionCategory = {
 type TransactionCategoryFieldProps = {
   categories: TransactionCategory[];
   disabled?: boolean;
+  onCategoryCreated?: (category: TransactionCategory) => void;
   onPendingChange?: (pending: boolean) => void;
   onValueChange: (categoryId: number | null) => void;
   value: number | null;
@@ -47,6 +48,7 @@ function getErrorMessage(value: unknown) {
 export function TransactionCategoryField({
   categories: initialCategories,
   disabled = false,
+  onCategoryCreated,
   onPendingChange,
   onValueChange,
   value,
@@ -133,6 +135,7 @@ export function TransactionCategoryField({
       };
 
       setCategories((current) => [...current, createdCategory]);
+      onCategoryCreated?.(createdCategory);
       onValueChange(createdCategory.id);
       setCategoryDraft("");
       setCreateOpen(false);

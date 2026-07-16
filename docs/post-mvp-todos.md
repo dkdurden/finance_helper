@@ -104,6 +104,17 @@ Status: `deferred`
 - Add a clearly visible border, contrasting shadow, or background treatment without relying on color alone.
 - Verify sufficient contrast in supported themes and confirm that keyboard focus remains clearly visible on the ellipsis trigger and menu actions.
 
+### Visual consistency
+
+#### Transaction category selectors
+
+Status: `deferred`
+
+- Align the closed-control styling of the Add Transaction category selector and the Transactions list category filter, including borders, radius, typography, spacing, caret treatment, and focus states.
+- Hide the Add Transaction selector's arbitrary color swatch unless category colors are added to the data model.
+- Preserve native select accessibility for the transaction form unless a fully accessible custom listbox is intentionally implemented.
+- If the controls are unified later, verify keyboard navigation, focus visibility, typeahead behavior, and screen-reader announcements.
+
 ## Adding future items
 
 Add work here when it is intentionally removed from an MVP or milestone definition of done but still needs to be completed later. Include the originating milestone, current status, and concrete verification concerns so deferred work remains actionable.

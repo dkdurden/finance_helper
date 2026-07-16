@@ -1,0 +1,27 @@
+.content {
+  display: grid;
+  gap: var(--space-250);
+}
+
+.controls {
+  display: grid;
+  gap: var(--space-250);
+}
+
+.accountField {
+  gap: var(--space-50);
+}
+
+.statusMessage {
+  margin: 0;
+  border-radius: var(--space-100);
+  background: var(--color-beige-100);
+  padding: var(--space-150);
+  color: var(--color-grey-500);
+  font-size: var(--text-preset-5-size);
+  line-height: var(--text-preset-5-line-height);
+}
+
+.errorMessage {
+  color: var(--color-danger);
+}

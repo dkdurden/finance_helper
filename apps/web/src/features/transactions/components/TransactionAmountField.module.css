@@ -1,0 +1,85 @@
+.field {
+  display: grid;
+  gap: var(--space-200);
+  min-width: 0;
+}
+
+.fieldset {
+  display: grid;
+  gap: var(--space-100);
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.legend {
+  color: var(--color-grey-500);
+  font-size: var(--text-preset-5-bold-size);
+  font-weight: var(--text-preset-5-bold-weight);
+  line-height: var(--text-preset-5-bold-line-height);
+}
+
+.directionOptions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-100);
+}
+
+.directionOption {
+  display: grid;
+  min-height: 3rem;
+  place-items: center;
+  border: 1px solid var(--color-beige-500);
+  border-radius: var(--space-100);
+  background: var(--color-white);
+  color: var(--color-grey-500);
+  cursor: pointer;
+  padding: var(--space-150);
+  font-size: var(--text-preset-4-bold-size);
+  font-weight: var(--text-preset-4-bold-weight);
+  line-height: var(--text-preset-4-bold-line-height);
+  text-align: center;
+}
+
+.directionOption[data-selected="true"] {
+  border-color: var(--color-grey-900);
+  background: var(--color-grey-900);
+  color: var(--color-white);
+}
+
+.directionOption:has(.directionInput:focus-visible) {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.directionOption:has(.directionInput:disabled) {
+  cursor: not-allowed;
+  opacity: 0.56;
+}
+
+.directionInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.amountField {
+  gap: var(--space-50);
+}
+
+.preview {
+  margin: 0;
+  color: var(--color-grey-500);
+  font-size: var(--text-preset-5-size);
+  line-height: var(--text-preset-5-line-height);
+}
+
+@media (max-width: 30rem) {
+  .directionOptions {
+    grid-template-columns: 1fr;
+  }
+}

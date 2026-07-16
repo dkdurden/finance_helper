@@ -610,6 +610,24 @@ class TransactionApiTests(APITestCase):
         self.assertEqual(response.data["signed_amount_cents"], payload["signed_amount_cents"])
         self.assertEqual(response.data["transaction_type"], payload["transaction_type"])
 
+    def test_transaction_amount_must_not_be_zero(self):
+        payload = {
+            "date": "2026-03-05",
+            "signed_amount_cents": 0,
+            "transaction_type": "normal",
+            "category": self.category.id,
+            "account": self.account.id,
+            "transfer": None,
+        }
+
+        response = self.client.post(reverse("transaction-list"), payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data["signed_amount_cents"][0],
+            "signed_amount_cents must not be zero.",
+        )
+
     def test_list_transactions(self):
         self.client.post(
             reverse("transaction-list"),
