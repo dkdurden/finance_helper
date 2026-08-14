@@ -18,6 +18,7 @@ from .serializers import (
     ReceiptItemSerializer,
     ReceiptSerializer,
     SignUpSerializer,
+    TRANSFER_POSTING_MUTATION_ERROR,
     TransactionSerializer,
     TransferSerializer,
 )
@@ -137,6 +138,17 @@ class TransactionViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.select_related("category", "account").all()
     serializer_class = TransactionSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def destroy(self, request, *args, **kwargs):
+        transaction = self.get_object()
+
+        if transaction.transaction_type == Transaction.TransactionType.TRANSFER:
+            return Response(
+                {"detail": TRANSFER_POSTING_MUTATION_ERROR},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return super().destroy(request, *args, **kwargs)
 
 
 def health(request):

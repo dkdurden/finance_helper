@@ -204,6 +204,11 @@ class TransferSerializer(serializers.ModelSerializer):
         return attrs
 
 
+TRANSFER_POSTING_MUTATION_ERROR = (
+    "Transfer postings are managed through the transfer endpoint."
+)
+
+
 class TransactionSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source="category.name", read_only=True)
     account_name = serializers.CharField(source="account.name", read_only=True)
@@ -236,12 +241,20 @@ class TransactionSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
+        if (
+            self.instance is not None
+            and self.instance.transaction_type == Transaction.TransactionType.TRANSFER
+        ):
+            raise serializers.ValidationError(
+                {"detail": TRANSFER_POSTING_MUTATION_ERROR}
+            )
+
         transaction_type = attrs.get("transaction_type", getattr(self.instance, "transaction_type", None))
         transfer = attrs.get("transfer", getattr(self.instance, "transfer", None))
 
-        if transaction_type == Transaction.TransactionType.TRANSFER and transfer is None:
+        if transaction_type == Transaction.TransactionType.TRANSFER:
             raise serializers.ValidationError(
-                {"transfer": "transfer is required when transaction_type is 'transfer'."}
+                {"transaction_type": TRANSFER_POSTING_MUTATION_ERROR}
             )
 
         if transaction_type != Transaction.TransactionType.TRANSFER and transfer is not None:

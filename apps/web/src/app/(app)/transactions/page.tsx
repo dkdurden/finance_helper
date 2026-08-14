@@ -4,6 +4,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { Pagination } from "@/components/pagination/Pagination";
 import { SortDropdown } from "@/features/transactions/components/SortDropdown";
 import { TransactionCreateControl } from "@/features/transactions/components/TransactionCreateControl";
+import { TransactionEditControl } from "@/features/transactions/components/TransactionEditControl";
 import { backendUrl } from "@/lib/backendUrl";
 import styles from "./page.module.css";
 
@@ -13,6 +14,8 @@ type TransactionApiRecord = {
   signed_amount_cents: number;
   transaction_type: "normal" | "adjustment" | "transfer";
   merchant: string | null;
+  account: number;
+  category: number;
   category_name: string;
 };
 
@@ -270,16 +273,35 @@ export default async function TransactionsPage() {
 
                   <p className={styles.categoryCell}>{transaction.category_name}</p>
                   <p className={styles.dateCell}>{formatDate(transaction.date)}</p>
-                  <p
-                    className={[
-                      styles.amountCell,
-                      transaction.signed_amount_cents > 0 ? styles.amountPositive : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                  >
-                    {formatAmount(transaction.signed_amount_cents)}
-                  </p>
+                  <div className={styles.amountActionsCell}>
+                    <p
+                      className={[
+                        styles.amountCell,
+                        transaction.signed_amount_cents > 0 ? styles.amountPositive : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                    >
+                      {formatAmount(transaction.signed_amount_cents)}
+                    </p>
+                    {transaction.transaction_type === "normal" ? (
+                      <TransactionEditControl
+                        accounts={formOptions.accounts}
+                        categories={formOptions.categories}
+                        optionsError={formOptions.error}
+                        transaction={{
+                          accountId: transaction.account,
+                          categoryId: transaction.category,
+                          categoryName: transaction.category_name,
+                          id: transaction.id,
+                          name,
+                          signedAmountCents: transaction.signed_amount_cents,
+                        }}
+                      />
+                    ) : (
+                      <span className={styles.actionPlaceholder} aria-hidden="true" />
+                    )}
+                  </div>
                 </article>
               );
             })

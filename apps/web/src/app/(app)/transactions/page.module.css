@@ -215,6 +215,18 @@
   text-align: right;
 }
 
+.amountActionsCell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 2rem;
+  gap: var(--space-100);
+  align-items: center;
+}
+
+.actionPlaceholder {
+  width: 2rem;
+  height: 2rem;
+}
+
 .amountPositive {
   color: var(--color-green);
 }
@@ -310,7 +322,7 @@
     text-align: right;
   }
 
-  .amountCell {
+  .amountActionsCell {
     grid-column: 2;
     grid-row: 1;
     align-self: start;

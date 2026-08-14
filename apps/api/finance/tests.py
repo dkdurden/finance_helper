@@ -592,6 +592,16 @@ class TransactionApiTests(APITestCase):
             to_account=self.secondary_account,
         )
 
+    def create_transfer_posting(self):
+        return Transaction.objects.create(
+            date=self.transfer.date,
+            signed_amount_cents=-self.transfer.amount_cents,
+            transaction_type=Transaction.TransactionType.TRANSFER,
+            category=self.category,
+            account=self.account,
+            transfer=self.transfer,
+        )
+
     def test_create_transaction(self):
         payload = {
             "date": "2026-03-05",
@@ -609,6 +619,44 @@ class TransactionApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["signed_amount_cents"], payload["signed_amount_cents"])
         self.assertEqual(response.data["transaction_type"], payload["transaction_type"])
+
+    def test_update_normal_transaction(self):
+        updated_category = Category.objects.create(name="Groceries")
+        transaction = Transaction.objects.create(
+            date="2026-03-05",
+            signed_amount_cents=-2599,
+            transaction_type=Transaction.TransactionType.NORMAL,
+            merchant="Trader Joe's",
+            note="Weekly groceries",
+            category=self.category,
+            account=self.account,
+        )
+        payload = {
+            "date": "2026-03-06",
+            "signed_amount_cents": -3199,
+            "merchant": "Whole Foods",
+            "note": "Updated grocery trip",
+            "category": updated_category.id,
+            "account": self.secondary_account.id,
+        }
+
+        response = self.client.patch(
+            reverse("transaction-detail", args=[transaction.id]),
+            payload,
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        transaction.refresh_from_db()
+        self.assertEqual(str(transaction.date), payload["date"])
+        self.assertEqual(transaction.signed_amount_cents, payload["signed_amount_cents"])
+        self.assertEqual(transaction.merchant, payload["merchant"])
+        self.assertEqual(transaction.note, payload["note"])
+        self.assertEqual(transaction.category, updated_category)
+        self.assertEqual(transaction.account, self.secondary_account)
+        self.assertEqual(transaction.transaction_type, Transaction.TransactionType.NORMAL)
+        self.assertEqual(response.data["category_name"], updated_category.name)
+        self.assertEqual(response.data["account_name"], self.secondary_account.name)
 
     def test_transaction_amount_must_not_be_zero(self):
         payload = {
@@ -657,20 +705,78 @@ class TransactionApiTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_transfer_type_requires_transfer_id(self):
+    def test_direct_transfer_transaction_creation_is_rejected(self):
         payload = {
             "date": "2026-03-05",
             "signed_amount_cents": -1000,
             "transaction_type": "transfer",
             "category": self.category.id,
             "account": self.account.id,
-            "transfer": None,
+            "transfer": self.transfer.id,
         }
 
         response = self.client.post(reverse("transaction-list"), payload, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("transfer", response.data)
+        self.assertEqual(
+            response.data["transaction_type"][0],
+            "Transfer postings are managed through the transfer endpoint.",
+        )
+        self.assertEqual(Transaction.objects.count(), 0)
+
+    def test_normal_transaction_cannot_be_converted_to_transfer_posting(self):
+        transaction = Transaction.objects.create(
+            date="2026-03-05",
+            signed_amount_cents=-1000,
+            transaction_type=Transaction.TransactionType.NORMAL,
+            category=self.category,
+            account=self.account,
+        )
+
+        response = self.client.patch(
+            reverse("transaction-detail", args=[transaction.id]),
+            {
+                "transaction_type": Transaction.TransactionType.TRANSFER,
+                "transfer": self.transfer.id,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        transaction.refresh_from_db()
+        self.assertEqual(transaction.transaction_type, Transaction.TransactionType.NORMAL)
+        self.assertIsNone(transaction.transfer)
+
+    def test_direct_transfer_posting_update_is_rejected(self):
+        transaction = self.create_transfer_posting()
+
+        response = self.client.patch(
+            reverse("transaction-detail", args=[transaction.id]),
+            {"signed_amount_cents": -2000},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data["detail"][0],
+            "Transfer postings are managed through the transfer endpoint.",
+        )
+        transaction.refresh_from_db()
+        self.assertEqual(transaction.signed_amount_cents, -1000)
+
+    def test_direct_transfer_posting_deletion_is_rejected(self):
+        transaction = self.create_transfer_posting()
+
+        response = self.client.delete(
+            reverse("transaction-detail", args=[transaction.id])
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data["detail"],
+            "Transfer postings are managed through the transfer endpoint.",
+        )
+        self.assertTrue(Transaction.objects.filter(id=transaction.id).exists())
 
     def test_non_transfer_type_requires_null_transfer(self):
         payload = {
