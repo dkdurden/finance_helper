@@ -215,7 +215,11 @@ TRANSFER_POSTING_MUTATION_ERROR = (
 
 
 class TransactionSerializer(serializers.ModelSerializer):
-    category_name = serializers.CharField(source="category.name", read_only=True)
+    category_name = serializers.CharField(
+        source="category.name",
+        read_only=True,
+        allow_null=True,
+    )
     account_name = serializers.CharField(source="account.name", read_only=True)
 
     class Meta:
@@ -256,6 +260,7 @@ class TransactionSerializer(serializers.ModelSerializer):
 
         transaction_type = attrs.get("transaction_type", getattr(self.instance, "transaction_type", None))
         transfer = attrs.get("transfer", getattr(self.instance, "transfer", None))
+        category = attrs.get("category", getattr(self.instance, "category", None))
 
         if transaction_type == Transaction.TransactionType.TRANSFER:
             raise serializers.ValidationError(
@@ -265,6 +270,11 @@ class TransactionSerializer(serializers.ModelSerializer):
         if transaction_type != Transaction.TransactionType.TRANSFER and transfer is not None:
             raise serializers.ValidationError(
                 {"transfer": "transfer must be null unless transaction_type is 'transfer'."}
+            )
+
+        if transaction_type != Transaction.TransactionType.TRANSFER and category is None:
+            raise serializers.ValidationError(
+                {"category": "category is required for non-transfer transactions."}
             )
 
         return attrs

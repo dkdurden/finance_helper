@@ -149,6 +149,8 @@ class Transaction(models.Model):
         Category,
         on_delete=models.PROTECT,
         related_name="transactions",
+        null=True,
+        blank=True,
     )
     account = models.ForeignKey(
         Account,
@@ -178,6 +180,13 @@ class Transaction(models.Model):
                     | (~Q(transaction_type="transfer") & Q(transfer__isnull=True))
                 ),
                 name="transaction_transfer_type_link_match",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    (Q(transaction_type="transfer") & Q(category__isnull=True))
+                    | (~Q(transaction_type="transfer") & Q(category__isnull=False))
+                ),
+                name="transaction_category_type_match",
             ),
         ]
 

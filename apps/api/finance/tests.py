@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.db import IntegrityError, transaction as db_transaction
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -755,10 +756,49 @@ class TransactionApiTests(APITestCase):
             date=self.transfer.date,
             signed_amount_cents=-self.transfer.amount_cents,
             transaction_type=Transaction.TransactionType.TRANSFER,
-            category=self.category,
+            category=None,
             account=self.account,
             transfer=self.transfer,
         )
+
+    def test_transfer_posting_serializes_null_category(self):
+        transaction = self.create_transfer_posting()
+
+        response = self.client.get(
+            reverse("transaction-detail", args=[transaction.id])
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsNone(response.data["category"])
+        self.assertIsNone(response.data["category_name"])
+
+    def test_transfer_posting_rejects_category_at_database_boundary(self):
+        with self.assertRaises(IntegrityError):
+            with db_transaction.atomic():
+                Transaction.objects.create(
+                    date=self.transfer.date,
+                    signed_amount_cents=-self.transfer.amount_cents,
+                    transaction_type=Transaction.TransactionType.TRANSFER,
+                    category=self.category,
+                    account=self.account,
+                    transfer=self.transfer,
+                )
+
+    def test_non_transfer_postings_require_category_at_database_boundary(self):
+        for transaction_type in (
+            Transaction.TransactionType.NORMAL,
+            Transaction.TransactionType.ADJUSTMENT,
+        ):
+            with self.subTest(transaction_type=transaction_type):
+                with self.assertRaises(IntegrityError):
+                    with db_transaction.atomic():
+                        Transaction.objects.create(
+                            date="2026-03-05",
+                            signed_amount_cents=1000,
+                            transaction_type=transaction_type,
+                            category=None,
+                            account=self.account,
+                        )
 
     def test_create_transaction(self):
         payload = {
@@ -868,7 +908,7 @@ class TransactionApiTests(APITestCase):
             "date": "2026-03-05",
             "signed_amount_cents": -1000,
             "transaction_type": "transfer",
-            "category": self.category.id,
+            "category": None,
             "account": self.account.id,
             "transfer": self.transfer.id,
         }
@@ -881,6 +921,29 @@ class TransactionApiTests(APITestCase):
             "Transfer postings are managed through the transfer endpoint.",
         )
         self.assertEqual(Transaction.objects.count(), 0)
+
+    def test_create_normal_transaction_requires_category(self):
+        payload = {
+            "date": "2026-03-05",
+            "signed_amount_cents": -1000,
+            "transaction_type": "normal",
+            "category": None,
+            "account": self.account.id,
+            "transfer": None,
+        }
+
+        response = self.client.post(
+            reverse("transaction-list"),
+            payload,
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data["category"][0],
+            "category is required for non-transfer transactions.",
+        )
+        self.assertFalse(Transaction.objects.exists())
 
     def test_normal_transaction_cannot_be_converted_to_transfer_posting(self):
         transaction = Transaction.objects.create(
