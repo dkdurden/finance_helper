@@ -179,9 +179,10 @@ class ReceiptItemViewSet(viewsets.ModelViewSet):
     serializer_class = ReceiptItemSerializer
 
 
-class TransferViewSet(viewsets.ModelViewSet):
+class TransferViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Transfer.objects.all()
     serializer_class = TransferSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
 
 class TransactionViewSet(viewsets.ModelViewSet):

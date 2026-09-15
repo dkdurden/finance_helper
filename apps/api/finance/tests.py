@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from .models import Account, Category, Product, Receipt, ReceiptItem, Transaction, Transfer
+from .serializers import TransferSerializer
 
 User = get_user_model()
 
@@ -599,6 +600,11 @@ class ReceiptItemApiTests(APITestCase):
 
 class TransferApiTests(APITestCase):
     def setUp(self):
+        self.user = User.objects.create_user(
+            email="transfer-tests@example.com",
+            password="strong-password-123",
+        )
+        self.client.force_authenticate(user=self.user)
         self.from_account = Account.objects.create(
             name="Transfer Source",
             account_type=Account.AccountType.CHECKING,
@@ -614,7 +620,7 @@ class TransferApiTests(APITestCase):
             opening_balance_date="2026-01-01T00:00:00Z",
         )
 
-    def test_create_transfer(self):
+    def test_create_transfer_is_not_available(self):
         payload = {
             "date": "2026-03-05",
             "amount_cents": 10000,
@@ -625,19 +631,15 @@ class TransferApiTests(APITestCase):
 
         response = self.client.post(reverse("transfer-list"), payload, format="json")
 
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data["amount_cents"], payload["amount_cents"])
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertFalse(Transfer.objects.exists())
 
     def test_list_transfers(self):
-        self.client.post(
-            reverse("transfer-list"),
-            {
-                "date": "2026-03-05",
-                "amount_cents": 5000,
-                "from_account": self.from_account.id,
-                "to_account": self.to_account.id,
-            },
-            format="json",
+        Transfer.objects.create(
+            date="2026-03-05",
+            amount_cents=5000,
+            from_account=self.from_account,
+            to_account=self.to_account,
         )
 
         response = self.client.get(reverse("transfer-list"))
@@ -645,6 +647,46 @@ class TransferApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["amount_cents"], 5000)
+
+    def test_list_transfers_requires_authentication(self):
+        self.client.force_authenticate(user=None)
+
+        response = self.client.get(reverse("transfer-list"))
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_update_transfer_is_not_available(self):
+        transfer = Transfer.objects.create(
+            date="2026-03-05",
+            amount_cents=5000,
+            from_account=self.from_account,
+            to_account=self.to_account,
+        )
+
+        response = self.client.patch(
+            reverse("transfer-detail", args=[transfer.id]),
+            {"amount_cents": 7500},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        transfer.refresh_from_db()
+        self.assertEqual(transfer.amount_cents, 5000)
+
+    def test_delete_transfer_is_not_available(self):
+        transfer = Transfer.objects.create(
+            date="2026-03-05",
+            amount_cents=5000,
+            from_account=self.from_account,
+            to_account=self.to_account,
+        )
+
+        response = self.client.delete(
+            reverse("transfer-detail", args=[transfer.id])
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertTrue(Transfer.objects.filter(id=transfer.id).exists())
 
     def test_transfer_amount_must_be_positive(self):
         payload = {
@@ -654,11 +696,11 @@ class TransferApiTests(APITestCase):
             "to_account": self.to_account.id,
         }
 
-        response = self.client.post(reverse("transfer-list"), payload, format="json")
+        serializer = TransferSerializer(data=payload)
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(serializer.is_valid())
         self.assertEqual(
-            response.data["amount_cents"][0],
+            serializer.errors["amount_cents"][0],
             "amount_cents must be greater than zero.",
         )
 
@@ -670,11 +712,11 @@ class TransferApiTests(APITestCase):
             "to_account": self.from_account.id,
         }
 
-        response = self.client.post(reverse("transfer-list"), payload, format="json")
+        serializer = TransferSerializer(data=payload)
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(serializer.is_valid())
         self.assertEqual(
-            response.data["to_account"][0],
+            serializer.errors["to_account"][0],
             "to_account must be different from from_account.",
         )
 
