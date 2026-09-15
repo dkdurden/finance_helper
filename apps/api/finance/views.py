@@ -1,4 +1,5 @@
 from django.contrib.auth import login, logout
+from django.db import transaction as db_transaction
 from django.db.models import BigIntegerField, ExpressionWrapper, F, Sum, Value
 from django.db.models.deletion import ProtectedError
 from django.db.models.functions import Coalesce
@@ -6,12 +7,15 @@ from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import permissions, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Account, Category, Product, Receipt, ReceiptItem, Transaction, Transfer
 from .serializers import (
     AccountSerializer,
+    BalanceAdjustmentSerializer,
     CategorySerializer,
     LoginSerializer,
     ProductSerializer,
@@ -93,6 +97,52 @@ class AccountViewSet(viewsets.ModelViewSet):
     )
     serializer_class = AccountSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    @action(detail=True, methods=["post"], url_path="adjust-balance")
+    def adjust_balance(self, request, *args, **kwargs):
+        input_serializer = BalanceAdjustmentSerializer(data=request.data)
+        input_serializer.is_valid(raise_exception=True)
+
+        with db_transaction.atomic():
+            account = Account.objects.select_for_update().get(
+                pk=self.get_object().pk
+            )
+            transaction_total = account.transactions.aggregate(
+                total=Sum("signed_amount_cents")
+            )["total"]
+            current_balance_cents = (
+                account.opening_balance_cents + (transaction_total or 0)
+            )
+            adjustment_cents = (
+                input_serializer.validated_data["target_balance_cents"]
+                - current_balance_cents
+            )
+
+            if adjustment_cents == 0:
+                raise ValidationError(
+                    {
+                        "target_balance_cents": (
+                            "Target balance already matches the current balance."
+                        )
+                    }
+                )
+
+            adjustment_category, _ = Category.objects.get_or_create(
+                name="Adjustments"
+            )
+            adjustment = Transaction.objects.create(
+                account=account,
+                category=adjustment_category,
+                date=input_serializer.validated_data["date"],
+                note="balance adjustment",
+                signed_amount_cents=adjustment_cents,
+                transaction_type=Transaction.TransactionType.ADJUSTMENT,
+            )
+
+        return Response(
+            TransactionSerializer(adjustment).data,
+            status=status.HTTP_201_CREATED,
+        )
 
     def destroy(self, request, *args, **kwargs):
         try:

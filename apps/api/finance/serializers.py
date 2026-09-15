@@ -81,6 +81,11 @@ class AccountSerializer(serializers.ModelSerializer):
         return obj.opening_balance_cents + (transaction_total or 0)
 
 
+class BalanceAdjustmentSerializer(serializers.Serializer):
+    target_balance_cents = serializers.IntegerField()
+    date = serializers.DateField()
+
+
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category

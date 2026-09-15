@@ -2,12 +2,13 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { AccountAdjustmentModal } from "./AccountAdjustmentModal";
 import { AccountDeleteModal } from "./AccountDeleteModal";
 import { AccountModal, type EditableAccount } from "./AccountModal";
 import styles from "./AccountEditControl.module.css";
 
 type AccountEditControlProps = {
-  account: EditableAccount;
+  account: EditableAccount & { balanceCents: number };
 };
 
 export function AccountEditControl({ account }: AccountEditControlProps) {
@@ -15,7 +16,9 @@ export function AccountEditControl({ account }: AccountEditControlProps) {
   const controlRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [activeModal, setActiveModal] = useState<"delete" | "edit" | null>(null);
+  const [activeModal, setActiveModal] = useState<
+    "adjust" | "delete" | "edit" | null
+  >(null);
 
   const closeModal = useCallback(() => {
     setActiveModal(null);
@@ -78,6 +81,17 @@ export function AccountEditControl({ account }: AccountEditControlProps) {
             Edit Account
           </button>
           <button
+            className={styles.actionsMenuItem}
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setMenuOpen(false);
+              setActiveModal("adjust");
+            }}
+          >
+            Adjust Balance
+          </button>
+          <button
             className={[styles.actionsMenuItem, styles.actionsMenuItemDanger].join(" ")}
             type="button"
             role="menuitem"
@@ -93,6 +107,9 @@ export function AccountEditControl({ account }: AccountEditControlProps) {
 
       {activeModal === "edit" ? (
         <AccountModal account={account} mode="edit" onClose={closeModal} />
+      ) : null}
+      {activeModal === "adjust" ? (
+        <AccountAdjustmentModal account={account} onClose={closeModal} />
       ) : null}
       {activeModal === "delete" ? (
         <AccountDeleteModal account={account} onClose={closeModal} />

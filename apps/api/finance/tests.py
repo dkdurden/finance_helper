@@ -271,6 +271,122 @@ class AccountApiTests(APITestCase):
         )
         self.assertTrue(Account.objects.filter(id=from_account.id).exists())
 
+    def test_adjust_balance_increase_creates_adjustment_transaction(self):
+        account = Account.objects.create(
+            name="Adjustment Checking",
+            opening_balance_cents=10000,
+            opening_balance_date="2026-01-01T00:00:00Z",
+        )
+        category = Category.objects.create(name="Existing Activity")
+        Transaction.objects.create(
+            account=account,
+            category=category,
+            date="2026-09-14",
+            signed_amount_cents=-2500,
+        )
+
+        response = self.client.post(
+            reverse("account-adjust-balance", args=[account.id]),
+            {
+                "target_balance_cents": 9000,
+                "date": "2026-09-15",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        adjustment = Transaction.objects.get(
+            transaction_type=Transaction.TransactionType.ADJUSTMENT
+        )
+        self.assertEqual(adjustment.signed_amount_cents, 1500)
+        self.assertEqual(adjustment.category.name, "Adjustments")
+        self.assertEqual(adjustment.note, "balance adjustment")
+        self.assertEqual(str(adjustment.date), "2026-09-15")
+
+        account_response = self.client.get(
+            reverse("account-detail", args=[account.id])
+        )
+        self.assertEqual(account_response.data["balance_cents"], 9000)
+
+    def test_adjust_balance_decrease_reuses_adjustments_category(self):
+        account = Account.objects.create(
+            name="Adjustment Savings",
+            opening_balance_cents=10000,
+            opening_balance_date="2026-01-01T00:00:00Z",
+        )
+        adjustment_category = Category.objects.create(name="Adjustments")
+
+        response = self.client.post(
+            reverse("account-adjust-balance", args=[account.id]),
+            {
+                "target_balance_cents": 6000,
+                "date": "2026-09-15",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        adjustment = Transaction.objects.get(
+            transaction_type=Transaction.TransactionType.ADJUSTMENT
+        )
+        self.assertEqual(adjustment.signed_amount_cents, -4000)
+        self.assertEqual(adjustment.category, adjustment_category)
+        self.assertEqual(Category.objects.filter(name="Adjustments").count(), 1)
+
+    def test_adjust_balance_rejects_unchanged_target(self):
+        account = Account.objects.create(
+            name="Already Balanced",
+            opening_balance_cents=10000,
+            opening_balance_date="2026-01-01T00:00:00Z",
+        )
+
+        response = self.client.post(
+            reverse("account-adjust-balance", args=[account.id]),
+            {
+                "target_balance_cents": 10000,
+                "date": "2026-09-15",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("target_balance_cents", response.data)
+        self.assertFalse(Transaction.objects.exists())
+        self.assertFalse(Category.objects.filter(name="Adjustments").exists())
+
+    def test_adjust_balance_validates_request_fields(self):
+        account = Account.objects.create(name="Adjustment Validation")
+
+        response = self.client.post(
+            reverse("account-adjust-balance", args=[account.id]),
+            {
+                "target_balance_cents": "not-an-integer",
+                "date": "not-a-date",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("target_balance_cents", response.data)
+        self.assertIn("date", response.data)
+        self.assertFalse(Transaction.objects.exists())
+
+    def test_adjust_balance_requires_authentication(self):
+        account = Account.objects.create(name="Private Adjustment")
+        self.client.force_authenticate(user=None)
+
+        response = self.client.post(
+            reverse("account-adjust-balance", args=[account.id]),
+            {
+                "target_balance_cents": 1000,
+                "date": "2026-09-15",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(Transaction.objects.exists())
+
 
 class CategoryApiTests(APITestCase):
     def setUp(self):

@@ -114,6 +114,7 @@ export default async function AccountsPage() {
                 <div className={styles.accountActions}>
                   <AccountEditControl
                     account={{
+                      balanceCents: account.balance_cents,
                       id: account.id,
                       name: account.name,
                       accountType: account.account_type,
