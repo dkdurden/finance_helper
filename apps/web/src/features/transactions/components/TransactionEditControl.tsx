@@ -25,6 +25,7 @@ import {
 } from "./TransactionCategoryField";
 import type { TransactionAccountOption } from "./TransactionCreateControl";
 import formStyles from "./TransactionCreateControl.module.css";
+import { TransactionDeleteModal } from "./TransactionDeleteModal";
 import styles from "./TransactionEditControl.module.css";
 
 export type EditableTransaction = {
@@ -335,10 +336,10 @@ export function TransactionEditControl({
   const controlRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [activeModal, setActiveModal] = useState<"delete" | "edit" | null>(null);
 
   const closeModal = useCallback(() => {
-    setModalOpen(false);
+    setActiveModal(null);
     requestAnimationFrame(() => menuButtonRef.current?.focus());
   }, []);
 
@@ -398,15 +399,28 @@ export function TransactionEditControl({
             role="menuitem"
             onClick={() => {
               setMenuOpen(false);
-              setModalOpen(true);
+              setActiveModal("edit");
             }}
           >
             Edit Transaction
           </button>
+          <button
+            className={[styles.actionsMenuItem, styles.actionsMenuItemDanger].join(
+              " ",
+            )}
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setMenuOpen(false);
+              setActiveModal("delete");
+            }}
+          >
+            Delete Transaction
+          </button>
         </div>
       ) : null}
 
-      {modalOpen ? (
+      {activeModal === "edit" ? (
         <TransactionEditModal
           accounts={accounts}
           categories={categories}
@@ -414,6 +428,9 @@ export function TransactionEditControl({
           transaction={transaction}
           onClose={closeModal}
         />
+      ) : null}
+      {activeModal === "delete" ? (
+        <TransactionDeleteModal transaction={transaction} onClose={closeModal} />
       ) : null}
     </div>
   );
