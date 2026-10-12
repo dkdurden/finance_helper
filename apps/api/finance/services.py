@@ -1,4 +1,5 @@
 from django.db import transaction as db_transaction
+from django.utils import timezone
 
 from .models import Transaction, Transfer
 
@@ -75,6 +76,69 @@ def create_transfer(**validated_data):
             transfer.amount_cents,
             transfer.to_account,
         ),
+    )
+
+    return transfer
+
+
+@db_transaction.atomic
+def update_transfer(transfer_id, **validated_data):
+    transfer = (
+        Transfer.objects.select_for_update()
+        .select_related("from_account", "to_account")
+        .get(pk=transfer_id)
+    )
+    postings = list(
+        Transaction.objects.select_for_update()
+        .filter(transfer=transfer)
+        .order_by("id")
+    )
+    _validate_transfer_postings(transfer, postings)
+
+    postings_by_account = {posting.account_id: posting for posting in postings}
+    previous_source_posting = postings_by_account[transfer.from_account_id]
+    previous_destination_posting = postings_by_account[transfer.to_account_id]
+
+    for field, value in validated_data.items():
+        setattr(transfer, field, value)
+    transfer.save()
+
+    source_posting = postings_by_account.get(transfer.from_account_id)
+    destination_posting = postings_by_account.get(transfer.to_account_id)
+    if source_posting is None and destination_posting is None:
+        source_posting = previous_source_posting
+        destination_posting = previous_destination_posting
+    elif source_posting is None:
+        source_posting = next(
+            posting for posting in postings if posting.pk != destination_posting.pk
+        )
+    elif destination_posting is None:
+        destination_posting = next(
+            posting for posting in postings if posting.pk != source_posting.pk
+        )
+
+    updated_at = timezone.now()
+    source_posting.account = transfer.from_account
+    source_posting.date = transfer.date
+    source_posting.occurred_at = transfer.occurred_at
+    source_posting.signed_amount_cents = _source_signed_amount(
+        transfer.amount_cents,
+        transfer.from_account,
+    )
+    source_posting.updated_at = updated_at
+
+    destination_posting.account = transfer.to_account
+    destination_posting.date = transfer.date
+    destination_posting.occurred_at = transfer.occurred_at
+    destination_posting.signed_amount_cents = _destination_signed_amount(
+        transfer.amount_cents,
+        transfer.to_account,
+    )
+    destination_posting.updated_at = updated_at
+
+    Transaction.objects.bulk_update(
+        [source_posting, destination_posting],
+        ["account", "date", "occurred_at", "signed_amount_cents", "updated_at"],
     )
 
     return transfer

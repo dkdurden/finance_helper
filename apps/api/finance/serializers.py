@@ -3,7 +3,7 @@ from django.db.models import Sum
 from rest_framework import serializers
 
 from .models import Account, Category, Product, Receipt, ReceiptItem, Transaction, Transfer
-from .services import create_transfer
+from .services import create_transfer, update_transfer
 
 User = get_user_model()
 
@@ -233,6 +233,9 @@ class TransferSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return create_transfer(**validated_data)
+
+    def update(self, instance, validated_data):
+        return update_transfer(instance.pk, **validated_data)
 
 
 TRANSFER_POSTING_MUTATION_ERROR = (

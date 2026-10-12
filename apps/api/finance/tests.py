@@ -915,7 +915,131 @@ class TransferApiTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_update_transfer_is_not_available(self):
+    def test_update_transfer_updates_header_and_postings(self):
+        create_response = self.client.post(
+            reverse("transfer-list"),
+            {
+                "date": "2026-03-05",
+                "amount_cents": 5000,
+                "from_account": self.from_account.id,
+                "to_account": self.to_account.id,
+                "note": "Original note",
+            },
+            format="json",
+        )
+        transfer_id = create_response.data["id"]
+
+        response = self.client.patch(
+            reverse("transfer-detail", args=[transfer_id]),
+            {
+                "date": "2026-03-06",
+                "occurred_at": "2026-03-06T16:45:00Z",
+                "amount_cents": 7500,
+                "note": "Updated note",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        transfer = Transfer.objects.get(id=transfer_id)
+        self.assertEqual(str(transfer.date), "2026-03-06")
+        self.assertEqual(transfer.amount_cents, 7500)
+        self.assertEqual(transfer.note, "Updated note")
+        postings = {
+            posting.account_id: posting
+            for posting in transfer.transactions.all()
+        }
+        self.assertEqual(
+            postings[self.from_account.id].signed_amount_cents,
+            -7500,
+        )
+        self.assertEqual(
+            postings[self.to_account.id].signed_amount_cents,
+            7500,
+        )
+        for posting in postings.values():
+            self.assertEqual(str(posting.date), "2026-03-06")
+            self.assertEqual(
+                posting.occurred_at.isoformat().replace("+00:00", "Z"),
+                "2026-03-06T16:45:00Z",
+            )
+
+    def test_update_transfer_recalculates_signs_for_changed_account(self):
+        liability_account = Account.objects.create(
+            name="Transfer Liability",
+            account_type=Account.AccountType.CREDIT_CARD,
+            is_liability=True,
+            opening_balance_cents=0,
+            opening_balance_date="2026-01-01T00:00:00Z",
+        )
+        create_response = self.client.post(
+            reverse("transfer-list"),
+            {
+                "date": "2026-03-05",
+                "amount_cents": 5000,
+                "from_account": self.from_account.id,
+                "to_account": self.to_account.id,
+            },
+            format="json",
+        )
+        transfer_id = create_response.data["id"]
+
+        response = self.client.patch(
+            reverse("transfer-detail", args=[transfer_id]),
+            {"to_account": liability_account.id},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        postings = {
+            posting.account_id: posting.signed_amount_cents
+            for posting in Transaction.objects.filter(transfer_id=transfer_id)
+        }
+        self.assertEqual(
+            postings,
+            {
+                self.from_account.id: -5000,
+                liability_account.id: -5000,
+            },
+        )
+
+    def test_update_transfer_can_reverse_source_and_destination(self):
+        create_response = self.client.post(
+            reverse("transfer-list"),
+            {
+                "date": "2026-03-05",
+                "amount_cents": 5000,
+                "from_account": self.from_account.id,
+                "to_account": self.to_account.id,
+            },
+            format="json",
+        )
+        transfer_id = create_response.data["id"]
+        posting_ids = {
+            posting.account_id: posting.id
+            for posting in Transaction.objects.filter(transfer_id=transfer_id)
+        }
+
+        response = self.client.patch(
+            reverse("transfer-detail", args=[transfer_id]),
+            {
+                "from_account": self.to_account.id,
+                "to_account": self.from_account.id,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        postings = {
+            posting.account_id: posting
+            for posting in Transaction.objects.filter(transfer_id=transfer_id)
+        }
+        self.assertEqual(postings[self.to_account.id].signed_amount_cents, -5000)
+        self.assertEqual(postings[self.from_account.id].signed_amount_cents, 5000)
+        self.assertEqual(postings[self.to_account.id].id, posting_ids[self.to_account.id])
+        self.assertEqual(postings[self.from_account.id].id, posting_ids[self.from_account.id])
+
+    def test_update_transfer_rejects_malformed_existing_postings(self):
         transfer = Transfer.objects.create(
             date="2026-03-05",
             amount_cents=5000,
@@ -929,8 +1053,68 @@ class TransferApiTests(APITestCase):
             format="json",
         )
 
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
         transfer.refresh_from_db()
+        self.assertEqual(transfer.amount_cents, 5000)
+
+    def test_update_transfer_rolls_back_when_posting_update_fails(self):
+        create_response = self.client.post(
+            reverse("transfer-list"),
+            {
+                "date": "2026-03-05",
+                "amount_cents": 5000,
+                "from_account": self.from_account.id,
+                "to_account": self.to_account.id,
+            },
+            format="json",
+        )
+        transfer_id = create_response.data["id"]
+
+        with patch(
+            "finance.services.Transaction.objects.bulk_update",
+            side_effect=IntegrityError("simulated posting update failure"),
+        ):
+            with self.assertRaises(IntegrityError):
+                self.client.patch(
+                    reverse("transfer-detail", args=[transfer_id]),
+                    {"amount_cents": 7500},
+                    format="json",
+                )
+
+        transfer = Transfer.objects.get(id=transfer_id)
+        self.assertEqual(transfer.amount_cents, 5000)
+        self.assertEqual(
+            set(
+                transfer.transactions.values_list(
+                    "signed_amount_cents",
+                    flat=True,
+                )
+            ),
+            {-5000, 5000},
+        )
+
+    def test_update_transfer_requires_authentication(self):
+        create_response = self.client.post(
+            reverse("transfer-list"),
+            {
+                "date": "2026-03-05",
+                "amount_cents": 5000,
+                "from_account": self.from_account.id,
+                "to_account": self.to_account.id,
+            },
+            format="json",
+        )
+        transfer_id = create_response.data["id"]
+        self.client.force_authenticate(user=None)
+
+        response = self.client.patch(
+            reverse("transfer-detail", args=[transfer_id]),
+            {"amount_cents": 7500},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        transfer = Transfer.objects.get(id=transfer_id)
         self.assertEqual(transfer.amount_cents, 5000)
 
     def test_delete_transfer_removes_header_and_both_postings(self):

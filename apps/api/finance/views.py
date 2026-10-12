@@ -182,12 +182,22 @@ class ReceiptItemViewSet(viewsets.ModelViewSet):
 
 class TransferViewSet(
     mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
     mixins.DestroyModelMixin,
     viewsets.ReadOnlyModelViewSet,
 ):
     queryset = Transfer.objects.all()
     serializer_class = TransferSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def update(self, request, *args, **kwargs):
+        try:
+            return super().update(request, *args, **kwargs)
+        except TransferIntegrityError as error:
+            return Response(
+                {"detail": str(error)},
+                status=status.HTTP_409_CONFLICT,
+            )
 
     def destroy(self, request, *args, **kwargs):
         transfer = self.get_object()
