@@ -188,6 +188,11 @@ class Transaction(models.Model):
                 ),
                 name="transaction_category_type_match",
             ),
+            models.UniqueConstraint(
+                fields=["transfer", "account"],
+                condition=Q(transfer__isnull=False),
+                name="unique_transfer_posting_per_account",
+            ),
         ]
 
     def __str__(self):

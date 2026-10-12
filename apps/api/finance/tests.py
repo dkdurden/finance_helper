@@ -747,6 +747,34 @@ class TransferApiTests(APITestCase):
         self.assertFalse(Transfer.objects.exists())
         self.assertFalse(Transaction.objects.exists())
 
+    def test_transfer_rejects_duplicate_posting_for_same_account(self):
+        response = self.client.post(
+            reverse("transfer-list"),
+            {
+                "date": "2026-03-05",
+                "amount_cents": 10000,
+                "from_account": self.from_account.id,
+                "to_account": self.to_account.id,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        transfer = Transfer.objects.get(id=response.data["id"])
+
+        with self.assertRaises(IntegrityError):
+            with db_transaction.atomic():
+                Transaction.objects.create(
+                    date=transfer.date,
+                    signed_amount_cents=-transfer.amount_cents,
+                    transaction_type=Transaction.TransactionType.TRANSFER,
+                    category=None,
+                    account=self.from_account,
+                    transfer=transfer,
+                )
+
+        self.assertEqual(transfer.transactions.count(), 2)
+
     def test_create_transfer_requires_authentication(self):
         self.client.force_authenticate(user=None)
 
