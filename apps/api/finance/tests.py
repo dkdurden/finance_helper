@@ -227,6 +227,107 @@ class AccountApiTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_update_unused_account_can_change_liability_classification(self):
+        account = Account.objects.create(
+            name="Unused Asset",
+            is_liability=False,
+        )
+
+        response = self.client.patch(
+            reverse("account-detail", args=[account.id]),
+            {"is_liability": True},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        account.refresh_from_db()
+        self.assertTrue(account.is_liability)
+
+    def test_update_account_with_transaction_cannot_change_liability_classification(self):
+        account = Account.objects.create(
+            name="Used Asset",
+            is_liability=False,
+        )
+        category = Category.objects.create(name="Classification Test")
+        Transaction.objects.create(
+            date="2026-07-16",
+            signed_amount_cents=-100,
+            category=category,
+            account=account,
+        )
+
+        response = self.client.patch(
+            reverse("account-detail", args=[account.id]),
+            {"is_liability": True},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data["is_liability"][0],
+            "is_liability cannot be changed after the account has ledger activity.",
+        )
+        account.refresh_from_db()
+        self.assertFalse(account.is_liability)
+
+    def test_update_account_with_transfer_cannot_change_liability_classification(self):
+        for role in ("source", "destination"):
+            with self.subTest(role=role):
+                account = Account.objects.create(
+                    name=f"Transfer {role.title()}",
+                    is_liability=False,
+                )
+                other_account = Account.objects.create(
+                    name=f"Transfer Other {role.title()}"
+                )
+                Transfer.objects.create(
+                    date="2026-07-16",
+                    amount_cents=100,
+                    from_account=account if role == "source" else other_account,
+                    to_account=other_account if role == "source" else account,
+                )
+
+                response = self.client.patch(
+                    reverse("account-detail", args=[account.id]),
+                    {"is_liability": True},
+                    format="json",
+                )
+
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertEqual(
+                    response.data["is_liability"][0],
+                    "is_liability cannot be changed after the account has ledger activity.",
+                )
+                account.refresh_from_db()
+                self.assertFalse(account.is_liability)
+
+    def test_update_account_with_activity_allows_unchanged_liability_classification(self):
+        account = Account.objects.create(
+            name="Original Name",
+            is_liability=False,
+        )
+        category = Category.objects.create(name="Unchanged Classification Test")
+        Transaction.objects.create(
+            date="2026-07-16",
+            signed_amount_cents=-100,
+            category=category,
+            account=account,
+        )
+
+        response = self.client.patch(
+            reverse("account-detail", args=[account.id]),
+            {
+                "name": "Updated Name",
+                "is_liability": False,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        account.refresh_from_db()
+        self.assertEqual(account.name, "Updated Name")
+        self.assertFalse(account.is_liability)
+
     def test_delete_unused_account(self):
         account = Account.objects.create(name="Unused Account")
 

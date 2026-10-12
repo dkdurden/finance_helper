@@ -81,6 +81,28 @@ class AccountSerializer(serializers.ModelSerializer):
         )["total"]
         return obj.opening_balance_cents + (transaction_total or 0)
 
+    def validate(self, attrs):
+        if (
+            self.instance is not None
+            and "is_liability" in attrs
+            and attrs["is_liability"] != self.instance.is_liability
+            and (
+                self.instance.transactions.exists()
+                or self.instance.outgoing_transfers.exists()
+                or self.instance.incoming_transfers.exists()
+            )
+        ):
+            raise serializers.ValidationError(
+                {
+                    "is_liability": (
+                        "is_liability cannot be changed after the account has "
+                        "ledger activity."
+                    )
+                }
+            )
+
+        return attrs
+
 
 class BalanceAdjustmentSerializer(serializers.Serializer):
     target_balance_cents = serializers.IntegerField()
