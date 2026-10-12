@@ -538,6 +538,13 @@ class CategoryApiTests(APITestCase):
 
 
 class ProductApiTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email="product-tests@example.com",
+            password="strong-password-123",
+        )
+        self.client.force_authenticate(user=self.user)
+
     def test_create_product(self):
         payload = {
             "name": "Paper Towels",
@@ -560,9 +567,21 @@ class ProductApiTests(APITestCase):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["name"], "Dish Soap")
 
+    def test_list_products_requires_authentication(self):
+        self.client.force_authenticate(user=None)
+
+        response = self.client.get(reverse("product-list"))
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
 
 class ReceiptApiTests(APITestCase):
     def setUp(self):
+        self.user = User.objects.create_user(
+            email="receipt-tests@example.com",
+            password="strong-password-123",
+        )
+        self.client.force_authenticate(user=self.user)
         self.account = Account.objects.create(
             name="Receipt Checking",
             account_type=Account.AccountType.CHECKING,
@@ -613,9 +632,21 @@ class ReceiptApiTests(APITestCase):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["store"], "Costco")
 
+    def test_list_receipts_requires_authentication(self):
+        self.client.force_authenticate(user=None)
+
+        response = self.client.get(reverse("receipt-list"))
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
 
 class ReceiptItemApiTests(APITestCase):
     def setUp(self):
+        self.user = User.objects.create_user(
+            email="receipt-item-tests@example.com",
+            password="strong-password-123",
+        )
+        self.client.force_authenticate(user=self.user)
         self.account = Account.objects.create(
             name="ReceiptItem Checking",
             account_type=Account.AccountType.CHECKING,
@@ -700,6 +731,13 @@ class ReceiptItemApiTests(APITestCase):
         response = self.client.post(reverse("receipt-item-list"), payload, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_list_receipt_items_requires_authentication(self):
+        self.client.force_authenticate(user=None)
+
+        response = self.client.get(reverse("receipt-item-list"))
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
 class TransferApiTests(APITestCase):
