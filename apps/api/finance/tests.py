@@ -933,7 +933,34 @@ class TransferApiTests(APITestCase):
         transfer.refresh_from_db()
         self.assertEqual(transfer.amount_cents, 5000)
 
-    def test_delete_transfer_is_not_available(self):
+    def test_delete_transfer_removes_header_and_both_postings(self):
+        create_response = self.client.post(
+            reverse("transfer-list"),
+            {
+                "date": "2026-03-05",
+                "amount_cents": 5000,
+                "from_account": self.from_account.id,
+                "to_account": self.to_account.id,
+            },
+            format="json",
+        )
+        transfer_id = create_response.data["id"]
+        posting_ids = list(
+            Transaction.objects.filter(transfer_id=transfer_id).values_list(
+                "id",
+                flat=True,
+            )
+        )
+
+        response = self.client.delete(
+            reverse("transfer-detail", args=[transfer_id])
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Transfer.objects.filter(id=transfer_id).exists())
+        self.assertFalse(Transaction.objects.filter(id__in=posting_ids).exists())
+
+    def test_delete_transfer_rejects_header_without_postings(self):
         transfer = Transfer.objects.create(
             date="2026-03-05",
             amount_cents=5000,
@@ -945,8 +972,93 @@ class TransferApiTests(APITestCase):
             reverse("transfer-detail", args=[transfer.id])
         )
 
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertEqual(
+            response.data["detail"],
+            "Transfer postings are malformed and cannot be modified.",
+        )
         self.assertTrue(Transfer.objects.filter(id=transfer.id).exists())
+
+    def test_delete_transfer_rejects_malformed_posting(self):
+        create_response = self.client.post(
+            reverse("transfer-list"),
+            {
+                "date": "2026-03-05",
+                "amount_cents": 5000,
+                "from_account": self.from_account.id,
+                "to_account": self.to_account.id,
+            },
+            format="json",
+        )
+        transfer_id = create_response.data["id"]
+        Transaction.objects.filter(
+            transfer_id=transfer_id,
+            account=self.from_account,
+        ).update(signed_amount_cents=-2500)
+
+        response = self.client.delete(
+            reverse("transfer-detail", args=[transfer_id])
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertTrue(Transfer.objects.filter(id=transfer_id).exists())
+        self.assertEqual(
+            Transaction.objects.filter(transfer_id=transfer_id).count(),
+            2,
+        )
+
+    def test_delete_transfer_rolls_back_when_header_deletion_fails(self):
+        create_response = self.client.post(
+            reverse("transfer-list"),
+            {
+                "date": "2026-03-05",
+                "amount_cents": 5000,
+                "from_account": self.from_account.id,
+                "to_account": self.to_account.id,
+            },
+            format="json",
+        )
+        transfer_id = create_response.data["id"]
+
+        with patch(
+            "finance.services.Transfer.delete",
+            side_effect=IntegrityError("simulated header deletion failure"),
+        ):
+            with self.assertRaises(IntegrityError):
+                self.client.delete(
+                    reverse("transfer-detail", args=[transfer_id])
+                )
+
+        self.assertTrue(Transfer.objects.filter(id=transfer_id).exists())
+        self.assertEqual(
+            Transaction.objects.filter(transfer_id=transfer_id).count(),
+            2,
+        )
+
+    def test_delete_transfer_requires_authentication(self):
+        create_response = self.client.post(
+            reverse("transfer-list"),
+            {
+                "date": "2026-03-05",
+                "amount_cents": 5000,
+                "from_account": self.from_account.id,
+                "to_account": self.to_account.id,
+            },
+            format="json",
+        )
+        transfer_id = create_response.data["id"]
+        self.client.force_authenticate(user=None)
+
+        response = self.client.delete(
+            reverse("transfer-detail", args=[transfer_id])
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(Transfer.objects.filter(id=transfer_id).exists())
+        self.assertEqual(
+            Transaction.objects.filter(transfer_id=transfer_id).count(),
+            2,
+        )
 
     def test_transfer_amount_must_be_positive(self):
         payload = {

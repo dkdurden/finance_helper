@@ -26,6 +26,7 @@ from .serializers import (
     TransactionSerializer,
     TransferSerializer,
 )
+from .services import TransferIntegrityError, delete_transfer
 
 
 def user_payload(user):
@@ -179,10 +180,27 @@ class ReceiptItemViewSet(viewsets.ModelViewSet):
     serializer_class = ReceiptItemSerializer
 
 
-class TransferViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
+class TransferViewSet(
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.ReadOnlyModelViewSet,
+):
     queryset = Transfer.objects.all()
     serializer_class = TransferSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def destroy(self, request, *args, **kwargs):
+        transfer = self.get_object()
+
+        try:
+            delete_transfer(transfer.pk)
+        except TransferIntegrityError as error:
+            return Response(
+                {"detail": str(error)},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class TransactionViewSet(viewsets.ModelViewSet):
