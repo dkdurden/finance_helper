@@ -51,7 +51,7 @@ Examples: groceries, rent, gym, income, adjustments.
 
 ## transaction (money source of truth)
 
-Represents a single financial event.
+Represents one posting that affects a single account. Normal and adjustment events use one posting; a transfer event uses two linked postings.
 
 - id
 - date
@@ -59,7 +59,7 @@ Represents a single financial event.
 - transaction_type (`normal | adjustment | transfer`)
 - merchant (nullable string)
 - note (nullable string)
-- category_id (fk -> category)
+- category_id (nullable fk -> category; null only for transfer postings)
 - account_id (fk -> account)
 - transfer_id (nullable fk -> transfer)
 - created_at
@@ -74,6 +74,15 @@ For asset accounts:
 For liability accounts:
 - positive -> increases amount owed
 - negative -> decreases amount owed
+
+Transfer posting signs are derived from both account roles:
+
+- asset to asset: `-amount`, `+amount`
+- asset to liability: `-amount`, `-amount`
+- liability to asset: `+amount`, `+amount`
+- liability to liability: `+amount`, `-amount`
+
+Transfer postings are created, updated, and deleted only through the atomic Transfer service. Clients cannot mutate either posting independently.
 
 ---
 
@@ -149,7 +158,8 @@ Represents an item on a receipt.
 
 # Relationships
 
-- `account 1 -----< transaction >----- 1 category`
+- `account 1 -----< transaction >----- 0..1 category`
+- `transfer 1 ----- 2 transaction postings`
 - `transaction 1 ----- 0..1 receipt`
 - `receipt 1 -----< receipt_item >----- 1 product`
 
@@ -313,6 +323,8 @@ Env vars:
 - transactions CRUD
 - account balance view (derived)
 - adjustment flow
+- atomic transfer/payment lifecycle with two derived postings
+- one-row-per-event transaction feed for transfer presentation
 
 ### Milestone 4 - Receipt module UX
 - products CRUD + search/autocomplete

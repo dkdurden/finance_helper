@@ -4,6 +4,8 @@ This guide summarizes the DRF resource endpoints currently exposed in Milestone 
 
 Base path: `/api/`
 
+Finance resource endpoints require Django session authentication. Authentication bootstrap endpoints explicitly allow unauthenticated access where needed. Signup is disabled by default unless `DJANGO_ALLOW_SIGNUP` is enabled.
+
 ## Health
 
 - `GET /api/health/`
@@ -95,6 +97,10 @@ Validation rules:
 
 - `amount_cents` must be `> 0`.
 - `from_account` and `to_account` must differ.
+- Clients submit only header fields; posting accounts and signs are derived by the backend.
+- Create, update, and delete write the header and both transaction postings atomically.
+- Transfer postings have null category, merchant, and note fields.
+- Update and delete return `409 Conflict` if the existing posting pair is malformed.
 
 ## Transactions
 
@@ -119,10 +125,13 @@ Create normal transaction example:
 }
 ```
 
-Transfer-link validation rules:
+Transaction-type validation rules:
 
-- If `transaction_type` is `transfer`, `transfer` must be non-null.
-- If `transaction_type` is not `transfer`, `transfer` must be null.
+- Normal and adjustment transactions require a category and a null `transfer` field.
+- Transfer postings require a non-null `transfer` and a null category.
+- Clients cannot create, update, or delete transfer postings through the Transaction endpoint. Use the Transfer endpoint to mutate the logical event.
+
+`GET /api/transactions/` is currently posting-level. It includes both internal postings for a transfer and should not be used as the final one-row-per-event feed. A paginated logical event endpoint remains to be implemented.
 
 ## Receipts
 
