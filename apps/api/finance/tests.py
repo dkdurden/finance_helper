@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction as db_transaction
+from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -20,6 +21,7 @@ class HealthEndpointTests(APITestCase):
         self.assertEqual(response.json(), {"status": "ok"})
 
 
+@override_settings(ALLOW_SIGNUP=True)
 class SignUpApiTests(APITestCase):
     def test_signup_creates_user(self):
         payload = {
@@ -72,6 +74,22 @@ class SignUpApiTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("password", response.data)
+
+    @override_settings(ALLOW_SIGNUP=False)
+    def test_signup_rejects_requests_when_disabled(self):
+        response = self.client.post(
+            reverse("auth-signup"),
+            {
+                "name": "Dana Thomas",
+                "email": "dana@example.com",
+                "password": "strong-password-123",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data["detail"], "Signup is disabled.")
+        self.assertFalse(User.objects.exists())
 
 
 class AuthSessionApiTests(APITestCase):

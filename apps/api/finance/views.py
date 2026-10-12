@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import login, logout
 from django.db import transaction as db_transaction
 from django.db.models import BigIntegerField, ExpressionWrapper, F, Sum, Value
@@ -41,6 +42,12 @@ class SignUpView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
+        if not settings.ALLOW_SIGNUP:
+            return Response(
+                {"detail": "Signup is disabled."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         serializer = SignUpSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()

@@ -30,6 +30,13 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+ALLOW_SIGNUP = os.environ.get("DJANGO_ALLOW_SIGNUP", "false").lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+
 
 # Application definition
 
