@@ -6,7 +6,7 @@ from django.db.models.functions import Coalesce
 from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
-from rest_framework import permissions, status, viewsets
+from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -179,7 +179,7 @@ class ReceiptItemViewSet(viewsets.ModelViewSet):
     serializer_class = ReceiptItemSerializer
 
 
-class TransferViewSet(viewsets.ReadOnlyModelViewSet):
+class TransferViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
     queryset = Transfer.objects.all()
     serializer_class = TransferSerializer
     permission_classes = [permissions.IsAuthenticated]

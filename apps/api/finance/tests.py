@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction as db_transaction
 from django.urls import reverse
@@ -621,9 +623,10 @@ class TransferApiTests(APITestCase):
             opening_balance_date="2026-01-01T00:00:00Z",
         )
 
-    def test_create_transfer_is_not_available(self):
+    def test_create_transfer_creates_header_and_two_postings(self):
         payload = {
             "date": "2026-03-05",
+            "occurred_at": "2026-03-05T15:30:00Z",
             "amount_cents": 10000,
             "from_account": self.from_account.id,
             "to_account": self.to_account.id,
@@ -632,8 +635,135 @@ class TransferApiTests(APITestCase):
 
         response = self.client.post(reverse("transfer-list"), payload, format="json")
 
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        transfer = Transfer.objects.get(id=response.data["id"])
+        postings = list(transfer.transactions.order_by("account_id"))
+        postings_by_account = {posting.account_id: posting for posting in postings}
+
+        self.assertEqual(len(postings), 2)
+        self.assertEqual(
+            postings_by_account[self.from_account.id].signed_amount_cents,
+            -10000,
+        )
+        self.assertEqual(
+            postings_by_account[self.to_account.id].signed_amount_cents,
+            10000,
+        )
+        for posting in postings:
+            self.assertEqual(str(posting.date), payload["date"])
+            self.assertEqual(
+                posting.occurred_at.isoformat().replace("+00:00", "Z"),
+                payload["occurred_at"],
+            )
+            self.assertEqual(
+                posting.transaction_type,
+                Transaction.TransactionType.TRANSFER,
+            )
+            self.assertIsNone(posting.category)
+            self.assertIsNone(posting.merchant)
+            self.assertIsNone(posting.note)
+
+    def test_transfer_posting_signs_follow_account_roles(self):
+        cases = [
+            (False, False, -2500, 2500),
+            (False, True, -2500, -2500),
+            (True, False, 2500, 2500),
+            (True, True, 2500, -2500),
+        ]
+
+        for index, (
+            source_is_liability,
+            destination_is_liability,
+            expected_source,
+            expected_destination,
+        ) in enumerate(cases):
+            with self.subTest(
+                source_is_liability=source_is_liability,
+                destination_is_liability=destination_is_liability,
+            ):
+                source = Account.objects.create(
+                    name=f"Source {index}",
+                    account_type=Account.AccountType.OTHER,
+                    is_liability=source_is_liability,
+                    opening_balance_cents=0,
+                    opening_balance_date="2026-01-01T00:00:00Z",
+                )
+                destination = Account.objects.create(
+                    name=f"Destination {index}",
+                    account_type=Account.AccountType.OTHER,
+                    is_liability=destination_is_liability,
+                    opening_balance_cents=0,
+                    opening_balance_date="2026-01-01T00:00:00Z",
+                )
+
+                response = self.client.post(
+                    reverse("transfer-list"),
+                    {
+                        "date": "2026-03-05",
+                        "amount_cents": 2500,
+                        "from_account": source.id,
+                        "to_account": destination.id,
+                    },
+                    format="json",
+                )
+
+                self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+                postings = {
+                    posting.account_id: posting.signed_amount_cents
+                    for posting in Transaction.objects.filter(
+                        transfer_id=response.data["id"]
+                    )
+                }
+                self.assertEqual(postings[source.id], expected_source)
+                self.assertEqual(postings[destination.id], expected_destination)
+
+    def test_create_transfer_rolls_back_when_a_posting_fails(self):
+        original_create = Transaction.objects.create
+        call_count = 0
+
+        def fail_second_posting(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 2:
+                raise IntegrityError("simulated posting failure")
+            return original_create(*args, **kwargs)
+
+        with patch(
+            "finance.services.Transaction.objects.create",
+            side_effect=fail_second_posting,
+        ):
+            with self.assertRaises(IntegrityError):
+                self.client.post(
+                    reverse("transfer-list"),
+                    {
+                        "date": "2026-03-05",
+                        "amount_cents": 10000,
+                        "from_account": self.from_account.id,
+                        "to_account": self.to_account.id,
+                    },
+                    format="json",
+                )
+
         self.assertFalse(Transfer.objects.exists())
+        self.assertFalse(Transaction.objects.exists())
+
+    def test_create_transfer_requires_authentication(self):
+        self.client.force_authenticate(user=None)
+
+        response = self.client.post(
+            reverse("transfer-list"),
+            {
+                "date": "2026-03-05",
+                "amount_cents": 10000,
+                "from_account": self.from_account.id,
+                "to_account": self.to_account.id,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(Transfer.objects.exists())
+        self.assertFalse(Transaction.objects.exists())
 
     def test_list_transfers(self):
         Transfer.objects.create(
