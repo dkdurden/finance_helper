@@ -87,6 +87,7 @@ export function TransactionCreateControl({
   const [toAccountId, setToAccountId] = useState<number | null>(null);
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [amount, setAmount] = useState("");
+  const [date, setDate] = useState(getLocalDate);
   const [direction, setDirection] = useState<TransactionDirection>("decrease");
   const [categoryPending, setCategoryPending] = useState(false);
   const [categories, setCategories] = useState(initialCategories);
@@ -167,6 +168,11 @@ export function TransactionCreateControl({
       return;
     }
 
+    if (!date) {
+      setErrorMessage("Select a date.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -190,14 +196,14 @@ export function TransactionCreateControl({
             entryType === "transfer"
               ? {
                   amount_cents: signedAmountCents,
-                  date: getLocalDate(),
+                  date,
                   from_account: accountId,
                   to_account: toAccountId,
                 }
               : {
                   account: accountId,
                   category: categoryId,
-                  date: getLocalDate(),
+                  date,
                   signed_amount_cents: signedAmountCents,
                   transaction_type: "normal",
                 },
@@ -231,6 +237,7 @@ export function TransactionCreateControl({
       setToAccountId(null);
       setCategoryId(null);
       setAmount("");
+      setDate(getLocalDate());
       setDirection("decrease");
       router.refresh();
       requestAnimationFrame(() => {
@@ -325,6 +332,16 @@ export function TransactionCreateControl({
                     setEntryType(event.target.value as EntryType);
                     setErrorMessage(null);
                   }}
+                />
+
+                <InputField
+                  disabled={categoryPending || isSubmitting}
+                  helperText=""
+                  label="Date"
+                  required
+                  type="date"
+                  value={date}
+                  onChange={(event) => setDate(event.target.value)}
                 />
 
                 <SelectField
