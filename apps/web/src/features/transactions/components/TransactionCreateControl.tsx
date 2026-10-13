@@ -89,6 +89,7 @@ export function TransactionCreateControl({
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(getLocalDate);
   const [direction, setDirection] = useState<TransactionDirection>("decrease");
+  const [merchant, setMerchant] = useState("");
   const [categoryPending, setCategoryPending] = useState(false);
   const [categories, setCategories] = useState(initialCategories);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -204,6 +205,7 @@ export function TransactionCreateControl({
                   account: accountId,
                   category: categoryId,
                   date,
+                  merchant: merchant.trim() || null,
                   signed_amount_cents: signedAmountCents,
                   transaction_type: "normal",
                 },
@@ -239,6 +241,7 @@ export function TransactionCreateControl({
       setAmount("");
       setDate(getLocalDate());
       setDirection("decrease");
+      setMerchant("");
       router.refresh();
       requestAnimationFrame(() => {
         triggerWrapRef.current?.querySelector("button")?.focus();
@@ -412,6 +415,15 @@ export function TransactionCreateControl({
                   </>
                 ) : (
                   <>
+                    <InputField
+                      disabled={categoryPending || isSubmitting}
+                      helperText="Optional. Used as the transaction name in the ledger."
+                      label="Merchant"
+                      maxLength={255}
+                      value={merchant}
+                      onChange={(event) => setMerchant(event.target.value)}
+                    />
+
                     <TransactionCategoryField
                       categories={categories}
                       disabled={categoryPending || isSubmitting}
