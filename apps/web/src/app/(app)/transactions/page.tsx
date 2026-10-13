@@ -77,6 +77,7 @@ const ledgerEventPageSize = 20;
 async function getTransactions(
   page: number,
   search: string,
+  sort: string,
 ): Promise<TransactionLoadResult> {
   try {
     const cookieStore = await cookies();
@@ -84,6 +85,10 @@ async function getTransactions(
 
     if (search) {
       query.set("search", search);
+    }
+
+    if (sort !== "latest") {
+      query.set("sort", sort);
     }
 
     const response = await fetch(backendUrl(`/api/ledger-events/?${query}`), {
@@ -225,6 +230,7 @@ const sortOptions = [
   { label: "Highest", value: "highest" },
   { label: "Lowest", value: "lowest" },
 ];
+const sortValues = new Set(sortOptions.map((option) => option.value));
 
 const categoryOptions = [
   { label: "All Transactions", value: "all" },
@@ -244,6 +250,7 @@ type TransactionsPageProps = {
   searchParams: Promise<{
     page?: string | string[];
     search?: string | string[];
+    sort?: string | string[];
   }>;
 };
 
@@ -251,11 +258,14 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
   const resolvedSearchParams = await searchParams;
   const rawPage = resolvedSearchParams.page;
   const rawSearch = resolvedSearchParams.search;
+  const rawSort = resolvedSearchParams.sort;
   const parsedPage = typeof rawPage === "string" ? Number(rawPage) : 1;
   const currentPage = Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
   const search = typeof rawSearch === "string" ? rawSearch.trim() : "";
+  const sort =
+    typeof rawSort === "string" && sortValues.has(rawSort) ? rawSort : "latest";
   const [{ count, data: transactions, error }, formOptions] = await Promise.all([
-    getTransactions(currentPage, search),
+    getTransactions(currentPage, search, sort),
     getTransactionFormOptions(),
   ]);
   const totalPages = Math.ceil(count / ledgerEventPageSize);
@@ -273,6 +283,7 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
       <section className={styles.panel} aria-label="Transactions list and controls">
         <div className={styles.toolbar} aria-label="Transaction controls">
           <form className={styles.searchField} action="/transactions" method="get">
+            {sort !== "latest" ? <input name="sort" type="hidden" value={sort} /> : null}
             <label className={styles.visuallyHidden} htmlFor="transaction-search">
               Search transactions
             </label>
@@ -290,7 +301,12 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
           <div className={styles.filters}>
             <div className={styles.filterControl}>
               <span className={styles.filterLabel}>Sort by</span>
-              <SortDropdown ariaLabel="Sort transactions" options={sortOptions} />
+              <SortDropdown
+                ariaLabel="Sort transactions"
+                options={sortOptions}
+                queryParam="sort"
+                value={sort}
+              />
             </div>
 
             <div className={styles.filterControl}>

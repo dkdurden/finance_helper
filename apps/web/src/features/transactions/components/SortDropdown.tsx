@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import styles from "./SortDropdown.module.css";
 
@@ -12,14 +13,53 @@ type SortDropdownProps = {
   ariaLabel: string;
   minWidth?: "compact" | "wide";
   options: DropdownOption[];
+  queryParam?: string;
+  value?: string;
 };
 
-export function SortDropdown({ ariaLabel, minWidth = "compact", options }: SortDropdownProps) {
+export function SortDropdown({
+  ariaLabel,
+  minWidth = "compact",
+  options,
+  queryParam,
+  value,
+}: SortDropdownProps) {
+  const pathname = usePathname();
+  const router = useRouter();
   const listboxId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
-  const [selectedValue, setSelectedValue] = useState(options[0]?.value ?? "");
+  const [internalValue, setInternalValue] = useState(options[0]?.value ?? "");
+  const selectedValue = value ?? internalValue;
   const selectedOption = options.find((option) => option.value === selectedValue) ?? options[0];
+
+  function handleSelection(nextValue: string) {
+    if (nextValue === selectedValue) {
+      setOpen(false);
+      return;
+    }
+
+    if (value === undefined) {
+      setInternalValue(nextValue);
+    }
+
+    if (queryParam) {
+      const nextSearchParams = new URLSearchParams(window.location.search);
+      const defaultValue = options[0]?.value;
+
+      if (nextValue === defaultValue) {
+        nextSearchParams.delete(queryParam);
+      } else {
+        nextSearchParams.set(queryParam, nextValue);
+      }
+
+      nextSearchParams.delete("page");
+      const query = nextSearchParams.toString();
+      router.push(query ? `${pathname}?${query}` : pathname);
+    }
+
+    setOpen(false);
+  }
 
   useEffect(() => {
     if (!open) {
@@ -66,10 +106,7 @@ export function SortDropdown({ ariaLabel, minWidth = "compact", options }: SortD
               type="button"
               role="option"
               aria-selected={option.value === selectedValue}
-              onClick={() => {
-                setSelectedValue(option.value);
-                setOpen(false);
-              }}
+              onClick={() => handleSelection(option.value)}
             >
               {option.label}
             </button>
