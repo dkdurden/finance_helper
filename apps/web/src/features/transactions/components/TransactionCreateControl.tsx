@@ -12,6 +12,7 @@ import {
   type FormEvent,
 } from "react";
 import { Button } from "@/components/button/Button";
+import { InputField } from "@/components/input/InputField";
 import { SelectField, type SelectOption } from "@/components/input/SelectField";
 import modalStyles from "@/features/accounts/components/AccountCreateControl.module.css";
 import {
@@ -37,27 +38,29 @@ type TransactionCreateControlProps = {
   optionsError?: string | null;
 };
 
-function getErrorMessage(value: unknown): string {
+type EntryType = "transaction" | "transfer";
+
+function getErrorMessage(value: unknown, fallback: string): string {
   if (typeof value === "string") {
     return value;
   }
 
   if (Array.isArray(value)) {
     const message = value.find((item) => typeof item === "string");
-    return typeof message === "string" ? message : "Unable to add the transaction.";
+    return typeof message === "string" ? message : fallback;
   }
 
   if (value && typeof value === "object") {
     for (const field of Object.values(value)) {
-      const message = getErrorMessage(field);
+      const message = getErrorMessage(field, fallback);
 
-      if (message !== "Unable to add the transaction.") {
+      if (message !== fallback) {
         return message;
       }
     }
   }
 
-  return "Unable to add the transaction.";
+  return fallback;
 }
 
 function getLocalDate() {
@@ -79,7 +82,9 @@ export function TransactionCreateControl({
   const accountSelectId = useId();
   const triggerWrapRef = useRef<HTMLDivElement>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [entryType, setEntryType] = useState<EntryType>("transaction");
   const [accountId, setAccountId] = useState<number | null>(null);
+  const [toAccountId, setToAccountId] = useState<number | null>(null);
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [amount, setAmount] = useState("");
   const [direction, setDirection] = useState<TransactionDirection>("decrease");
@@ -99,6 +104,21 @@ export function TransactionCreateControl({
       })),
     [accounts],
   );
+  const entryTypeOptions = useMemo<SelectOption[]>(
+    () => [
+      {
+        color: "var(--color-green)",
+        label: "Transaction",
+        value: "transaction",
+      },
+      {
+        color: "var(--color-cyan)",
+        label: "Transfer",
+        value: "transfer",
+      },
+    ],
+    [],
+  );
 
   const closeModal = useCallback(() => {
     if (categoryPending || isSubmitting) {
@@ -115,15 +135,30 @@ export function TransactionCreateControl({
     event.preventDefault();
     setErrorMessage(null);
 
-    const signedAmountCents = getSignedAmountCents(amount, direction);
+    const signedAmountCents = getSignedAmountCents(
+      amount,
+      entryType === "transfer" ? "increase" : direction,
+    );
 
     if (accountId === null) {
-      setErrorMessage("Select an account.");
+      setErrorMessage(
+        entryType === "transfer" ? "Select a source account." : "Select an account.",
+      );
       return;
     }
 
-    if (categoryId === null) {
+    if (entryType === "transaction" && categoryId === null) {
       setErrorMessage("Select a category.");
+      return;
+    }
+
+    if (entryType === "transfer" && toAccountId === null) {
+      setErrorMessage("Select a destination account.");
+      return;
+    }
+
+    if (entryType === "transfer" && accountId === toAccountId) {
+      setErrorMessage("Choose two different accounts for the transfer.");
       return;
     }
 
@@ -144,19 +179,31 @@ export function TransactionCreateControl({
         throw new Error("Unable to initialize transaction security.");
       }
 
-      const response = await fetch("/api/transactions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        entryType === "transfer" ? "/api/transfers" : "/api/transactions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(
+            entryType === "transfer"
+              ? {
+                  amount_cents: signedAmountCents,
+                  date: getLocalDate(),
+                  from_account: accountId,
+                  to_account: toAccountId,
+                }
+              : {
+                  account: accountId,
+                  category: categoryId,
+                  date: getLocalDate(),
+                  signed_amount_cents: signedAmountCents,
+                  transaction_type: "normal",
+                },
+          ),
         },
-        body: JSON.stringify({
-          account: accountId,
-          category: categoryId,
-          date: getLocalDate(),
-          signed_amount_cents: signedAmountCents,
-          transaction_type: "normal",
-        }),
-      });
+      );
 
       let responseData: unknown = null;
 
@@ -167,12 +214,21 @@ export function TransactionCreateControl({
       }
 
       if (!response.ok) {
-        setErrorMessage(getErrorMessage(responseData));
+        setErrorMessage(
+          getErrorMessage(
+            responseData,
+            entryType === "transfer"
+              ? "Unable to add the transfer."
+              : "Unable to add the transaction.",
+          ),
+        );
         return;
       }
 
       setModalOpen(false);
+      setEntryType("transaction");
       setAccountId(null);
+      setToAccountId(null);
       setCategoryId(null);
       setAmount("");
       setDirection("decrease");
@@ -182,7 +238,11 @@ export function TransactionCreateControl({
       });
     } catch (error) {
       setErrorMessage(
-        error instanceof Error ? error.message : "Unable to add the transaction.",
+        error instanceof Error
+          ? error.message
+          : entryType === "transfer"
+            ? "Unable to add the transfer."
+            : "Unable to add the transaction.",
       );
     } finally {
       setIsSubmitting(false);
@@ -250,16 +310,29 @@ export function TransactionCreateControl({
 
             <form className={styles.content} onSubmit={handleSubmit}>
               <p className={modalStyles.description} id={descriptionId}>
-                Choose an account, category, and amount for this transaction.
+                {entryType === "transfer"
+                  ? "Choose the source, destination, and amount for this transfer."
+                  : "Choose an account, category, and amount for this transaction."}
               </p>
 
               <div className={styles.controls}>
+                <SelectField
+                  helperText=""
+                  label="Entry type"
+                  options={entryTypeOptions}
+                  value={entryType}
+                  onChange={(event) => {
+                    setEntryType(event.target.value as EntryType);
+                    setErrorMessage(null);
+                  }}
+                />
+
                 <SelectField
                   className={styles.accountField}
                   disabled={categoryPending || isSubmitting || accounts.length === 0}
                   helperText=""
                   id={accountSelectId}
-                  label="Account"
+                  label={entryType === "transfer" ? "From account" : "Account"}
                   noneLabel={accounts.length === 0 ? "Add an account first" : "Select an account"}
                   options={accountOptions}
                   placeholder={accounts.length === 0 ? "Add an account first" : "Select an account"}
@@ -271,29 +344,78 @@ export function TransactionCreateControl({
                     );
 
                     setAccountId(nextAccount?.id ?? null);
+                    if (entryType === "transfer" && nextAccount?.id === toAccountId) {
+                      setToAccountId(null);
+                    }
                     setDirection(nextAccount?.isLiability ? "increase" : "decrease");
                   }}
                 />
 
-                <TransactionCategoryField
-                  categories={categories}
-                  disabled={categoryPending || isSubmitting}
-                  value={categoryId}
-                  onCategoryCreated={(category) => {
-                    setCategories((current) => [...current, category]);
-                  }}
-                  onPendingChange={setCategoryPending}
-                  onValueChange={setCategoryId}
-                />
+                {entryType === "transfer" ? (
+                  <>
+                    <SelectField
+                      disabled={isSubmitting || accounts.length < 2}
+                      helperText=""
+                      label="To account"
+                      noneLabel={
+                        accounts.length < 2
+                          ? "Add another account first"
+                          : "Select an account"
+                      }
+                      options={accountOptions.filter(
+                        (account) => account.value !== String(accountId),
+                      )}
+                      placeholder={
+                        accounts.length < 2
+                          ? "Add another account first"
+                          : "Select an account"
+                      }
+                      required
+                      value={toAccountId === null ? "" : String(toAccountId)}
+                      onChange={(event) => {
+                        const nextAccountId = Number(event.target.value);
+                        setToAccountId(
+                          accounts.some((account) => account.id === nextAccountId)
+                            ? nextAccountId
+                            : null,
+                        );
+                      }}
+                    />
 
-                <TransactionAmountField
-                  account={selectedAccount}
-                  amount={amount}
-                  direction={direction}
-                  disabled={categoryPending || isSubmitting}
-                  onAmountChange={setAmount}
-                  onDirectionChange={setDirection}
-                />
+                    <InputField
+                      disabled={isSubmitting}
+                      helperText="Enter a positive amount with up to two decimal places."
+                      inputMode="decimal"
+                      label="Amount"
+                      prefix="$"
+                      required
+                      value={amount}
+                      onChange={(event) => setAmount(event.target.value)}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <TransactionCategoryField
+                      categories={categories}
+                      disabled={categoryPending || isSubmitting}
+                      value={categoryId}
+                      onCategoryCreated={(category) => {
+                        setCategories((current) => [...current, category]);
+                      }}
+                      onPendingChange={setCategoryPending}
+                      onValueChange={setCategoryId}
+                    />
+
+                    <TransactionAmountField
+                      account={selectedAccount}
+                      amount={amount}
+                      direction={direction}
+                      disabled={categoryPending || isSubmitting}
+                      onAmountChange={setAmount}
+                      onDirectionChange={setDirection}
+                    />
+                  </>
+                )}
               </div>
 
               {optionsError ? (
@@ -313,11 +435,17 @@ export function TransactionCreateControl({
                 disabled={
                   categoryPending ||
                   isSubmitting ||
-                  accounts.length === 0 ||
+                  accounts.length < (entryType === "transfer" ? 2 : 1) ||
                   optionsError !== null
                 }
               >
-                {isSubmitting ? "Adding Transaction..." : "Add Transaction"}
+                {isSubmitting
+                  ? entryType === "transfer"
+                    ? "Adding Transfer..."
+                    : "Adding Transaction..."
+                  : entryType === "transfer"
+                    ? "Add Transfer"
+                    : "Add Transaction"}
               </Button>
             </form>
           </div>
