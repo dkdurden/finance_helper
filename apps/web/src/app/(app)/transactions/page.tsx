@@ -8,20 +8,28 @@ import { TransactionEditControl } from "@/features/transactions/components/Trans
 import { backendUrl } from "@/lib/backendUrl";
 import styles from "./page.module.css";
 
-type TransactionApiRecord = {
+type LedgerEventApiRecord = {
+  event_type: "transaction" | "transfer";
   id: number;
   date: string;
-  signed_amount_cents: number;
+  amount_cents: number;
   transaction_type: "normal" | "adjustment" | "transfer";
   merchant: string | null;
-  account: number;
-  category: number;
-  category_name: string;
+  account_id: number | null;
+  account_name: string | null;
+  category_id: number | null;
+  category_name: string | null;
+  from_account_name: string | null;
+  to_account_name: string | null;
 };
 
 type TransactionLoadResult = {
-  data: TransactionApiRecord[];
+  data: LedgerEventApiRecord[];
   error: string | null;
+};
+
+type LedgerEventPageApiResponse = {
+  results: LedgerEventApiRecord[];
 };
 
 type AccountOptionApiRecord = {
@@ -57,7 +65,7 @@ const dateFormatter = new Intl.DateTimeFormat("en-GB", {
 async function getTransactions(): Promise<TransactionLoadResult> {
   try {
     const cookieStore = await cookies();
-    const response = await fetch(backendUrl("/api/transactions/"), {
+    const response = await fetch(backendUrl("/api/ledger-events/"), {
       headers: {
         cookie: cookieStore.toString(),
       },
@@ -70,11 +78,16 @@ async function getTransactions(): Promise<TransactionLoadResult> {
 
     const data: unknown = await response.json();
 
-    if (!Array.isArray(data)) {
+    if (
+      typeof data !== "object" ||
+      data === null ||
+      !("results" in data) ||
+      !Array.isArray(data.results)
+    ) {
       return { data: [], error: "The transaction service returned an unexpected response." };
     }
 
-    return { data: data as TransactionApiRecord[], error: null };
+    return { data: (data as LedgerEventPageApiResponse).results, error: null };
   } catch {
     return { data: [], error: "Unable to load transactions right now." };
   }
@@ -136,17 +149,21 @@ function formatDate(date: string) {
   return dateFormatter.format(new Date(date + "T00:00:00Z"));
 }
 
-function getTransactionName(transaction: TransactionApiRecord) {
+function getTransactionName(transaction: LedgerEventApiRecord) {
+  if (transaction.event_type === "transfer") {
+    if (transaction.from_account_name && transaction.to_account_name) {
+      return `${transaction.from_account_name} to ${transaction.to_account_name}`;
+    }
+
+    return "Transfer";
+  }
+
   if (transaction.merchant?.trim()) {
     return transaction.merchant.trim();
   }
 
   if (transaction.transaction_type === "adjustment") {
     return "Balance adjustment";
-  }
-
-  if (transaction.transaction_type === "transfer") {
-    return "Transfer";
   }
 
   return "Transaction";
@@ -263,7 +280,10 @@ export default async function TransactionsPage() {
               const name = getTransactionName(transaction);
 
               return (
-                <article className={styles.transactionRow} key={transaction.id}>
+                <article
+                  className={styles.transactionRow}
+                  key={`${transaction.event_type}-${transaction.id}`}
+                >
                   <div className={styles.recipientCell}>
                     <span className={styles.avatarFallback} aria-hidden="true">
                       {getInitials(name)}
@@ -271,31 +291,39 @@ export default async function TransactionsPage() {
                     <p className={styles.recipientName}>{name}</p>
                   </div>
 
-                  <p className={styles.categoryCell}>{transaction.category_name}</p>
+                  <p className={styles.categoryCell}>
+                    {transaction.event_type === "transfer"
+                      ? "Transfer"
+                      : transaction.category_name}
+                  </p>
                   <p className={styles.dateCell}>{formatDate(transaction.date)}</p>
                   <div className={styles.amountActionsCell}>
                     <p
                       className={[
                         styles.amountCell,
-                        transaction.signed_amount_cents > 0 ? styles.amountPositive : "",
+                        transaction.amount_cents > 0 ? styles.amountPositive : "",
                       ]
                         .filter(Boolean)
                         .join(" ")}
                     >
-                      {formatAmount(transaction.signed_amount_cents)}
+                      {formatAmount(transaction.amount_cents)}
                     </p>
-                    {transaction.transaction_type === "normal" ? (
+                    {transaction.event_type === "transaction" &&
+                    transaction.transaction_type === "normal" &&
+                    transaction.account_id !== null &&
+                    transaction.category_id !== null &&
+                    transaction.category_name !== null ? (
                       <TransactionEditControl
                         accounts={formOptions.accounts}
                         categories={formOptions.categories}
                         optionsError={formOptions.error}
                         transaction={{
-                          accountId: transaction.account,
-                          categoryId: transaction.category,
+                          accountId: transaction.account_id,
+                          categoryId: transaction.category_id,
                           categoryName: transaction.category_name,
                           id: transaction.id,
                           name,
-                          signedAmountCents: transaction.signed_amount_cents,
+                          signedAmountCents: transaction.amount_cents,
                         }}
                       />
                     ) : (
