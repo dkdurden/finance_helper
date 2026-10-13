@@ -33,6 +33,7 @@ export type EditableTransaction = {
   accountId: number;
   categoryId: number;
   categoryName: string;
+  date: string;
   id: number;
   merchant: string | null;
   name: string;
@@ -90,6 +91,7 @@ function TransactionEditModal({
   const accountSelectId = useId();
   const [accountId, setAccountId] = useState<number | null>(transaction.accountId);
   const [categoryId, setCategoryId] = useState<number | null>(transaction.categoryId);
+  const [date, setDate] = useState(transaction.date);
   const [amount, setAmount] = useState(() =>
     formatAmountForInput(transaction.signedAmountCents),
   );
@@ -160,6 +162,11 @@ function TransactionEditModal({
       return;
     }
 
+    if (!date) {
+      setErrorMessage("Select a date.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -180,6 +187,7 @@ function TransactionEditModal({
         body: JSON.stringify({
           account: accountId,
           category: categoryId,
+          date,
           merchant: merchant.trim() || null,
           signed_amount_cents: signedAmountCents,
         }),
@@ -249,11 +257,21 @@ function TransactionEditModal({
 
         <form className={formStyles.content} onSubmit={handleSubmit}>
           <p className={modalStyles.description} id={descriptionId}>
-            Update the merchant, account, category, and amount. The transaction
-            date and other details will stay unchanged.
+            Update the date, merchant, account, category, and amount. Other
+            transaction details will stay unchanged.
           </p>
 
           <div className={formStyles.controls}>
+            <InputField
+              disabled={categoryPending || isSubmitting}
+              helperText=""
+              label="Date"
+              required
+              type="date"
+              value={date}
+              onChange={(event) => setDate(event.target.value)}
+            />
+
             <InputField
               disabled={categoryPending || isSubmitting}
               helperText="Optional. Used as the transaction name in the ledger."
