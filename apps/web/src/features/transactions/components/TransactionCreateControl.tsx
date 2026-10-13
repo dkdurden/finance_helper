@@ -208,6 +208,7 @@ export function TransactionCreateControl({
                   merchant: merchant.trim() || null,
                   signed_amount_cents: signedAmountCents,
                   transaction_type: "normal",
+                  transfer: null,
                 },
           ),
         },
