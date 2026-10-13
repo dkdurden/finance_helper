@@ -5,6 +5,7 @@ import { Pagination } from "@/components/pagination/Pagination";
 import { SortDropdown } from "@/features/transactions/components/SortDropdown";
 import { TransactionCreateControl } from "@/features/transactions/components/TransactionCreateControl";
 import { TransactionEditControl } from "@/features/transactions/components/TransactionEditControl";
+import { TransferActionControl } from "@/features/transactions/components/TransferActionControl";
 import { backendUrl } from "@/lib/backendUrl";
 import styles from "./page.module.css";
 
@@ -360,6 +361,10 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
                           name,
                           signedAmountCents: transaction.amount_cents,
                         }}
+                      />
+                    ) : transaction.event_type === "transfer" ? (
+                      <TransferActionControl
+                        transfer={{ id: transaction.id, name }}
                       />
                     ) : (
                       <span className={styles.actionPlaceholder} aria-hidden="true" />
