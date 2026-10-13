@@ -74,10 +74,19 @@ const dateFormatter = new Intl.DateTimeFormat("en-GB", {
 
 const ledgerEventPageSize = 20;
 
-async function getTransactions(page: number): Promise<TransactionLoadResult> {
+async function getTransactions(
+  page: number,
+  search: string,
+): Promise<TransactionLoadResult> {
   try {
     const cookieStore = await cookies();
-    const response = await fetch(backendUrl(`/api/ledger-events/?page=${page}`), {
+    const query = new URLSearchParams({ page: String(page) });
+
+    if (search) {
+      query.set("search", search);
+    }
+
+    const response = await fetch(backendUrl(`/api/ledger-events/?${query}`), {
       headers: {
         cookie: cookieStore.toString(),
       },
@@ -232,15 +241,21 @@ const categoryOptions = [
 ];
 
 type TransactionsPageProps = {
-  searchParams: Promise<{ page?: string | string[] }>;
+  searchParams: Promise<{
+    page?: string | string[];
+    search?: string | string[];
+  }>;
 };
 
 export default async function TransactionsPage({ searchParams }: TransactionsPageProps) {
-  const rawPage = (await searchParams).page;
+  const resolvedSearchParams = await searchParams;
+  const rawPage = resolvedSearchParams.page;
+  const rawSearch = resolvedSearchParams.search;
   const parsedPage = typeof rawPage === "string" ? Number(rawPage) : 1;
   const currentPage = Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+  const search = typeof rawSearch === "string" ? rawSearch.trim() : "";
   const [{ count, data: transactions, error }, formOptions] = await Promise.all([
-    getTransactions(currentPage),
+    getTransactions(currentPage, search),
     getTransactionFormOptions(),
   ]);
   const totalPages = Math.ceil(count / ledgerEventPageSize);
@@ -257,15 +272,20 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
     >
       <section className={styles.panel} aria-label="Transactions list and controls">
         <div className={styles.toolbar} aria-label="Transaction controls">
-          <label className={styles.searchField}>
-            <span className={styles.visuallyHidden}>Search transaction</span>
+          <form className={styles.searchField} action="/transactions" method="get">
+            <label className={styles.visuallyHidden} htmlFor="transaction-search">
+              Search transactions
+            </label>
             <input
               className={styles.searchInput}
+              defaultValue={search}
+              id="transaction-search"
+              name="search"
               type="search"
               placeholder="Search transaction"
             />
             <span className={styles.searchIcon} aria-hidden="true" />
-          </label>
+          </form>
 
           <div className={styles.filters}>
             <div className={styles.filterControl}>
@@ -309,7 +329,9 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
               {error}
             </p>
           ) : transactions.length === 0 ? (
-            <p className={styles.stateMessage}>No transactions yet.</p>
+            <p className={styles.stateMessage}>
+              {search ? "No transactions match your search." : "No transactions yet."}
+            </p>
           ) : (
             transactions.map((transaction) => {
               const name = getTransactionName(transaction);
