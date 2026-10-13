@@ -1333,6 +1333,155 @@ class TransferApiTests(APITestCase):
         )
 
 
+class LedgerEventApiTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email="ledger-event-tests@example.com",
+            password="strong-password-123",
+        )
+        self.client.force_authenticate(user=self.user)
+        self.from_account = Account.objects.create(
+            name="Ledger Source",
+            account_type=Account.AccountType.CHECKING,
+            is_liability=False,
+            opening_balance_cents=0,
+            opening_balance_date="2026-01-01T00:00:00Z",
+        )
+        self.to_account = Account.objects.create(
+            name="Ledger Destination",
+            account_type=Account.AccountType.SAVINGS,
+            is_liability=False,
+            opening_balance_cents=0,
+            opening_balance_date="2026-01-01T00:00:00Z",
+        )
+        self.category = Category.objects.create(name="Ledger Events")
+
+    def test_list_ledger_events_returns_one_row_per_logical_event(self):
+        normal = Transaction.objects.create(
+            date="2026-03-04",
+            signed_amount_cents=-1200,
+            transaction_type=Transaction.TransactionType.NORMAL,
+            merchant="Market",
+            category=self.category,
+            account=self.from_account,
+        )
+        adjustment = Transaction.objects.create(
+            date="2026-03-05",
+            signed_amount_cents=300,
+            transaction_type=Transaction.TransactionType.ADJUSTMENT,
+            note="balance adjustment",
+            category=self.category,
+            account=self.from_account,
+        )
+        transfer_response = self.client.post(
+            reverse("transfer-list"),
+            {
+                "date": "2026-03-06",
+                "amount_cents": 5000,
+                "from_account": self.from_account.id,
+                "to_account": self.to_account.id,
+                "note": "Move cash",
+            },
+            format="json",
+        )
+        transfer_id = transfer_response.data["id"]
+
+        response = self.client.get(reverse("ledger-event-list"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 3)
+        self.assertEqual(len(response.data["results"]), 3)
+        self.assertEqual(Transaction.objects.count(), 4)
+
+        transfer_event, adjustment_event, normal_event = response.data["results"]
+        self.assertEqual(transfer_event["event_type"], "transfer")
+        self.assertEqual(transfer_event["id"], transfer_id)
+        self.assertEqual(transfer_event["transaction_type"], "transfer")
+        self.assertEqual(transfer_event["amount_cents"], 5000)
+        self.assertEqual(transfer_event["note"], "Move cash")
+        self.assertEqual(transfer_event["from_account_id"], self.from_account.id)
+        self.assertEqual(transfer_event["from_account_name"], self.from_account.name)
+        self.assertEqual(transfer_event["to_account_id"], self.to_account.id)
+        self.assertEqual(transfer_event["to_account_name"], self.to_account.name)
+        self.assertIsNone(transfer_event["category_id"])
+        self.assertIsNone(transfer_event["account_id"])
+
+        self.assertEqual(adjustment_event["event_type"], "transaction")
+        self.assertEqual(adjustment_event["id"], adjustment.id)
+        self.assertEqual(adjustment_event["transaction_type"], "adjustment")
+        self.assertEqual(adjustment_event["amount_cents"], 300)
+        self.assertEqual(adjustment_event["account_name"], self.from_account.name)
+
+        self.assertEqual(normal_event["event_type"], "transaction")
+        self.assertEqual(normal_event["id"], normal.id)
+        self.assertEqual(normal_event["transaction_type"], "normal")
+        self.assertEqual(normal_event["merchant"], "Market")
+        self.assertEqual(normal_event["category_name"], self.category.name)
+
+    def test_ledger_event_pagination_never_duplicates_transfer_postings(self):
+        for index in range(20):
+            Transaction.objects.create(
+                date="2026-03-05",
+                signed_amount_cents=100 + index,
+                transaction_type=Transaction.TransactionType.NORMAL,
+                category=self.category,
+                account=self.from_account,
+            )
+        transfer_response = self.client.post(
+            reverse("transfer-list"),
+            {
+                "date": "2026-03-05",
+                "amount_cents": 5000,
+                "from_account": self.from_account.id,
+                "to_account": self.to_account.id,
+            },
+            format="json",
+        )
+        transfer_id = transfer_response.data["id"]
+
+        first_page = self.client.get(reverse("ledger-event-list"))
+        second_page = self.client.get(reverse("ledger-event-list"), {"page": 2})
+
+        self.assertEqual(first_page.status_code, status.HTTP_200_OK)
+        self.assertEqual(second_page.status_code, status.HTTP_200_OK)
+        self.assertEqual(first_page.data["count"], 21)
+        self.assertEqual(second_page.data["count"], 21)
+        self.assertEqual(len(first_page.data["results"]), 20)
+        self.assertEqual(len(second_page.data["results"]), 1)
+
+        events = first_page.data["results"] + second_page.data["results"]
+        event_keys = {(event["event_type"], event["id"]) for event in events}
+        self.assertEqual(len(event_keys), 21)
+        self.assertEqual(
+            len(
+                [
+                    event
+                    for event in events
+                    if event["event_type"] == "transfer"
+                    and event["id"] == transfer_id
+                ]
+            ),
+            1,
+        )
+        self.assertEqual(
+            len(
+                [
+                event
+                for event in events
+                if event["event_type"] == "transfer"
+                ]
+            ),
+            1,
+        )
+
+    def test_list_ledger_events_requires_authentication(self):
+        self.client.force_authenticate(user=None)
+
+        response = self.client.get(reverse("ledger-event-list"))
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
 class TransactionApiTests(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(

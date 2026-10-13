@@ -1,7 +1,15 @@
 from django.conf import settings
 from django.contrib.auth import login, logout
 from django.db import transaction as db_transaction
-from django.db.models import BigIntegerField, ExpressionWrapper, F, Sum, Value
+from django.db.models import (
+    BigIntegerField,
+    CharField,
+    ExpressionWrapper,
+    F,
+    IntegerField,
+    Sum,
+    Value,
+)
 from django.db.models.deletion import ProtectedError
 from django.db.models.functions import Coalesce
 from django.http import JsonResponse
@@ -10,6 +18,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -18,6 +27,7 @@ from .serializers import (
     AccountSerializer,
     BalanceAdjustmentSerializer,
     CategorySerializer,
+    LedgerEventSerializer,
     LoginSerializer,
     ProductSerializer,
     ReceiptItemSerializer,
@@ -218,6 +228,96 @@ class TransferViewSet(
             )
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class LedgerEventPagination(PageNumberPagination):
+    page_size = 20
+
+
+class LedgerEventListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        event_fields = (
+            "event_type",
+            "event_id",
+            "event_date",
+            "event_occurred_at",
+            "event_created_at",
+            "event_amount_cents",
+            "event_transaction_type",
+            "event_merchant",
+            "event_note",
+            "event_category_id",
+            "event_category_name",
+            "event_account_id",
+            "event_account_name",
+            "event_from_account_id",
+            "event_from_account_name",
+            "event_to_account_id",
+            "event_to_account_name",
+        )
+        transaction_events = (
+            Transaction.objects.exclude(
+                transaction_type=Transaction.TransactionType.TRANSFER
+            )
+            .annotate(
+                event_type=Value("transaction", output_field=CharField()),
+                event_id=F("id"),
+                event_date=F("date"),
+                event_occurred_at=F("occurred_at"),
+                event_created_at=F("created_at"),
+                event_amount_cents=F("signed_amount_cents"),
+                event_transaction_type=F("transaction_type"),
+                event_merchant=F("merchant"),
+                event_note=F("note"),
+                event_category_id=F("category_id"),
+                event_category_name=F("category__name"),
+                event_account_id=F("account_id"),
+                event_account_name=F("account__name"),
+                event_from_account_id=Value(None, output_field=IntegerField()),
+                event_from_account_name=Value(None, output_field=CharField()),
+                event_to_account_id=Value(None, output_field=IntegerField()),
+                event_to_account_name=Value(None, output_field=CharField()),
+            )
+            .values(*event_fields)
+        )
+        transfer_events = (
+            Transfer.objects.annotate(
+                event_type=Value("transfer", output_field=CharField()),
+                event_id=F("id"),
+                event_date=F("date"),
+                event_occurred_at=F("occurred_at"),
+                event_created_at=F("created_at"),
+                event_amount_cents=F("amount_cents"),
+                event_transaction_type=Value(
+                    Transaction.TransactionType.TRANSFER,
+                    output_field=CharField(),
+                ),
+                event_merchant=Value(None, output_field=CharField()),
+                event_note=F("note"),
+                event_category_id=Value(None, output_field=IntegerField()),
+                event_category_name=Value(None, output_field=CharField()),
+                event_account_id=Value(None, output_field=IntegerField()),
+                event_account_name=Value(None, output_field=CharField()),
+                event_from_account_id=F("from_account_id"),
+                event_from_account_name=F("from_account__name"),
+                event_to_account_id=F("to_account_id"),
+                event_to_account_name=F("to_account__name"),
+            )
+            .values(*event_fields)
+        )
+        events = transaction_events.union(transfer_events, all=True).order_by(
+            "-event_date",
+            "-event_created_at",
+            "-event_type",
+            "-event_id",
+        )
+
+        paginator = LedgerEventPagination()
+        page = paginator.paginate_queryset(events, request, view=self)
+        serializer = LedgerEventSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 
 class TransactionViewSet(viewsets.ModelViewSet):

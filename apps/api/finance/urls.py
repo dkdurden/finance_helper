@@ -6,6 +6,7 @@ from .views import (
     CategoryViewSet,
     CsrfCookieView,
     CurrentUserView,
+    LedgerEventListView,
     LoginView,
     LogoutView,
     ProductViewSet,
@@ -33,5 +34,6 @@ urlpatterns = [
     path("auth/logout/", LogoutView.as_view(), name="auth-logout"),
     path("auth/me/", CurrentUserView.as_view(), name="auth-me"),
     path("auth/signup/", SignUpView.as_view(), name="auth-signup"),
+    path("ledger-events/", LedgerEventListView.as_view(), name="ledger-event-list"),
     path("", include(router.urls)),
 ]

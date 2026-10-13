@@ -238,6 +238,55 @@ class TransferSerializer(serializers.ModelSerializer):
         return update_transfer(instance.pk, **validated_data)
 
 
+class LedgerEventSerializer(serializers.Serializer):
+    event_type = serializers.ChoiceField(choices=["transaction", "transfer"])
+    id = serializers.IntegerField(source="event_id")
+    date = serializers.DateField(source="event_date")
+    occurred_at = serializers.DateTimeField(
+        source="event_occurred_at",
+        allow_null=True,
+    )
+    amount_cents = serializers.IntegerField(source="event_amount_cents")
+    transaction_type = serializers.ChoiceField(
+        source="event_transaction_type",
+        choices=Transaction.TransactionType.choices,
+    )
+    merchant = serializers.CharField(source="event_merchant", allow_null=True)
+    note = serializers.CharField(source="event_note", allow_null=True)
+    category_id = serializers.IntegerField(
+        source="event_category_id",
+        allow_null=True,
+    )
+    category_name = serializers.CharField(
+        source="event_category_name",
+        allow_null=True,
+    )
+    account_id = serializers.IntegerField(
+        source="event_account_id",
+        allow_null=True,
+    )
+    account_name = serializers.CharField(
+        source="event_account_name",
+        allow_null=True,
+    )
+    from_account_id = serializers.IntegerField(
+        source="event_from_account_id",
+        allow_null=True,
+    )
+    from_account_name = serializers.CharField(
+        source="event_from_account_name",
+        allow_null=True,
+    )
+    to_account_id = serializers.IntegerField(
+        source="event_to_account_id",
+        allow_null=True,
+    )
+    to_account_name = serializers.CharField(
+        source="event_to_account_name",
+        allow_null=True,
+    )
+
+
 TRANSFER_POSTING_MUTATION_ERROR = (
     "Transfer postings are managed through the transfer endpoint."
 )
