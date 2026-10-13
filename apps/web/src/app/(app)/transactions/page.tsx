@@ -409,6 +409,7 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
                           categoryId: transaction.category_id,
                           categoryName: transaction.category_name,
                           id: transaction.id,
+                          merchant: transaction.merchant,
                           name,
                           signedAmountCents: transaction.amount_cents,
                         }}

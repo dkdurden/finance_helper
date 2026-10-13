@@ -12,6 +12,7 @@ import {
   type FormEvent,
 } from "react";
 import { Button } from "@/components/button/Button";
+import { InputField } from "@/components/input/InputField";
 import { SelectField, type SelectOption } from "@/components/input/SelectField";
 import modalStyles from "@/features/accounts/components/AccountCreateControl.module.css";
 import {
@@ -33,6 +34,7 @@ export type EditableTransaction = {
   categoryId: number;
   categoryName: string;
   id: number;
+  merchant: string | null;
   name: string;
   signedAmountCents: number;
 };
@@ -91,6 +93,7 @@ function TransactionEditModal({
   const [amount, setAmount] = useState(() =>
     formatAmountForInput(transaction.signedAmountCents),
   );
+  const [merchant, setMerchant] = useState(transaction.merchant ?? "");
   const [direction, setDirection] = useState<TransactionDirection>(
     transaction.signedAmountCents > 0 ? "increase" : "decrease",
   );
@@ -177,6 +180,7 @@ function TransactionEditModal({
         body: JSON.stringify({
           account: accountId,
           category: categoryId,
+          merchant: merchant.trim() || null,
           signed_amount_cents: signedAmountCents,
         }),
       });
@@ -245,11 +249,20 @@ function TransactionEditModal({
 
         <form className={formStyles.content} onSubmit={handleSubmit}>
           <p className={modalStyles.description} id={descriptionId}>
-            Update the account, category, and amount. The transaction date and
-            other details will stay unchanged.
+            Update the merchant, account, category, and amount. The transaction
+            date and other details will stay unchanged.
           </p>
 
           <div className={formStyles.controls}>
+            <InputField
+              disabled={categoryPending || isSubmitting}
+              helperText="Optional. Used as the transaction name in the ledger."
+              label="Merchant"
+              maxLength={255}
+              value={merchant}
+              onChange={(event) => setMerchant(event.target.value)}
+            />
+
             <SelectField
               className={formStyles.accountField}
               disabled={categoryPending || isSubmitting || accounts.length === 0}
