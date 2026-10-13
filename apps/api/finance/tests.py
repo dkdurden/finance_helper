@@ -1701,6 +1701,60 @@ class LedgerEventApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["count"], 2)
 
+    def test_ledger_event_query_options_work_together_before_pagination(self):
+        matching_transactions = []
+        for index in range(21):
+            matching_transactions.append(
+                Transaction.objects.create(
+                    date="2026-03-04",
+                    signed_amount_cents=100 + index,
+                    transaction_type=Transaction.TransactionType.NORMAL,
+                    merchant=f"Combined Match {index}",
+                    category=self.category,
+                    account=self.from_account,
+                )
+            )
+
+        other_category = Category.objects.create(name="Other Combined Category")
+        Transaction.objects.create(
+            date="2026-03-04",
+            signed_amount_cents=50,
+            transaction_type=Transaction.TransactionType.NORMAL,
+            merchant="Combined Match Other Category",
+            category=other_category,
+            account=self.from_account,
+        )
+        self.client.post(
+            reverse("transfer-list"),
+            {
+                "date": "2026-03-04",
+                "amount_cents": 25,
+                "from_account": self.from_account.id,
+                "to_account": self.to_account.id,
+                "note": "Combined Match Transfer",
+            },
+            format="json",
+        )
+
+        response = self.client.get(
+            reverse("ledger-event-list"),
+            {
+                "category": self.category.id,
+                "page": 2,
+                "search": "combined match",
+                "sort": "lowest",
+            },
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 21)
+        self.assertEqual(len(response.data["results"]), 1)
+        self.assertEqual(response.data["results"][0]["event_type"], "transaction")
+        self.assertEqual(
+            response.data["results"][0]["id"],
+            matching_transactions[-1].id,
+        )
+
     def test_list_ledger_events_requires_authentication(self):
         self.client.force_authenticate(user=None)
 
