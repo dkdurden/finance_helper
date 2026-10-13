@@ -1474,6 +1474,83 @@ class LedgerEventApiTests(APITestCase):
             1,
         )
 
+    def test_ledger_event_search_matches_transaction_fields(self):
+        matching_transaction = Transaction.objects.create(
+            date="2026-03-04",
+            signed_amount_cents=-1200,
+            transaction_type=Transaction.TransactionType.NORMAL,
+            merchant="Neighborhood Market",
+            category=self.category,
+            account=self.from_account,
+        )
+        Transaction.objects.create(
+            date="2026-03-05",
+            signed_amount_cents=-800,
+            transaction_type=Transaction.TransactionType.NORMAL,
+            merchant="Coffee Shop",
+            category=self.category,
+            account=self.from_account,
+        )
+
+        response = self.client.get(
+            reverse("ledger-event-list"),
+            {"search": "market"},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["results"][0]["event_type"], "transaction")
+        self.assertEqual(response.data["results"][0]["id"], matching_transaction.id)
+
+    def test_ledger_event_search_matches_transfer_account_names(self):
+        transfer_response = self.client.post(
+            reverse("transfer-list"),
+            {
+                "date": "2026-03-06",
+                "amount_cents": 5000,
+                "from_account": self.from_account.id,
+                "to_account": self.to_account.id,
+            },
+            format="json",
+        )
+        Transaction.objects.create(
+            date="2026-03-05",
+            signed_amount_cents=-800,
+            transaction_type=Transaction.TransactionType.NORMAL,
+            merchant="Coffee Shop",
+            category=self.category,
+            account=self.from_account,
+        )
+
+        response = self.client.get(
+            reverse("ledger-event-list"),
+            {"search": "destination"},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["results"][0]["event_type"], "transfer")
+        self.assertEqual(response.data["results"][0]["id"], transfer_response.data["id"])
+
+    def test_ledger_event_search_returns_empty_page_for_no_matches(self):
+        Transaction.objects.create(
+            date="2026-03-04",
+            signed_amount_cents=-1200,
+            transaction_type=Transaction.TransactionType.NORMAL,
+            merchant="Neighborhood Market",
+            category=self.category,
+            account=self.from_account,
+        )
+
+        response = self.client.get(
+            reverse("ledger-event-list"),
+            {"search": "no matching ledger event"},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 0)
+        self.assertEqual(response.data["results"], [])
+
     def test_list_ledger_events_requires_authentication(self):
         self.client.force_authenticate(user=None)
 

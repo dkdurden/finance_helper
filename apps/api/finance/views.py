@@ -7,6 +7,7 @@ from django.db.models import (
     ExpressionWrapper,
     F,
     IntegerField,
+    Q,
     Sum,
     Value,
 )
@@ -238,6 +239,7 @@ class LedgerEventListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
+        search = request.query_params.get("search", "").strip()
         event_fields = (
             "event_type",
             "event_id",
@@ -257,10 +259,26 @@ class LedgerEventListView(APIView):
             "event_to_account_id",
             "event_to_account_name",
         )
-        transaction_events = (
-            Transaction.objects.exclude(
-                transaction_type=Transaction.TransactionType.TRANSFER
+        transaction_queryset = Transaction.objects.exclude(
+            transaction_type=Transaction.TransactionType.TRANSFER
+        )
+        transfer_queryset = Transfer.objects.all()
+
+        if search:
+            transaction_queryset = transaction_queryset.filter(
+                Q(merchant__icontains=search)
+                | Q(note__icontains=search)
+                | Q(category__name__icontains=search)
+                | Q(account__name__icontains=search)
             )
+            transfer_queryset = transfer_queryset.filter(
+                Q(note__icontains=search)
+                | Q(from_account__name__icontains=search)
+                | Q(to_account__name__icontains=search)
+            )
+
+        transaction_events = (
+            transaction_queryset
             .annotate(
                 event_type=Value("transaction", output_field=CharField()),
                 event_id=F("id"),
@@ -283,7 +301,7 @@ class LedgerEventListView(APIView):
             .values(*event_fields)
         )
         transfer_events = (
-            Transfer.objects.annotate(
+            transfer_queryset.annotate(
                 event_type=Value("transfer", output_field=CharField()),
                 event_id=F("id"),
                 event_date=F("date"),
