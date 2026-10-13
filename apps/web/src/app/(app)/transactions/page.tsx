@@ -75,6 +75,7 @@ const dateFormatter = new Intl.DateTimeFormat("en-GB", {
 const ledgerEventPageSize = 20;
 
 async function getTransactions(
+  category: string,
   page: number,
   search: string,
   sort: string,
@@ -89,6 +90,10 @@ async function getTransactions(
 
     if (sort !== "latest") {
       query.set("sort", sort);
+    }
+
+    if (category !== "all") {
+      query.set("category", category);
     }
 
     const response = await fetch(backendUrl(`/api/ledger-events/?${query}`), {
@@ -232,22 +237,9 @@ const sortOptions = [
 ];
 const sortValues = new Set(sortOptions.map((option) => option.value));
 
-const categoryOptions = [
-  { label: "All Transactions", value: "all" },
-  { label: "Entertainment", value: "entertainment" },
-  { label: "Bills", value: "bills" },
-  { label: "Groceries", value: "groceries" },
-  { label: "Dining Out", value: "dining-out" },
-  { label: "Transportation", value: "transportation" },
-  { label: "Personal Care", value: "personal-care" },
-  { label: "Education", value: "education" },
-  { label: "Lifestyle", value: "lifestyle" },
-  { label: "Shopping", value: "shopping" },
-  { label: "General", value: "general" },
-];
-
 type TransactionsPageProps = {
   searchParams: Promise<{
+    category?: string | string[];
     page?: string | string[];
     search?: string | string[];
     sort?: string | string[];
@@ -256,19 +248,31 @@ type TransactionsPageProps = {
 
 export default async function TransactionsPage({ searchParams }: TransactionsPageProps) {
   const resolvedSearchParams = await searchParams;
+  const rawCategory = resolvedSearchParams.category;
   const rawPage = resolvedSearchParams.page;
   const rawSearch = resolvedSearchParams.search;
   const rawSort = resolvedSearchParams.sort;
   const parsedPage = typeof rawPage === "string" ? Number(rawPage) : 1;
   const currentPage = Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+  const category =
+    typeof rawCategory === "string" && /^\d+$/.test(rawCategory) && Number(rawCategory) > 0
+      ? rawCategory
+      : "all";
   const search = typeof rawSearch === "string" ? rawSearch.trim() : "";
   const sort =
     typeof rawSort === "string" && sortValues.has(rawSort) ? rawSort : "latest";
   const [{ count, data: transactions, error }, formOptions] = await Promise.all([
-    getTransactions(currentPage, search, sort),
+    getTransactions(category, currentPage, search, sort),
     getTransactionFormOptions(),
   ]);
   const totalPages = Math.ceil(count / ledgerEventPageSize);
+  const categoryOptions = [
+    { label: "All Transactions", value: "all" },
+    ...formOptions.categories.map((option) => ({
+      label: option.name,
+      value: String(option.id),
+    })),
+  ];
   return (
     <AppShell
       title="Transactions"
@@ -283,6 +287,9 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
       <section className={styles.panel} aria-label="Transactions list and controls">
         <div className={styles.toolbar} aria-label="Transaction controls">
           <form className={styles.searchField} action="/transactions" method="get">
+            {category !== "all" ? (
+              <input name="category" type="hidden" value={category} />
+            ) : null}
             {sort !== "latest" ? <input name="sort" type="hidden" value={sort} /> : null}
             <label className={styles.visuallyHidden} htmlFor="transaction-search">
               Search transactions
@@ -315,6 +322,8 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
                 ariaLabel="Filter transactions by category"
                 minWidth="wide"
                 options={categoryOptions}
+                queryParam="category"
+                value={category}
               />
             </div>
           </div>
@@ -346,7 +355,9 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
             </p>
           ) : transactions.length === 0 ? (
             <p className={styles.stateMessage}>
-              {search ? "No transactions match your search." : "No transactions yet."}
+              {search || category !== "all"
+                ? "No transactions match your filters."
+                : "No transactions yet."}
             </p>
           ) : (
             transactions.map((transaction) => {
