@@ -58,6 +58,11 @@ const currencyFormatter = new Intl.NumberFormat("en-US", {
   signDisplay: "always",
 });
 
+const neutralCurrencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+});
+
 const dateFormatter = new Intl.DateTimeFormat("en-GB", {
   day: "2-digit",
   month: "short",
@@ -154,6 +159,14 @@ async function getTransactionFormOptions(): Promise<TransactionFormOptions> {
 
 function formatAmount(amountCents: number) {
   return currencyFormatter.format(amountCents / 100);
+}
+
+function formatEventAmount(event: LedgerEventApiRecord) {
+  if (event.event_type === "transfer") {
+    return neutralCurrencyFormatter.format(event.amount_cents / 100);
+  }
+
+  return formatAmount(event.amount_cents);
 }
 
 function formatDate(date: string) {
@@ -320,12 +333,15 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
                     <p
                       className={[
                         styles.amountCell,
-                        transaction.amount_cents > 0 ? styles.amountPositive : "",
+                        transaction.event_type === "transaction" &&
+                        transaction.amount_cents > 0
+                          ? styles.amountPositive
+                          : "",
                       ]
                         .filter(Boolean)
                         .join(" ")}
                     >
-                      {formatAmount(transaction.amount_cents)}
+                      {formatEventAmount(transaction)}
                     </p>
                     {transaction.event_type === "transaction" &&
                     transaction.transaction_type === "normal" &&
