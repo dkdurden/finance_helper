@@ -20,7 +20,9 @@ type LedgerEventApiRecord = {
   account_name: string | null;
   category_id: number | null;
   category_name: string | null;
+  from_account_id: number | null;
   from_account_name: string | null;
+  to_account_id: number | null;
   to_account_name: string | null;
 };
 
@@ -362,9 +364,19 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
                           signedAmountCents: transaction.amount_cents,
                         }}
                       />
-                    ) : transaction.event_type === "transfer" ? (
+                    ) : transaction.event_type === "transfer" &&
+                      transaction.from_account_id !== null &&
+                      transaction.to_account_id !== null ? (
                       <TransferActionControl
-                        transfer={{ id: transaction.id, name }}
+                        accounts={formOptions.accounts}
+                        optionsError={formOptions.error}
+                        transfer={{
+                          amountCents: transaction.amount_cents,
+                          fromAccountId: transaction.from_account_id,
+                          id: transaction.id,
+                          name,
+                          toAccountId: transaction.to_account_id,
+                        }}
                       />
                     ) : (
                       <span className={styles.actionPlaceholder} aria-hidden="true" />
