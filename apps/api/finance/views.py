@@ -243,6 +243,12 @@ class LedgerEventListView(APIView):
     def get(self, request):
         search = request.query_params.get("search", "").strip()
         sort = request.query_params.get("sort", "latest")
+        raw_category = request.query_params.get("category", "").strip()
+        category_id = (
+            int(raw_category)
+            if raw_category.isdecimal() and int(raw_category) > 0
+            else None
+        )
         ordering = {
             "latest": (
                 "-event_date",
@@ -316,6 +322,12 @@ class LedgerEventListView(APIView):
             transaction_type=Transaction.TransactionType.TRANSFER
         )
         transfer_queryset = Transfer.objects.all()
+
+        if category_id is not None:
+            transaction_queryset = transaction_queryset.filter(
+                category_id=category_id
+            )
+            transfer_queryset = transfer_queryset.none()
 
         if search:
             transaction_queryset = transaction_queryset.filter(

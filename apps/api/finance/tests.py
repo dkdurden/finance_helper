@@ -1615,6 +1615,92 @@ class LedgerEventApiTests(APITestCase):
                     expected_order,
                 )
 
+    def test_ledger_event_category_filter_matches_transactions_and_excludes_transfers(self):
+        matching_transaction = Transaction.objects.create(
+            date="2026-03-04",
+            signed_amount_cents=-1200,
+            transaction_type=Transaction.TransactionType.NORMAL,
+            merchant="Market",
+            category=self.category,
+            account=self.from_account,
+        )
+        other_category = Category.objects.create(name="Other Ledger Events")
+        Transaction.objects.create(
+            date="2026-03-05",
+            signed_amount_cents=-800,
+            transaction_type=Transaction.TransactionType.NORMAL,
+            merchant="Coffee Shop",
+            category=other_category,
+            account=self.from_account,
+        )
+        self.client.post(
+            reverse("transfer-list"),
+            {
+                "date": "2026-03-06",
+                "amount_cents": 5000,
+                "from_account": self.from_account.id,
+                "to_account": self.to_account.id,
+            },
+            format="json",
+        )
+
+        response = self.client.get(
+            reverse("ledger-event-list"),
+            {"category": self.category.id},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["results"][0]["event_type"], "transaction")
+        self.assertEqual(response.data["results"][0]["id"], matching_transaction.id)
+
+    def test_ledger_event_category_filter_returns_empty_page_for_no_matches(self):
+        Transaction.objects.create(
+            date="2026-03-04",
+            signed_amount_cents=-1200,
+            transaction_type=Transaction.TransactionType.NORMAL,
+            merchant="Market",
+            category=self.category,
+            account=self.from_account,
+        )
+
+        response = self.client.get(
+            reverse("ledger-event-list"),
+            {"category": 999999},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 0)
+        self.assertEqual(response.data["results"], [])
+
+    def test_ledger_event_malformed_category_filter_falls_back_to_all_events(self):
+        Transaction.objects.create(
+            date="2026-03-04",
+            signed_amount_cents=-1200,
+            transaction_type=Transaction.TransactionType.NORMAL,
+            merchant="Market",
+            category=self.category,
+            account=self.from_account,
+        )
+        self.client.post(
+            reverse("transfer-list"),
+            {
+                "date": "2026-03-06",
+                "amount_cents": 5000,
+                "from_account": self.from_account.id,
+                "to_account": self.to_account.id,
+            },
+            format="json",
+        )
+
+        response = self.client.get(
+            reverse("ledger-event-list"),
+            {"category": "not-a-category"},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 2)
+
     def test_list_ledger_events_requires_authentication(self):
         self.client.force_authenticate(user=None)
 
