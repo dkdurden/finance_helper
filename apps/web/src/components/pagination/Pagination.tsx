@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/cn";
 import styles from "./Pagination.module.css";
 
@@ -10,6 +11,7 @@ type PaginationProps = {
   defaultPage?: number;
   mobileCompact?: boolean;
   onPageChange?: (page: number) => void;
+  pageQueryParam?: string;
   totalPages?: number;
 };
 
@@ -36,8 +38,12 @@ export function Pagination({
   defaultPage = 2,
   mobileCompact = false,
   onPageChange,
+  pageQueryParam,
   totalPages = 5,
 }: PaginationProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const safeTotalPages = Math.max(1, Math.trunc(totalPages));
   const safeDefaultPage = clampPage(Math.trunc(defaultPage), safeTotalPages);
   const safeCurrentPage = clampPage(Math.trunc(currentPage ?? safeDefaultPage), safeTotalPages);
@@ -46,6 +52,9 @@ export function Pagination({
   const safeInternalPage = clampPage(internalPage, safeTotalPages);
   const activePage = isControlled ? safeCurrentPage : safeInternalPage;
   const pages = Array.from({ length: safeTotalPages }, (_, index) => index + 1);
+  const compactPages = Array.from(new Set([1, 2, safeTotalPages])).filter(
+    (page) => page <= safeTotalPages,
+  );
 
   function handlePageChange(page: number) {
     const nextPage = clampPage(page, safeTotalPages);
@@ -56,6 +65,19 @@ export function Pagination({
 
     if (!isControlled) {
       setInternalPage(nextPage);
+    }
+
+    if (pageQueryParam) {
+      const nextSearchParams = new URLSearchParams(searchParams.toString());
+
+      if (nextPage === 1) {
+        nextSearchParams.delete(pageQueryParam);
+      } else {
+        nextSearchParams.set(pageQueryParam, String(nextPage));
+      }
+
+      const query = nextSearchParams.toString();
+      router.push(query ? `${pathname}?${query}` : pathname);
     }
 
     onPageChange?.(nextPage);
@@ -92,39 +114,25 @@ export function Pagination({
 
       {mobileCompact ? (
         <div className={styles.compactPageList}>
-          <button
-            type="button"
-            className={styles.pageButton}
-            aria-label={activePage === 1 ? "Page 1, current page" : "Go to page 1"}
-            data-active={activePage === 1 || undefined}
-            aria-current={activePage === 1 ? "page" : undefined}
-            onClick={() => handlePageChange(1)}
-          >
-            1
-          </button>
-          <button
-            type="button"
-            className={styles.pageButton}
-            aria-label={activePage === 2 ? "Page 2, current page" : "Go to page 2"}
-            data-active={activePage === 2 || undefined}
-            aria-current={activePage === 2 ? "page" : undefined}
-            onClick={() => handlePageChange(2)}
-          >
-            2
-          </button>
-          <span className={styles.pageButton} aria-hidden="true">
-            ...
-          </span>
-          <button
-            type="button"
-            className={styles.pageButton}
-            aria-label={activePage === safeTotalPages ? `Page ${safeTotalPages}, current page` : `Go to page ${safeTotalPages}`}
-            data-active={activePage === safeTotalPages || undefined}
-            aria-current={activePage === safeTotalPages ? "page" : undefined}
-            onClick={() => handlePageChange(safeTotalPages)}
-          >
-            {safeTotalPages}
-          </button>
+          {compactPages.map((page, index) => (
+            <Fragment key={page}>
+              {index > 0 && page - compactPages[index - 1] > 1 ? (
+                <span className={styles.pageButton} aria-hidden="true">
+                  ...
+                </span>
+              ) : null}
+              <button
+                type="button"
+                className={styles.pageButton}
+                aria-label={page === activePage ? `Page ${page}, current page` : `Go to page ${page}`}
+                data-active={page === activePage || undefined}
+                aria-current={page === activePage ? "page" : undefined}
+                onClick={() => handlePageChange(page)}
+              >
+                {page}
+              </button>
+            </Fragment>
+          ))}
         </div>
       ) : null}
 

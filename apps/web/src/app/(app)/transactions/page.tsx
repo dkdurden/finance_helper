@@ -24,11 +24,13 @@ type LedgerEventApiRecord = {
 };
 
 type TransactionLoadResult = {
+  count: number;
   data: LedgerEventApiRecord[];
   error: string | null;
 };
 
 type LedgerEventPageApiResponse = {
+  count: number;
   results: LedgerEventApiRecord[];
 };
 
@@ -62,10 +64,12 @@ const dateFormatter = new Intl.DateTimeFormat("en-GB", {
   year: "numeric",
 });
 
-async function getTransactions(): Promise<TransactionLoadResult> {
+const ledgerEventPageSize = 20;
+
+async function getTransactions(page: number): Promise<TransactionLoadResult> {
   try {
     const cookieStore = await cookies();
-    const response = await fetch(backendUrl("/api/ledger-events/"), {
+    const response = await fetch(backendUrl(`/api/ledger-events/?page=${page}`), {
       headers: {
         cookie: cookieStore.toString(),
       },
@@ -73,7 +77,7 @@ async function getTransactions(): Promise<TransactionLoadResult> {
     });
 
     if (!response.ok) {
-      return { data: [], error: "Unable to load transactions right now." };
+      return { count: 0, data: [], error: "Unable to load transactions right now." };
     }
 
     const data: unknown = await response.json();
@@ -81,15 +85,22 @@ async function getTransactions(): Promise<TransactionLoadResult> {
     if (
       typeof data !== "object" ||
       data === null ||
+      !("count" in data) ||
+      typeof data.count !== "number" ||
       !("results" in data) ||
       !Array.isArray(data.results)
     ) {
-      return { data: [], error: "The transaction service returned an unexpected response." };
+      return {
+        count: 0,
+        data: [],
+        error: "The transaction service returned an unexpected response.",
+      };
     }
 
-    return { data: (data as LedgerEventPageApiResponse).results, error: null };
+    const pageData = data as LedgerEventPageApiResponse;
+    return { count: pageData.count, data: pageData.results, error: null };
   } catch {
-    return { data: [], error: "Unable to load transactions right now." };
+    return { count: 0, data: [], error: "Unable to load transactions right now." };
   }
 }
 
@@ -204,11 +215,19 @@ const categoryOptions = [
   { label: "General", value: "general" },
 ];
 
-export default async function TransactionsPage() {
-  const [{ data: transactions, error }, formOptions] = await Promise.all([
-    getTransactions(),
+type TransactionsPageProps = {
+  searchParams: Promise<{ page?: string | string[] }>;
+};
+
+export default async function TransactionsPage({ searchParams }: TransactionsPageProps) {
+  const rawPage = (await searchParams).page;
+  const parsedPage = typeof rawPage === "string" ? Number(rawPage) : 1;
+  const currentPage = Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+  const [{ count, data: transactions, error }, formOptions] = await Promise.all([
+    getTransactions(currentPage),
     getTransactionFormOptions(),
   ]);
+  const totalPages = Math.ceil(count / ledgerEventPageSize);
   return (
     <AppShell
       title="Transactions"
@@ -336,7 +355,14 @@ export default async function TransactionsPage() {
           )}
         </div>
 
-        {!error && transactions.length > 0 ? <Pagination mobileCompact /> : null}
+        {!error && totalPages > 1 ? (
+          <Pagination
+            currentPage={currentPage}
+            mobileCompact
+            pageQueryParam="page"
+            totalPages={totalPages}
+          />
+        ) : null}
       </section>
     </AppShell>
   );
