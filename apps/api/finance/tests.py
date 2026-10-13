@@ -1551,6 +1551,70 @@ class LedgerEventApiTests(APITestCase):
         self.assertEqual(response.data["count"], 0)
         self.assertEqual(response.data["results"], [])
 
+    def test_ledger_event_sort_modes_order_logical_events(self):
+        alpha = Transaction.objects.create(
+            date="2026-03-01",
+            signed_amount_cents=-500,
+            transaction_type=Transaction.TransactionType.NORMAL,
+            merchant="Alpha",
+            category=self.category,
+            account=self.from_account,
+        )
+        adjustment = Transaction.objects.create(
+            date="2026-03-02",
+            signed_amount_cents=300,
+            transaction_type=Transaction.TransactionType.ADJUSTMENT,
+            category=self.category,
+            account=self.from_account,
+        )
+        zulu = Transaction.objects.create(
+            date="2026-03-03",
+            signed_amount_cents=100,
+            transaction_type=Transaction.TransactionType.NORMAL,
+            merchant="Zulu",
+            category=self.category,
+            account=self.from_account,
+        )
+        transfer_response = self.client.post(
+            reverse("transfer-list"),
+            {
+                "date": "2026-03-04",
+                "amount_cents": 700,
+                "from_account": self.from_account.id,
+                "to_account": self.to_account.id,
+            },
+            format="json",
+        )
+        transfer = ("transfer", transfer_response.data["id"])
+        alpha_event = ("transaction", alpha.id)
+        adjustment_event = ("transaction", adjustment.id)
+        zulu_event = ("transaction", zulu.id)
+        expected_orders = {
+            "latest": [transfer, zulu_event, adjustment_event, alpha_event],
+            "oldest": [alpha_event, adjustment_event, zulu_event, transfer],
+            "a-to-z": [alpha_event, adjustment_event, transfer, zulu_event],
+            "z-to-a": [zulu_event, transfer, adjustment_event, alpha_event],
+            "highest": [transfer, adjustment_event, zulu_event, alpha_event],
+            "lowest": [alpha_event, zulu_event, adjustment_event, transfer],
+            "invalid": [transfer, zulu_event, adjustment_event, alpha_event],
+        }
+
+        for sort, expected_order in expected_orders.items():
+            with self.subTest(sort=sort):
+                response = self.client.get(
+                    reverse("ledger-event-list"),
+                    {"sort": sort},
+                )
+
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                self.assertEqual(
+                    [
+                        (event["event_type"], event["id"])
+                        for event in response.data["results"]
+                    ],
+                    expected_order,
+                )
+
     def test_list_ledger_events_requires_authentication(self):
         self.client.force_authenticate(user=None)
 

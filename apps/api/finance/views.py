@@ -3,6 +3,7 @@ from django.contrib.auth import login, logout
 from django.db import transaction as db_transaction
 from django.db.models import (
     BigIntegerField,
+    Case,
     CharField,
     ExpressionWrapper,
     F,
@@ -10,9 +11,10 @@ from django.db.models import (
     Q,
     Sum,
     Value,
+    When,
 )
 from django.db.models.deletion import ProtectedError
-from django.db.models.functions import Coalesce
+from django.db.models.functions import Coalesce, Concat, Lower
 from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -240,6 +242,56 @@ class LedgerEventListView(APIView):
 
     def get(self, request):
         search = request.query_params.get("search", "").strip()
+        sort = request.query_params.get("sort", "latest")
+        ordering = {
+            "latest": (
+                "-event_date",
+                "-event_created_at",
+                "-event_type",
+                "-event_id",
+            ),
+            "oldest": (
+                "event_date",
+                "event_created_at",
+                "event_type",
+                "event_id",
+            ),
+            "a-to-z": (
+                "event_sort_name",
+                "-event_date",
+                "-event_created_at",
+                "-event_type",
+                "-event_id",
+            ),
+            "z-to-a": (
+                "-event_sort_name",
+                "-event_date",
+                "-event_created_at",
+                "-event_type",
+                "-event_id",
+            ),
+            "highest": (
+                "-event_amount_cents",
+                "-event_date",
+                "-event_created_at",
+                "-event_type",
+                "-event_id",
+            ),
+            "lowest": (
+                "event_amount_cents",
+                "-event_date",
+                "-event_created_at",
+                "-event_type",
+                "-event_id",
+            ),
+        }.get(sort, ())
+        if not ordering:
+            ordering = (
+                "-event_date",
+                "-event_created_at",
+                "-event_type",
+                "-event_id",
+            )
         event_fields = (
             "event_type",
             "event_id",
@@ -258,6 +310,7 @@ class LedgerEventListView(APIView):
             "event_from_account_name",
             "event_to_account_id",
             "event_to_account_name",
+            "event_sort_name",
         )
         transaction_queryset = Transaction.objects.exclude(
             transaction_type=Transaction.TransactionType.TRANSFER
@@ -297,6 +350,17 @@ class LedgerEventListView(APIView):
                 event_from_account_name=Value(None, output_field=CharField()),
                 event_to_account_id=Value(None, output_field=IntegerField()),
                 event_to_account_name=Value(None, output_field=CharField()),
+                event_sort_name=Lower(
+                    Case(
+                        When(merchant__regex=r"\S", then=F("merchant")),
+                        When(
+                            transaction_type=Transaction.TransactionType.ADJUSTMENT,
+                            then=Value("Balance adjustment"),
+                        ),
+                        default=Value("Transaction"),
+                        output_field=CharField(),
+                    )
+                ),
             )
             .values(*event_fields)
         )
@@ -322,14 +386,19 @@ class LedgerEventListView(APIView):
                 event_from_account_name=F("from_account__name"),
                 event_to_account_id=F("to_account_id"),
                 event_to_account_name=F("to_account__name"),
+                event_sort_name=Lower(
+                    Concat(
+                        F("from_account__name"),
+                        Value(" to "),
+                        F("to_account__name"),
+                        output_field=CharField(),
+                    )
+                ),
             )
             .values(*event_fields)
         )
         events = transaction_events.union(transfer_events, all=True).order_by(
-            "-event_date",
-            "-event_created_at",
-            "-event_type",
-            "-event_id",
+            *ordering
         )
 
         paginator = LedgerEventPagination()
