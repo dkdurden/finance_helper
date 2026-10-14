@@ -13,10 +13,109 @@ function getCookieValue(cookieHeader: string, name: string) {
     ?.slice(name.length + 1);
 }
 
+function isValidId(id: string) {
+  return /^\d+$/.test(id) && Number(id) > 0;
+}
+
+export async function GET(request: Request, context: ReceiptRouteContext) {
+  const { id } = await context.params;
+
+  if (!isValidId(id)) {
+    return NextResponse.json(
+      { detail: "Invalid receipt ID." },
+      { status: 400 },
+    );
+  }
+
+  let backendResponse: Response;
+
+  try {
+    backendResponse = await fetch(backendUrl(`/api/receipts/${id}/`), {
+      headers: { cookie: request.headers.get("cookie") ?? "" },
+      cache: "no-store",
+    });
+  } catch {
+    return NextResponse.json(
+      { detail: "Unable to reach the receipt service." },
+      { status: 502 },
+    );
+  }
+
+  let responseData: unknown = null;
+
+  try {
+    responseData = await backendResponse.json();
+  } catch {
+    responseData = null;
+  }
+
+  return NextResponse.json(
+    responseData ?? { detail: "Receipt retrieval failed." },
+    { status: backendResponse.status },
+  );
+}
+
+export async function PATCH(request: Request, context: ReceiptRouteContext) {
+  let body: unknown;
+
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json(
+      { detail: "Invalid receipt request body." },
+      { status: 400 },
+    );
+  }
+
+  const { id } = await context.params;
+
+  if (!isValidId(id)) {
+    return NextResponse.json(
+      { detail: "Invalid receipt ID." },
+      { status: 400 },
+    );
+  }
+
+  const cookieHeader = request.headers.get("cookie") ?? "";
+  const csrfToken = getCookieValue(cookieHeader, "csrftoken");
+  let backendResponse: Response;
+
+  try {
+    backendResponse = await fetch(backendUrl(`/api/receipts/${id}/`), {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        cookie: cookieHeader,
+        ...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
+      },
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
+  } catch {
+    return NextResponse.json(
+      { detail: "Unable to reach the receipt service." },
+      { status: 502 },
+    );
+  }
+
+  let responseData: unknown = null;
+
+  try {
+    responseData = await backendResponse.json();
+  } catch {
+    responseData = null;
+  }
+
+  return NextResponse.json(
+    responseData ?? { detail: "Receipt update failed." },
+    { status: backendResponse.status },
+  );
+}
+
 export async function DELETE(request: Request, context: ReceiptRouteContext) {
   const { id } = await context.params;
 
-  if (!/^\d+$/.test(id) || Number(id) < 1) {
+  if (!isValidId(id)) {
     return NextResponse.json(
       { detail: "Invalid receipt ID." },
       { status: 400 },

@@ -6,7 +6,7 @@ import { Pagination } from "@/components/pagination/Pagination";
 import { SortDropdown } from "@/features/transactions/components/SortDropdown";
 import { TransactionCreateControl } from "@/features/transactions/components/TransactionCreateControl";
 import { TransactionEditControl } from "@/features/transactions/components/TransactionEditControl";
-import { ReceiptDeleteControl } from "@/features/transactions/components/ReceiptDeleteControl";
+import { ReceiptActionControl } from "@/features/transactions/components/ReceiptActionControl";
 import { TransferActionControl } from "@/features/transactions/components/TransferActionControl";
 import { backendUrl } from "@/lib/backendUrl";
 import styles from "./page.module.css";
@@ -471,7 +471,10 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
                     </p>
                     {transaction.event_type === "transaction" &&
                     transaction.receipt_id !== null ? (
-                      <ReceiptDeleteControl
+                      <ReceiptActionControl
+                        accounts={formOptions.accounts}
+                        categories={formOptions.categories}
+                        optionsError={formOptions.error}
                         receipt={{ id: transaction.receipt_id, name }}
                       />
                     ) : transaction.event_type === "transaction" &&
