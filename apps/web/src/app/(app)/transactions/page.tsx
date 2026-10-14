@@ -423,6 +423,7 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
                         optionsError={formOptions.error}
                         transfer={{
                           amountCents: transaction.amount_cents,
+                          date: transaction.date,
                           fromAccountId: transaction.from_account_id,
                           id: transaction.id,
                           name,

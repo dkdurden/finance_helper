@@ -26,6 +26,7 @@ type TransferActionControlProps = {
   optionsError?: string | null;
   transfer: {
     amountCents: number;
+    date: string;
     fromAccountId: number;
     id: number;
     name: string;
@@ -80,6 +81,7 @@ function TransferEditModal({
   const [amount, setAmount] = useState(() =>
     (transfer.amountCents / 100).toFixed(2),
   );
+  const [date, setDate] = useState(transfer.date);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const accountOptions = useMemo<SelectOption[]>(
@@ -137,6 +139,11 @@ function TransferEditModal({
       return;
     }
 
+    if (!date) {
+      setErrorMessage("Select a date.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -156,6 +163,7 @@ function TransferEditModal({
         },
         body: JSON.stringify({
           amount_cents: amountCents,
+          date,
           from_account: fromAccountId,
           to_account: toAccountId,
         }),
@@ -227,11 +235,21 @@ function TransferEditModal({
 
         <form className={formStyles.content} onSubmit={handleSubmit}>
           <p className={modalStyles.description} id={descriptionId}>
-            Update the source, destination, and amount. The transfer date and
-            note will stay unchanged.
+            Update the date, source, destination, and amount. The transfer note
+            will stay unchanged.
           </p>
 
           <div className={formStyles.controls}>
+            <InputField
+              disabled={isSubmitting}
+              helperText=""
+              label="Date"
+              required
+              type="date"
+              value={date}
+              onChange={(event) => setDate(event.target.value)}
+            />
+
             <SelectField
               disabled={isSubmitting || accounts.length < 2}
               helperText=""
