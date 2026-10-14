@@ -53,8 +53,10 @@ type CategoryOptionApiRecord = {
 };
 
 type TransactionFormOptions = {
+  accountError: string | null;
   accounts: Array<{ id: number; isLiability: boolean; name: string }>;
   categories: Array<{ id: number; name: string }>;
+  categoryError: string | null;
   categoryFilters: Array<{ id: number; name: string }>;
   error: string | null;
 };
@@ -154,62 +156,77 @@ async function getTransactions(
 }
 
 async function getTransactionFormOptions(): Promise<TransactionFormOptions> {
-  try {
-    const cookieStore = await cookies();
-    const headers = { cookie: cookieStore.toString() };
-    const [accountsResponse, categoriesResponse] = await Promise.all([
-      fetch(backendUrl("/api/accounts/"), { headers, cache: "no-store" }),
-      fetch(backendUrl("/api/categories/"), { headers, cache: "no-store" }),
-    ]);
+  const cookieStore = await cookies();
+  const headers = { cookie: cookieStore.toString() };
+  const [accountResult, categoryResult] = await Promise.all([
+    (async () => {
+      try {
+        const response = await fetch(backendUrl("/api/accounts/"), {
+          headers,
+          cache: "no-store",
+        });
+        const data: unknown = response.ok ? await response.json() : null;
 
-    if (!accountsResponse.ok || !categoriesResponse.ok) {
-      return {
-        accounts: [],
-        categories: [],
-        categoryFilters: [],
-        error: "Unable to load transaction form options right now.",
-      };
-    }
+        if (!response.ok || !Array.isArray(data)) {
+          throw new Error();
+        }
 
-    const accountsData: unknown = await accountsResponse.json();
-    const categoriesData: unknown = await categoriesResponse.json();
+        return {
+          data: (data as AccountOptionApiRecord[]).map((account) => ({
+            id: account.id,
+            isLiability: account.is_liability,
+            name: account.name,
+          })),
+          error: null,
+        };
+      } catch {
+        return {
+          data: [],
+          error: "Unable to load account options right now.",
+        };
+      }
+    })(),
+    (async () => {
+      try {
+        const response = await fetch(backendUrl("/api/categories/"), {
+          headers,
+          cache: "no-store",
+        });
+        const data: unknown = response.ok ? await response.json() : null;
 
-    if (!Array.isArray(accountsData) || !Array.isArray(categoriesData)) {
-      return {
-        accounts: [],
-        categories: [],
-        categoryFilters: [],
-        error: "The transaction form services returned an unexpected response.",
-      };
-    }
+        if (!response.ok || !Array.isArray(data)) {
+          throw new Error();
+        }
 
-    const categoryOptions = (categoriesData as CategoryOptionApiRecord[]).map(
-      (category) => ({
-        id: category.id,
-        name: category.name,
-      }),
-    );
+        const categoryOptions = (data as CategoryOptionApiRecord[]).map(
+          (category) => ({ id: category.id, name: category.name }),
+        );
 
-    return {
-      accounts: (accountsData as AccountOptionApiRecord[]).map((account) => ({
-        id: account.id,
-        isLiability: account.is_liability,
-        name: account.name,
-      })),
-      categories: (categoriesData as CategoryOptionApiRecord[])
-        .filter((category) => !category.is_archived)
-        .map((category) => ({ id: category.id, name: category.name })),
-      categoryFilters: categoryOptions,
-      error: null,
-    };
-  } catch {
-    return {
-      accounts: [],
-      categories: [],
-      categoryFilters: [],
-      error: "Unable to load transaction form options right now.",
-    };
-  }
+        return {
+          categories: (data as CategoryOptionApiRecord[])
+            .filter((category) => !category.is_archived)
+            .map((category) => ({ id: category.id, name: category.name })),
+          categoryFilters: categoryOptions,
+          error: null,
+        };
+      } catch {
+        return {
+          categories: [],
+          categoryFilters: [],
+          error: "Unable to load category options right now.",
+        };
+      }
+    })(),
+  ]);
+
+  return {
+    accountError: accountResult.error,
+    accounts: accountResult.data,
+    categories: categoryResult.categories,
+    categoryError: categoryResult.error,
+    categoryFilters: categoryResult.categoryFilters,
+    error: accountResult.error ?? categoryResult.error,
+  };
 }
 
 function formatAmount(amountCents: number) {
@@ -332,9 +349,10 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
       title="Transactions"
       headerAction={
         <TransactionCreateControl
+          accountError={formOptions.accountError}
           accounts={formOptions.accounts}
           categories={formOptions.categories}
-          optionsError={formOptions.error}
+          categoryError={formOptions.categoryError}
         />
       }
     >

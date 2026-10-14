@@ -33,9 +33,10 @@ export type TransactionAccountOption = {
 };
 
 type TransactionCreateControlProps = {
+  accountError?: string | null;
   accounts: TransactionAccountOption[];
   categories: TransactionCategory[];
-  optionsError?: string | null;
+  categoryError?: string | null;
 };
 
 type EntryType = "transaction" | "transfer";
@@ -72,9 +73,10 @@ function getLocalDate() {
 }
 
 export function TransactionCreateControl({
+  accountError = null,
   accounts,
   categories: initialCategories,
-  optionsError = null,
+  categoryError = null,
 }: TransactionCreateControlProps) {
   const router = useRouter();
   const titleId = useId();
@@ -95,6 +97,8 @@ export function TransactionCreateControl({
   const [categories, setCategories] = useState(initialCategories);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const optionsError =
+    accountError ?? (entryType === "transaction" ? categoryError : null);
 
   const selectedAccount =
     accounts.find((account) => account.id === accountId) ?? null;
