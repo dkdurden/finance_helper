@@ -493,6 +493,10 @@ class LedgerEventSerializer(serializers.Serializer):
         source="event_account_name",
         allow_null=True,
     )
+    receipt_id = serializers.IntegerField(
+        source="event_receipt_id",
+        allow_null=True,
+    )
     from_account_id = serializers.IntegerField(
         source="event_from_account_id",
         allow_null=True,

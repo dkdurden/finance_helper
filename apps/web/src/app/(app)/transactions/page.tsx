@@ -6,6 +6,7 @@ import { Pagination } from "@/components/pagination/Pagination";
 import { SortDropdown } from "@/features/transactions/components/SortDropdown";
 import { TransactionCreateControl } from "@/features/transactions/components/TransactionCreateControl";
 import { TransactionEditControl } from "@/features/transactions/components/TransactionEditControl";
+import { ReceiptDeleteControl } from "@/features/transactions/components/ReceiptDeleteControl";
 import { TransferActionControl } from "@/features/transactions/components/TransferActionControl";
 import { backendUrl } from "@/lib/backendUrl";
 import styles from "./page.module.css";
@@ -20,6 +21,7 @@ type LedgerEventApiRecord = {
   note: string | null;
   account_id: number | null;
   account_name: string | null;
+  receipt_id: number | null;
   category_id: number | null;
   category_name: string | null;
   from_account_id: number | null;
@@ -468,6 +470,11 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
                       {formatEventAmount(transaction)}
                     </p>
                     {transaction.event_type === "transaction" &&
+                    transaction.receipt_id !== null ? (
+                      <ReceiptDeleteControl
+                        receipt={{ id: transaction.receipt_id, name }}
+                      />
+                    ) : transaction.event_type === "transaction" &&
                     transaction.transaction_type === "normal" &&
                     transaction.account_id !== null &&
                     transaction.category_id !== null &&

@@ -1969,6 +1969,12 @@ class LedgerEventApiTests(APITestCase):
             category=self.category,
             account=self.from_account,
         )
+        receipt = Receipt.objects.create(
+            date=normal.date,
+            store=normal.merchant,
+            total_cents=1200,
+            transaction=normal,
+        )
         adjustment = Transaction.objects.create(
             date="2026-03-05",
             signed_amount_cents=300,
@@ -2009,18 +2015,21 @@ class LedgerEventApiTests(APITestCase):
         self.assertEqual(transfer_event["to_account_name"], self.to_account.name)
         self.assertIsNone(transfer_event["category_id"])
         self.assertIsNone(transfer_event["account_id"])
+        self.assertIsNone(transfer_event["receipt_id"])
 
         self.assertEqual(adjustment_event["event_type"], "transaction")
         self.assertEqual(adjustment_event["id"], adjustment.id)
         self.assertEqual(adjustment_event["transaction_type"], "adjustment")
         self.assertEqual(adjustment_event["amount_cents"], 300)
         self.assertEqual(adjustment_event["account_name"], self.from_account.name)
+        self.assertIsNone(adjustment_event["receipt_id"])
 
         self.assertEqual(normal_event["event_type"], "transaction")
         self.assertEqual(normal_event["id"], normal.id)
         self.assertEqual(normal_event["transaction_type"], "normal")
         self.assertEqual(normal_event["merchant"], "Market")
         self.assertEqual(normal_event["category_name"], self.category.name)
+        self.assertEqual(normal_event["receipt_id"], receipt.id)
 
     def test_ledger_event_pagination_never_duplicates_transfer_postings(self):
         for index in range(20):
