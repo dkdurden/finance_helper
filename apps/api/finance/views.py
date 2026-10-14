@@ -189,6 +189,18 @@ class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        search = self.request.query_params.get("search", "").strip()
+
+        if search:
+            queryset = queryset.filter(
+                is_archived=False,
+                name__icontains=search,
+            )
+
+        return queryset
+
 
 class ReceiptViewSet(viewsets.ModelViewSet):
     queryset = Receipt.objects.all()

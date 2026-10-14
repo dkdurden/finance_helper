@@ -585,6 +585,29 @@ class ProductApiTests(APITestCase):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["name"], "Dish Soap")
 
+    def test_search_products_matches_active_names_case_insensitively(self):
+        matching_product = Product.objects.create(
+            name="Laundry Detergent",
+            default_unit="bottle",
+        )
+        Product.objects.create(name="Dish Soap", default_unit="bottle")
+
+        response = self.client.get(reverse("product-list"), {"search": "DETER"})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["id"], matching_product.id)
+
+    def test_search_products_excludes_archived_matches(self):
+        Product.objects.create(name="Active Apples")
+        Product.objects.create(name="Archived Apples", is_archived=True)
+
+        response = self.client.get(reverse("product-list"), {"search": "apples"})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["name"], "Active Apples")
+
     def test_list_products_requires_authentication(self):
         self.client.force_authenticate(user=None)
 
