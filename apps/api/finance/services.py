@@ -170,6 +170,29 @@ def update_receipt(
     return receipt
 
 
+@db_transaction.atomic
+def delete_receipt(receipt_id):
+    receipt = (
+        Receipt.objects.select_for_update()
+        .select_related("transaction")
+        .get(pk=receipt_id)
+    )
+    transaction = Transaction.objects.select_for_update().get(
+        pk=receipt.transaction_id
+    )
+
+    if (
+        transaction.transaction_type != Transaction.TransactionType.NORMAL
+        or transaction.transfer_id is not None
+    ):
+        raise ReceiptIntegrityError(
+            "Receipt transaction is malformed and cannot be deleted."
+        )
+
+    receipt.delete()
+    transaction.delete()
+
+
 def _source_signed_amount(amount_cents, account):
     return amount_cents if account.is_liability else -amount_cents
 

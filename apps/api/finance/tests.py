@@ -9,7 +9,12 @@ from rest_framework.test import APITestCase
 
 from .models import Account, Category, Product, Receipt, ReceiptItem, Transaction, Transfer
 from .serializers import TransferSerializer
-from .services import ReceiptIntegrityError, create_receipt, update_receipt
+from .services import (
+    ReceiptIntegrityError,
+    create_receipt,
+    delete_receipt,
+    update_receipt,
+)
 
 User = get_user_model()
 
@@ -951,21 +956,41 @@ class ReceiptApiTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
 
-    def test_direct_receipt_deletion_is_not_allowed(self):
-        receipt = Receipt.objects.create(
-            date="2026-03-05",
-            store="Costco",
-            total_cents=2500,
-            transaction=self.transaction,
-        )
+    def test_delete_receipt_removes_aggregate(self):
+        receipt, item = self.create_existing_receipt()
 
         response = self.client.delete(
             reverse("receipt-detail", args=[receipt.id])
         )
 
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Receipt.objects.filter(id=receipt.id).exists())
+        self.assertFalse(ReceiptItem.objects.filter(id=item.id).exists())
+        self.assertFalse(Transaction.objects.filter(id=self.transaction.id).exists())
+
+    def test_delete_receipt_returns_conflict_for_malformed_transaction(self):
+        receipt, _ = self.create_existing_receipt()
+        self.transaction.transaction_type = Transaction.TransactionType.ADJUSTMENT
+        self.transaction.save(update_fields=["transaction_type"])
+
+        response = self.client.delete(
+            reverse("receipt-detail", args=[receipt.id])
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
         self.assertTrue(Receipt.objects.filter(id=receipt.id).exists())
         self.assertTrue(Transaction.objects.filter(id=self.transaction.id).exists())
+
+    def test_delete_receipt_requires_authentication(self):
+        receipt, _ = self.create_existing_receipt()
+        self.client.force_authenticate(user=None)
+
+        response = self.client.delete(
+            reverse("receipt-detail", args=[receipt.id])
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(Receipt.objects.filter(id=receipt.id).exists())
 
     def test_list_receipts_requires_authentication(self):
         self.client.force_authenticate(user=None)
@@ -1275,6 +1300,66 @@ class ReceiptServiceTests(APITestCase):
         self.assertEqual(receipt.store, "Original Market")
         self.assertEqual(receipt.transaction.merchant, "Original Market")
         self.assertTrue(receipt.items.filter(id=original_item.id).exists())
+
+    def test_delete_receipt_removes_items_and_linked_transaction(self):
+        receipt = create_receipt(
+            account=self.account,
+            category=self.category,
+            date="2026-10-14",
+            items=self.receipt_items(),
+        )
+        receipt_id = receipt.id
+        transaction_id = receipt.transaction_id
+        item_id = receipt.items.get().id
+
+        delete_receipt(receipt_id)
+
+        self.assertFalse(Receipt.objects.filter(id=receipt_id).exists())
+        self.assertFalse(ReceiptItem.objects.filter(id=item_id).exists())
+        self.assertFalse(Transaction.objects.filter(id=transaction_id).exists())
+
+    def test_delete_receipt_rejects_malformed_linked_transaction(self):
+        receipt = create_receipt(
+            account=self.account,
+            category=self.category,
+            date="2026-10-14",
+            items=self.receipt_items(),
+        )
+        receipt.transaction.transaction_type = Transaction.TransactionType.ADJUSTMENT
+        receipt.transaction.save(update_fields=["transaction_type"])
+
+        with self.assertRaisesRegex(
+            ReceiptIntegrityError,
+            "Receipt transaction is malformed",
+        ):
+            delete_receipt(receipt.id)
+
+        self.assertTrue(Receipt.objects.filter(id=receipt.id).exists())
+        self.assertTrue(
+            Transaction.objects.filter(id=receipt.transaction_id).exists()
+        )
+
+    def test_delete_receipt_rolls_back_when_transaction_deletion_fails(self):
+        receipt = create_receipt(
+            account=self.account,
+            category=self.category,
+            date="2026-10-14",
+            items=self.receipt_items(),
+        )
+        receipt_id = receipt.id
+        transaction_id = receipt.transaction_id
+        item_id = receipt.items.get().id
+
+        with patch(
+            "finance.services.Transaction.delete",
+            side_effect=IntegrityError("simulated transaction deletion failure"),
+        ):
+            with self.assertRaises(IntegrityError):
+                delete_receipt(receipt_id)
+
+        self.assertTrue(Receipt.objects.filter(id=receipt_id).exists())
+        self.assertTrue(ReceiptItem.objects.filter(id=item_id).exists())
+        self.assertTrue(Transaction.objects.filter(id=transaction_id).exists())
 
 
 class TransferApiTests(APITestCase):

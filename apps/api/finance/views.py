@@ -42,7 +42,12 @@ from .serializers import (
     TransactionSerializer,
     TransferSerializer,
 )
-from .services import ReceiptIntegrityError, TransferIntegrityError, delete_transfer
+from .services import (
+    ReceiptIntegrityError,
+    TransferIntegrityError,
+    delete_receipt,
+    delete_transfer,
+)
 
 
 def user_payload(user):
@@ -207,6 +212,7 @@ class ProductViewSet(viewsets.ModelViewSet):
 class ReceiptViewSet(
     mixins.CreateModelMixin,
     mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
     viewsets.ReadOnlyModelViewSet,
 ):
     queryset = Receipt.objects.all()
@@ -228,6 +234,19 @@ class ReceiptViewSet(
                 {"detail": str(error)},
                 status=status.HTTP_409_CONFLICT,
             )
+
+    def destroy(self, request, *args, **kwargs):
+        receipt = self.get_object()
+
+        try:
+            delete_receipt(receipt.pk)
+        except ReceiptIntegrityError as error:
+            return Response(
+                {"detail": str(error)},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class ReceiptItemViewSet(viewsets.ReadOnlyModelViewSet):
