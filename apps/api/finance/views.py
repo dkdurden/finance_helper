@@ -203,7 +203,10 @@ class ProductViewSet(viewsets.ModelViewSet):
         return queryset
 
 
-class ReceiptViewSet(viewsets.ModelViewSet):
+class ReceiptViewSet(
+    mixins.CreateModelMixin,
+    viewsets.ReadOnlyModelViewSet,
+):
     queryset = Receipt.objects.all()
     serializer_class = ReceiptSerializer
 
@@ -214,7 +217,7 @@ class ReceiptViewSet(viewsets.ModelViewSet):
         return super().get_serializer_class()
 
 
-class ReceiptItemViewSet(viewsets.ModelViewSet):
+class ReceiptItemViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ReceiptItem.objects.all()
     serializer_class = ReceiptItemSerializer
 

@@ -757,6 +757,38 @@ class ReceiptApiTests(APITestCase):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["store"], "Costco")
 
+    def test_direct_receipt_update_is_not_allowed(self):
+        receipt = Receipt.objects.create(
+            date="2026-03-05",
+            store="Costco",
+            total_cents=2500,
+            transaction=self.transaction,
+        )
+
+        response = self.client.patch(
+            reverse("receipt-detail", args=[receipt.id]),
+            {"total_cents": 9999},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_direct_receipt_deletion_is_not_allowed(self):
+        receipt = Receipt.objects.create(
+            date="2026-03-05",
+            store="Costco",
+            total_cents=2500,
+            transaction=self.transaction,
+        )
+
+        response = self.client.delete(
+            reverse("receipt-detail", args=[receipt.id])
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertTrue(Receipt.objects.filter(id=receipt.id).exists())
+        self.assertTrue(Transaction.objects.filter(id=self.transaction.id).exists())
+
     def test_list_receipts_requires_authentication(self):
         self.client.force_authenticate(user=None)
 
@@ -798,7 +830,7 @@ class ReceiptItemApiTests(APITestCase):
         )
         self.product = Product.objects.create(name="Laundry Detergent", default_unit="bottle")
 
-    def test_create_receipt_item(self):
+    def test_direct_receipt_item_creation_is_not_allowed(self):
         payload = {
             "receipt": self.receipt.id,
             "product": self.product.id,
@@ -811,9 +843,7 @@ class ReceiptItemApiTests(APITestCase):
 
         response = self.client.post(reverse("receipt-item-list"), payload, format="json")
 
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data["name_snapshot"], payload["name_snapshot"])
-        self.assertEqual(response.data["line_total_cents"], payload["line_total_cents"])
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_list_receipt_items(self):
         ReceiptItem.objects.create(
@@ -832,30 +862,36 @@ class ReceiptItemApiTests(APITestCase):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["name_snapshot"], "Laundry Detergent")
 
-    def test_receipt_item_rejects_negative_line_total(self):
-        payload = {
-            "receipt": self.receipt.id,
-            "product": self.product.id,
-            "name_snapshot": "Bad Line",
-            "line_total_cents": -1,
-        }
+    def test_direct_receipt_item_update_is_not_allowed(self):
+        item = ReceiptItem.objects.create(
+            receipt=self.receipt,
+            product=self.product,
+            name_snapshot=self.product.name,
+            line_total_cents=1299,
+        )
 
-        response = self.client.post(reverse("receipt-item-list"), payload, format="json")
+        response = self.client.patch(
+            reverse("receipt-item-detail", args=[item.id]),
+            {"line_total_cents": 9999},
+            format="json",
+        )
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def test_receipt_item_rejects_non_positive_qty(self):
-        payload = {
-            "receipt": self.receipt.id,
-            "product": self.product.id,
-            "name_snapshot": "Bad Qty",
-            "qty": "0.000",
-            "line_total_cents": 100,
-        }
+    def test_direct_receipt_item_deletion_is_not_allowed(self):
+        item = ReceiptItem.objects.create(
+            receipt=self.receipt,
+            product=self.product,
+            name_snapshot=self.product.name,
+            line_total_cents=1299,
+        )
 
-        response = self.client.post(reverse("receipt-item-list"), payload, format="json")
+        response = self.client.delete(
+            reverse("receipt-item-detail", args=[item.id])
+        )
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertTrue(ReceiptItem.objects.filter(id=item.id).exists())
 
     def test_list_receipt_items_requires_authentication(self):
         self.client.force_authenticate(user=None)
