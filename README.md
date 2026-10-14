@@ -29,7 +29,11 @@ docs/
   - Django session auth, Next.js auth proxies, and protected app routes are implemented.
   - The current responsive baseline is accepted for Milestone 2; further visual refinement is deferred in `docs/post-mvp-todos.md` and is not considered finished.
   - `/transactions` performs an authenticated server-side Django API read with loading, empty, and error states.
-  - Next focus: Milestone 3 accounts and transactions flows.
+- Milestone 3 complete: accounts and transaction flows.
+  - Account CRUD, derived balances, and balance adjustments are implemented.
+  - Normal transactions and atomic transfers support create, edit, and delete flows.
+  - `/api/ledger-events/` provides the authenticated, paginated, one-row-per-event feed used by `/transactions`.
+  - Next focus: Milestone 4 receipt module UX.
 - Current local development workflow:
   - `db` and `api` run through Docker Compose
   - `web` runs locally for reliable hot reload on Windows

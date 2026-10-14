@@ -130,8 +130,52 @@ Transaction-type validation rules:
 - Normal and adjustment transactions require a category and a null `transfer` field.
 - Transfer postings require a non-null `transfer` and a null category.
 - Clients cannot create, update, or delete transfer postings through the Transaction endpoint. Use the Transfer endpoint to mutate the logical event.
+- New transactions cannot use an archived category, and existing transactions cannot switch to one. Historical transactions already assigned to an archived category may retain it while other fields are updated.
 
-`GET /api/transactions/` is currently posting-level. It includes both internal postings for a transfer and should not be used as the final one-row-per-event feed. A paginated logical event endpoint remains to be implemented.
+`GET /api/transactions/` is posting-level and includes both internal postings for a transfer. Use the ledger event endpoint for user-facing transaction feeds.
+
+## Ledger Events
+
+- `GET /api/ledger-events/`
+
+This authenticated, read-only endpoint combines normal transactions, balance adjustments, and transfers into one logical event feed. Each transfer appears once rather than exposing its two derived postings.
+
+The response uses page-number pagination with 20 events per page:
+
+```json
+{
+  "count": 1,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "event_type": "transfer",
+      "id": 1,
+      "date": "2026-03-05",
+      "occurred_at": null,
+      "amount_cents": 10000,
+      "transaction_type": "transfer",
+      "merchant": null,
+      "note": "Move cash",
+      "category_id": null,
+      "category_name": null,
+      "account_id": null,
+      "account_name": null,
+      "from_account_id": 1,
+      "from_account_name": "Checking",
+      "to_account_id": 2,
+      "to_account_name": "Savings"
+    }
+  ]
+}
+```
+
+Supported query parameters:
+
+- `page`: positive page number.
+- `search`: case-insensitive matching across relevant merchant, note, category, and account names.
+- `category`: positive category ID; transfers are excluded when this filter is active.
+- `sort`: `latest`, `oldest`, `a-to-z`, `z-to-a`, `highest`, or `lowest`. Invalid values fall back to `latest`.
 
 ## Receipts
 
