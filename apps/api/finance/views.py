@@ -34,6 +34,7 @@ from .serializers import (
     LoginSerializer,
     ProductSerializer,
     ReceiptCreateSerializer,
+    ReceiptDetailSerializer,
     ReceiptItemSerializer,
     ReceiptSerializer,
     ReceiptUpdateSerializer,
@@ -218,9 +219,21 @@ class ReceiptViewSet(
     queryset = Receipt.objects.all()
     serializer_class = ReceiptSerializer
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.action == "retrieve":
+            return queryset.select_related(
+                "transaction__account",
+                "transaction__category",
+            ).prefetch_related("items__product")
+
+        return queryset
+
     def get_serializer_class(self):
         if self.action == "create":
             return ReceiptCreateSerializer
+        if self.action == "retrieve":
+            return ReceiptDetailSerializer
         if self.action in {"update", "partial_update"}:
             return ReceiptUpdateSerializer
 

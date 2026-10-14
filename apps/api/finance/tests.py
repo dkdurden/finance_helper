@@ -800,6 +800,41 @@ class ReceiptApiTests(APITestCase):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["store"], "Costco")
 
+    def test_retrieve_receipt_returns_complete_aggregate(self):
+        receipt, item = self.create_existing_receipt()
+        self.category.is_archived = True
+        self.category.save(update_fields=["is_archived"])
+        self.product.is_archived = True
+        self.product.save(update_fields=["is_archived"])
+        self.transaction.note = "Paper coupon"
+        self.transaction.save(update_fields=["note"])
+
+        response = self.client.get(
+            reverse("receipt-detail", args=[receipt.id])
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["account"], self.account.id)
+        self.assertEqual(response.data["account_name"], self.account.name)
+        self.assertEqual(response.data["category"], self.category.id)
+        self.assertEqual(response.data["category_name"], self.category.name)
+        self.assertEqual(response.data["note"], "Paper coupon")
+        self.assertEqual(len(response.data["items"]), 1)
+        self.assertEqual(
+            response.data["items"][0],
+            {
+                "id": item.id,
+                "product": self.product.id,
+                "product_name": self.product.name,
+                "product_is_archived": True,
+                "name_snapshot": self.product.name,
+                "qty": "1.000",
+                "unit": "item",
+                "unit_price_cents": 2500,
+                "line_total_cents": 2500,
+            },
+        )
+
     def test_update_receipt_synchronizes_aggregate_and_preserves_item_id(self):
         receipt, item = self.create_existing_receipt()
         payload = self.update_payload(item)

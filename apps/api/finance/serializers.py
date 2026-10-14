@@ -154,6 +154,67 @@ class ReceiptSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at", "updated_at"]
 
 
+class ReceiptDetailItemSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source="product.name", read_only=True)
+    product_is_archived = serializers.BooleanField(
+        source="product.is_archived",
+        read_only=True,
+    )
+
+    class Meta:
+        model = ReceiptItem
+        fields = [
+            "id",
+            "product",
+            "product_name",
+            "product_is_archived",
+            "name_snapshot",
+            "qty",
+            "unit",
+            "unit_price_cents",
+            "line_total_cents",
+        ]
+        read_only_fields = fields
+
+
+class ReceiptDetailSerializer(ReceiptSerializer):
+    account = serializers.IntegerField(
+        source="transaction.account_id",
+        read_only=True,
+    )
+    account_name = serializers.CharField(
+        source="transaction.account.name",
+        read_only=True,
+    )
+    category = serializers.IntegerField(
+        source="transaction.category_id",
+        allow_null=True,
+        read_only=True,
+    )
+    category_name = serializers.CharField(
+        source="transaction.category.name",
+        allow_null=True,
+        read_only=True,
+    )
+    note = serializers.CharField(
+        source="transaction.note",
+        allow_null=True,
+        read_only=True,
+    )
+    items = ReceiptDetailItemSerializer(many=True, read_only=True)
+
+    class Meta(ReceiptSerializer.Meta):
+        fields = ReceiptSerializer.Meta.fields + [
+            "account",
+            "account_name",
+            "category",
+            "category_name",
+            "note",
+            "items",
+        ]
+        read_only_fields = fields
+
+
 class ReceiptCreateItemSerializer(serializers.Serializer):
     product = serializers.PrimaryKeyRelatedField(
         queryset=Product.objects.filter(is_archived=False)
