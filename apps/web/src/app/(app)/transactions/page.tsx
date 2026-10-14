@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
 import { Pagination } from "@/components/pagination/Pagination";
 import { SortDropdown } from "@/features/transactions/components/SortDropdown";
@@ -31,6 +32,7 @@ type TransactionLoadResult = {
   count: number;
   data: LedgerEventApiRecord[];
   error: string | null;
+  pageOutOfRange: boolean;
 };
 
 type LedgerEventPageApiResponse = {
@@ -105,7 +107,14 @@ async function getTransactions(
     });
 
     if (!response.ok) {
-      return { count: 0, data: [], error: "Unable to load transactions right now." };
+      const pageOutOfRange = response.status === 404 && page > 1;
+
+      return {
+        count: 0,
+        data: [],
+        error: pageOutOfRange ? null : "Unable to load transactions right now.",
+        pageOutOfRange,
+      };
     }
 
     const data: unknown = await response.json();
@@ -122,13 +131,24 @@ async function getTransactions(
         count: 0,
         data: [],
         error: "The transaction service returned an unexpected response.",
+        pageOutOfRange: false,
       };
     }
 
     const pageData = data as LedgerEventPageApiResponse;
-    return { count: pageData.count, data: pageData.results, error: null };
+    return {
+      count: pageData.count,
+      data: pageData.results,
+      error: null,
+      pageOutOfRange: false,
+    };
   } catch {
-    return { count: 0, data: [], error: "Unable to load transactions right now." };
+    return {
+      count: 0,
+      data: [],
+      error: "Unable to load transactions right now.",
+      pageOutOfRange: false,
+    };
   }
 }
 
@@ -262,10 +282,31 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
   const search = typeof rawSearch === "string" ? rawSearch.trim() : "";
   const sort =
     typeof rawSort === "string" && sortValues.has(rawSort) ? rawSort : "latest";
-  const [{ count, data: transactions, error }, formOptions] = await Promise.all([
+  const [transactionResult, formOptions] = await Promise.all([
     getTransactions(category, currentPage, search, sort),
     getTransactionFormOptions(),
   ]);
+
+  if (transactionResult.pageOutOfRange) {
+    const query = new URLSearchParams();
+
+    if (search) {
+      query.set("search", search);
+    }
+
+    if (sort !== "latest") {
+      query.set("sort", sort);
+    }
+
+    if (category !== "all") {
+      query.set("category", category);
+    }
+
+    const redirectQuery = query.toString();
+    redirect(redirectQuery ? `/transactions?${redirectQuery}` : "/transactions");
+  }
+
+  const { count, data: transactions, error } = transactionResult;
   const totalPages = Math.ceil(count / ledgerEventPageSize);
   const categoryOptions = [
     { label: "All Transactions", value: "all" },
