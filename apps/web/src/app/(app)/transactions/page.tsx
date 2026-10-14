@@ -55,6 +55,7 @@ type CategoryOptionApiRecord = {
 type TransactionFormOptions = {
   accounts: Array<{ id: number; isLiability: boolean; name: string }>;
   categories: Array<{ id: number; name: string }>;
+  categoryFilters: Array<{ id: number; name: string }>;
   error: string | null;
 };
 
@@ -165,6 +166,7 @@ async function getTransactionFormOptions(): Promise<TransactionFormOptions> {
       return {
         accounts: [],
         categories: [],
+        categoryFilters: [],
         error: "Unable to load transaction form options right now.",
       };
     }
@@ -176,9 +178,17 @@ async function getTransactionFormOptions(): Promise<TransactionFormOptions> {
       return {
         accounts: [],
         categories: [],
+        categoryFilters: [],
         error: "The transaction form services returned an unexpected response.",
       };
     }
+
+    const categoryOptions = (categoriesData as CategoryOptionApiRecord[]).map(
+      (category) => ({
+        id: category.id,
+        name: category.name,
+      }),
+    );
 
     return {
       accounts: (accountsData as AccountOptionApiRecord[]).map((account) => ({
@@ -189,12 +199,14 @@ async function getTransactionFormOptions(): Promise<TransactionFormOptions> {
       categories: (categoriesData as CategoryOptionApiRecord[])
         .filter((category) => !category.is_archived)
         .map((category) => ({ id: category.id, name: category.name })),
+      categoryFilters: categoryOptions,
       error: null,
     };
   } catch {
     return {
       accounts: [],
       categories: [],
+      categoryFilters: [],
       error: "Unable to load transaction form options right now.",
     };
   }
@@ -310,7 +322,7 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
   const totalPages = Math.ceil(count / ledgerEventPageSize);
   const categoryOptions = [
     { label: "All Transactions", value: "all" },
-    ...formOptions.categories.map((option) => ({
+    ...formOptions.categoryFilters.map((option) => ({
       label: option.name,
       value: String(option.id),
     })),
