@@ -1,11 +1,57 @@
 from django.db import transaction as db_transaction
 from django.utils import timezone
 
-from .models import Transaction, Transfer
+from .models import Receipt, ReceiptItem, Transaction, Transfer
 
 
 class TransferIntegrityError(Exception):
     pass
+
+
+@db_transaction.atomic
+def create_receipt(
+    *,
+    account,
+    category,
+    date,
+    items,
+    fees_cents=0,
+    note=None,
+    occurred_at=None,
+    store=None,
+    tax_cents=0,
+):
+    total_cents = (
+        sum(item["line_total_cents"] for item in items)
+        + tax_cents
+        + fees_cents
+    )
+    transaction = Transaction.objects.create(
+        account=account,
+        category=category,
+        date=date,
+        merchant=store,
+        note=note,
+        occurred_at=occurred_at,
+        signed_amount_cents=(
+            total_cents if account.is_liability else -total_cents
+        ),
+        transaction_type=Transaction.TransactionType.NORMAL,
+    )
+    receipt = Receipt.objects.create(
+        date=date,
+        fees_cents=fees_cents,
+        occurred_at=occurred_at,
+        store=store,
+        tax_cents=tax_cents,
+        total_cents=total_cents,
+        transaction=transaction,
+    )
+    ReceiptItem.objects.bulk_create(
+        [ReceiptItem(receipt=receipt, **item) for item in items]
+    )
+
+    return receipt
 
 
 def _source_signed_amount(amount_cents, account):

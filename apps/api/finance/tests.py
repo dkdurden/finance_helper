@@ -9,6 +9,7 @@ from rest_framework.test import APITestCase
 
 from .models import Account, Category, Product, Receipt, ReceiptItem, Transaction, Transfer
 from .serializers import TransferSerializer
+from .services import create_receipt
 
 User = get_user_model()
 
@@ -779,6 +780,90 @@ class ReceiptItemApiTests(APITestCase):
         response = self.client.get(reverse("receipt-item-list"))
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class ReceiptServiceTests(APITestCase):
+    def setUp(self):
+        self.account = Account.objects.create(
+            name="Receipt Service Checking",
+            account_type=Account.AccountType.CHECKING,
+            is_liability=False,
+        )
+        self.category = Category.objects.create(name="Receipt Service Category")
+        self.product = Product.objects.create(
+            name="Receipt Service Product",
+            default_unit="item",
+        )
+
+    def receipt_items(self):
+        return [
+            {
+                "line_total_cents": 1800,
+                "name_snapshot": self.product.name,
+                "product": self.product,
+                "qty": "2.000",
+                "unit": "item",
+                "unit_price_cents": 900,
+            }
+        ]
+
+    def test_create_receipt_derives_total_and_asset_transaction(self):
+        receipt = create_receipt(
+            account=self.account,
+            category=self.category,
+            date="2026-10-14",
+            fees_cents=50,
+            items=self.receipt_items(),
+            note="Weekly shop",
+            store="Market",
+            tax_cents=200,
+        )
+
+        self.assertEqual(receipt.total_cents, 2050)
+        self.assertEqual(receipt.items.count(), 1)
+        self.assertEqual(receipt.items.get().name_snapshot, self.product.name)
+        self.assertEqual(receipt.transaction.account, self.account)
+        self.assertEqual(receipt.transaction.category, self.category)
+        self.assertEqual(receipt.transaction.merchant, "Market")
+        self.assertEqual(receipt.transaction.note, "Weekly shop")
+        self.assertEqual(receipt.transaction.signed_amount_cents, -2050)
+        self.assertEqual(
+            receipt.transaction.transaction_type,
+            Transaction.TransactionType.NORMAL,
+        )
+
+    def test_create_receipt_uses_positive_transaction_for_liability(self):
+        liability_account = Account.objects.create(
+            name="Receipt Service Credit Card",
+            account_type=Account.AccountType.CREDIT_CARD,
+            is_liability=True,
+        )
+
+        receipt = create_receipt(
+            account=liability_account,
+            category=self.category,
+            date="2026-10-14",
+            items=self.receipt_items(),
+        )
+
+        self.assertEqual(receipt.transaction.signed_amount_cents, 1800)
+
+    def test_create_receipt_rolls_back_when_item_creation_fails(self):
+        with patch(
+            "finance.services.ReceiptItem.objects.bulk_create",
+            side_effect=RuntimeError("item creation failed"),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "item creation failed"):
+                create_receipt(
+                    account=self.account,
+                    category=self.category,
+                    date="2026-10-14",
+                    items=self.receipt_items(),
+                )
+
+        self.assertEqual(Transaction.objects.count(), 0)
+        self.assertEqual(Receipt.objects.count(), 0)
+        self.assertEqual(ReceiptItem.objects.count(), 0)
 
 
 class TransferApiTests(APITestCase):
