@@ -36,12 +36,13 @@ from .serializers import (
     ReceiptCreateSerializer,
     ReceiptItemSerializer,
     ReceiptSerializer,
+    ReceiptUpdateSerializer,
     SignUpSerializer,
     TRANSFER_POSTING_MUTATION_ERROR,
     TransactionSerializer,
     TransferSerializer,
 )
-from .services import TransferIntegrityError, delete_transfer
+from .services import ReceiptIntegrityError, TransferIntegrityError, delete_transfer
 
 
 def user_payload(user):
@@ -205,6 +206,7 @@ class ProductViewSet(viewsets.ModelViewSet):
 
 class ReceiptViewSet(
     mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
     viewsets.ReadOnlyModelViewSet,
 ):
     queryset = Receipt.objects.all()
@@ -213,8 +215,19 @@ class ReceiptViewSet(
     def get_serializer_class(self):
         if self.action == "create":
             return ReceiptCreateSerializer
+        if self.action in {"update", "partial_update"}:
+            return ReceiptUpdateSerializer
 
         return super().get_serializer_class()
+
+    def update(self, request, *args, **kwargs):
+        try:
+            return super().update(request, *args, **kwargs)
+        except ReceiptIntegrityError as error:
+            return Response(
+                {"detail": str(error)},
+                status=status.HTTP_409_CONFLICT,
+            )
 
 
 class ReceiptItemViewSet(viewsets.ReadOnlyModelViewSet):

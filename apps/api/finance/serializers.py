@@ -3,7 +3,7 @@ from django.db.models import Sum
 from rest_framework import serializers
 
 from .models import Account, Category, Product, Receipt, ReceiptItem, Transaction, Transfer
-from .services import create_receipt, create_transfer, update_transfer
+from .services import create_receipt, create_transfer, update_receipt, update_transfer
 
 User = get_user_model()
 
@@ -257,6 +257,125 @@ class ReceiptCreateSerializer(serializers.ModelSerializer):
             for item in items
         ]
         return create_receipt(items=receipt_items, **validated_data)
+
+
+class ReceiptUpdateItemSerializer(ReceiptCreateItemSerializer):
+    id = serializers.IntegerField(min_value=1, required=False)
+    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
+
+
+class ReceiptUpdateSerializer(serializers.ModelSerializer):
+    account = serializers.PrimaryKeyRelatedField(
+        queryset=Account.objects.all(),
+        write_only=True,
+    )
+    category = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all(),
+        write_only=True,
+    )
+    items = ReceiptUpdateItemSerializer(many=True, allow_empty=False, write_only=True)
+    note = serializers.CharField(
+        allow_blank=True,
+        allow_null=True,
+        required=False,
+        write_only=True,
+    )
+
+    class Meta:
+        model = Receipt
+        fields = [
+            "id",
+            "account",
+            "category",
+            "date",
+            "occurred_at",
+            "store",
+            "note",
+            "tax_cents",
+            "fees_cents",
+            "items",
+            "total_cents",
+            "transaction",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "total_cents",
+            "transaction",
+            "created_at",
+            "updated_at",
+        ]
+        extra_kwargs = {
+            "fees_cents": {"min_value": 0},
+            "tax_cents": {"min_value": 0},
+        }
+
+    def validate(self, attrs):
+        required_fields = {"account", "category", "date", "items"}
+        missing_fields = required_fields.difference(self.initial_data)
+        if missing_fields:
+            raise serializers.ValidationError(
+                {
+                    field: "This field is required."
+                    for field in sorted(missing_fields)
+                }
+            )
+
+        category = attrs["category"]
+        if (
+            category.is_archived
+            and category.id != self.instance.transaction.category_id
+        ):
+            raise serializers.ValidationError(
+                {"category": "Archived categories cannot be assigned."}
+            )
+
+        existing_products = {
+            item.id: item.product_id for item in self.instance.items.all()
+        }
+        item_errors = []
+        has_item_errors = False
+        for item in attrs["items"]:
+            product = item["product"]
+            item_id = item.get("id")
+            if product.is_archived and existing_products.get(item_id) != product.id:
+                item_errors.append(
+                    {"product": ["Archived products cannot be assigned."]}
+                )
+                has_item_errors = True
+            else:
+                item_errors.append({})
+
+        if has_item_errors:
+            raise serializers.ValidationError({"items": item_errors})
+
+        total_cents = (
+            sum(item["line_total_cents"] for item in attrs["items"])
+            + attrs.get("tax_cents", 0)
+            + attrs.get("fees_cents", 0)
+        )
+        if total_cents <= 0:
+            raise serializers.ValidationError(
+                {"items": "Receipt total must be greater than zero."}
+            )
+
+        return attrs
+
+    def update(self, instance, validated_data):
+        items = validated_data.pop("items")
+        receipt_items = [
+            {
+                **item,
+                "name_snapshot": item["product"].name,
+            }
+            for item in items
+        ]
+        return update_receipt(
+            instance.id,
+            items=receipt_items,
+            **validated_data,
+        )
 
 
 class ReceiptItemSerializer(serializers.ModelSerializer):

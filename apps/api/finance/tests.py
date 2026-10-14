@@ -646,6 +646,44 @@ class ReceiptApiTests(APITestCase):
             transfer=None,
         )
 
+    def create_existing_receipt(self):
+        receipt = Receipt.objects.create(
+            date="2026-03-05",
+            store="Target",
+            total_cents=2500,
+            transaction=self.transaction,
+        )
+        item = ReceiptItem.objects.create(
+            receipt=receipt,
+            product=self.product,
+            name_snapshot=self.product.name,
+            qty="1.000",
+            unit="item",
+            unit_price_cents=2500,
+            line_total_cents=2500,
+        )
+        return receipt, item
+
+    def update_payload(self, item):
+        return {
+            "account": self.account.id,
+            "category": self.category.id,
+            "date": "2026-03-06",
+            "store": "Updated Target",
+            "tax_cents": 100,
+            "fees_cents": 25,
+            "items": [
+                {
+                    "id": item.id,
+                    "product": self.product.id,
+                    "qty": "2.000",
+                    "unit": "item",
+                    "unit_price_cents": 1000,
+                    "line_total_cents": 2000,
+                }
+            ],
+        }
+
     def test_create_receipt(self):
         payload = {
             "account": self.account.id,
@@ -757,21 +795,161 @@ class ReceiptApiTests(APITestCase):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["store"], "Costco")
 
-    def test_direct_receipt_update_is_not_allowed(self):
-        receipt = Receipt.objects.create(
-            date="2026-03-05",
-            store="Costco",
-            total_cents=2500,
-            transaction=self.transaction,
-        )
+    def test_update_receipt_synchronizes_aggregate_and_preserves_item_id(self):
+        receipt, item = self.create_existing_receipt()
+        payload = self.update_payload(item)
 
         response = self.client.patch(
             reverse("receipt-detail", args=[receipt.id]),
-            {"total_cents": 9999},
+            payload,
             format="json",
         )
 
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        receipt.refresh_from_db()
+        receipt.transaction.refresh_from_db()
+        item.refresh_from_db()
+        self.assertEqual(receipt.total_cents, 2125)
+        self.assertEqual(receipt.store, "Updated Target")
+        self.assertEqual(receipt.transaction.signed_amount_cents, -2125)
+        self.assertEqual(receipt.transaction.merchant, "Updated Target")
+        self.assertEqual(item.id, payload["items"][0]["id"])
+        self.assertEqual(item.line_total_cents, 2000)
+
+    def test_put_updates_receipt_through_aggregate_service(self):
+        receipt, item = self.create_existing_receipt()
+
+        response = self.client.put(
+            reverse("receipt-detail", args=[receipt.id]),
+            self.update_payload(item),
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        receipt.refresh_from_db()
+        self.assertEqual(receipt.total_cents, 2125)
+
+    def test_partial_update_requires_complete_aggregate_payload(self):
+        receipt, _ = self.create_existing_receipt()
+
+        response = self.client.patch(
+            reverse("receipt-detail", args=[receipt.id]),
+            {"store": "Incomplete"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            set(response.data),
+            {"account", "category", "date", "items"},
+        )
+
+    def test_update_preserves_existing_archived_category_and_product(self):
+        receipt, item = self.create_existing_receipt()
+        self.category.is_archived = True
+        self.category.save(update_fields=["is_archived"])
+        self.product.is_archived = True
+        self.product.save(update_fields=["is_archived"])
+
+        response = self.client.patch(
+            reverse("receipt-detail", args=[receipt.id]),
+            self.update_payload(item),
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_update_rejects_different_archived_category(self):
+        receipt, item = self.create_existing_receipt()
+        archived_category = Category.objects.create(
+            name="Archived Update Category",
+            is_archived=True,
+        )
+        payload = self.update_payload(item)
+        payload["category"] = archived_category.id
+
+        response = self.client.patch(
+            reverse("receipt-detail", args=[receipt.id]),
+            payload,
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("category", response.data)
+
+    def test_update_rejects_different_archived_product(self):
+        receipt, item = self.create_existing_receipt()
+        archived_product = Product.objects.create(
+            name="Archived Update Product",
+            is_archived=True,
+        )
+        payload = self.update_payload(item)
+        payload["items"][0]["product"] = archived_product.id
+
+        response = self.client.patch(
+            reverse("receipt-detail", args=[receipt.id]),
+            payload,
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("product", response.data["items"][0])
+
+    def test_update_returns_conflict_for_foreign_item_id(self):
+        receipt, item = self.create_existing_receipt()
+        other_transaction = Transaction.objects.create(
+            account=self.account,
+            category=self.category,
+            date="2026-03-05",
+            signed_amount_cents=-100,
+        )
+        other_receipt = Receipt.objects.create(
+            date="2026-03-05",
+            total_cents=100,
+            transaction=other_transaction,
+        )
+        foreign_item = ReceiptItem.objects.create(
+            receipt=other_receipt,
+            product=self.product,
+            name_snapshot=self.product.name,
+            line_total_cents=100,
+        )
+        payload = self.update_payload(item)
+        payload["items"][0]["id"] = foreign_item.id
+
+        response = self.client.patch(
+            reverse("receipt-detail", args=[receipt.id]),
+            payload,
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+
+    def test_update_returns_conflict_for_duplicate_item_id(self):
+        receipt, item = self.create_existing_receipt()
+        payload = self.update_payload(item)
+        payload["items"].append(dict(payload["items"][0]))
+
+        response = self.client.patch(
+            reverse("receipt-detail", args=[receipt.id]),
+            payload,
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+
+    def test_update_returns_conflict_for_malformed_linked_transaction(self):
+        receipt, item = self.create_existing_receipt()
+        self.transaction.transaction_type = Transaction.TransactionType.ADJUSTMENT
+        self.transaction.save(update_fields=["transaction_type"])
+
+        response = self.client.patch(
+            reverse("receipt-detail", args=[receipt.id]),
+            self.update_payload(item),
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
 
     def test_direct_receipt_deletion_is_not_allowed(self):
         receipt = Receipt.objects.create(
