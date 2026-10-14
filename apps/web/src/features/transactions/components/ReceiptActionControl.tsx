@@ -51,6 +51,7 @@ type ReceiptActionControlProps = {
   accounts: TransactionAccountOption[];
   categories: TransactionCategory[];
   optionsError?: string | null;
+  products: Array<{ defaultUnit: string | null; id: number; name: string }>;
   receipt: { id: number; name: string };
 };
 
@@ -102,6 +103,7 @@ export function ReceiptActionControl({
   accounts,
   categories,
   optionsError = null,
+  products,
   receipt,
 }: ReceiptActionControlProps) {
   const router = useRouter();
@@ -110,6 +112,7 @@ export function ReceiptActionControl({
   const descriptionId = useId();
   const controlRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const nextTemporaryItemId = useRef(-1);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<"delete" | "edit" | null>(null);
   const [details, setDetails] = useState<ReceiptDetails | null>(null);
@@ -146,6 +149,61 @@ export function ReceiptActionControl({
     }
     return options;
   }, [categories, details]);
+
+  function getProductOptions(item: ReceiptItemDetails): SelectOption[] {
+    const options = products.map((product) => ({
+      color: "var(--color-cyan)",
+      label: product.name,
+      value: String(product.id),
+    }));
+    if (!products.some((product) => product.id === item.product)) {
+      options.push({
+        color: "var(--color-grey-300)",
+        label: item.product_name,
+        value: String(item.product),
+      });
+    }
+    return options;
+  }
+
+  function addItem() {
+    if (!details || products.length === 0) return;
+    const product = products[0];
+    const id = nextTemporaryItemId.current--;
+    setDetails({
+      ...details,
+      items: [
+        ...details.items,
+        {
+          id,
+          line_total_cents: 0,
+          product: product.id,
+          product_is_archived: false,
+          product_name: product.name,
+          qty: null,
+          unit: product.defaultUnit,
+          unit_price_cents: null,
+        },
+      ],
+    });
+    setItemAmounts({
+      ...itemAmounts,
+      [id]: { line: "0.00", unitPrice: "" },
+    });
+  }
+
+  function removeItem(itemId: number) {
+    if (!details || details.items.length === 1) return;
+    setDetails({
+      ...details,
+      items: details.items.filter((item) => item.id !== itemId),
+    });
+    setItemAmounts((current) => {
+      const next = { ...current };
+      delete next[itemId];
+      return next;
+    });
+  }
 
   const closeModal = useCallback(() => {
     if (!isLoading && !isSubmitting) {
@@ -248,7 +306,7 @@ export function ReceiptActionControl({
     const items = details.items.map((item) => {
       const amounts = itemAmounts[item.id];
       return {
-        id: item.id,
+        ...(item.id > 0 ? { id: item.id } : {}),
         product: item.product,
         qty: item.qty?.trim() || null,
         unit: item.unit?.trim() || null,
@@ -258,11 +316,16 @@ export function ReceiptActionControl({
         line_total_cents: amounts ? parseCents(amounts.line) : null,
       };
     });
-    const invalidAmount = items.some(
-      (item) =>
-        item.line_total_cents === null ||
-        (item.unit_price_cents === null &&
-          itemAmounts[item.id]?.unitPrice.trim()),
+    const invalidAmount = details.items.some(
+      (item) => {
+        const amounts = itemAmounts[item.id];
+        return (
+          !amounts ||
+          parseCents(amounts.line) === null ||
+          (amounts.unitPrice.trim() !== "" &&
+            parseCents(amounts.unitPrice) === null)
+        );
+      },
     );
     if (taxCents === null || feesCents === null || invalidAmount) {
       setErrorMessage(
@@ -438,18 +501,59 @@ export function ReceiptActionControl({
                     <div className={styles.items}>
                       {details.items.map((item, index) => (
                         <fieldset className={styles.item} key={item.id} disabled={isSubmitting}>
-                          <legend className={styles.itemTitle}>
-                            {item.product_name}
-                            {item.product_is_archived ? " (archived)" : ""}
-                          </legend>
+                          <legend className={styles.itemTitle}>Item {index + 1}</legend>
                           <div className={styles.itemGrid}>
+                            <SelectField
+                              className={styles.productField}
+                              label="Product"
+                              required
+                              options={getProductOptions(item)}
+                              value={String(item.product)}
+                              onChange={(event) => {
+                                const product = products.find(
+                                  (option) => option.id === Number(event.target.value),
+                                );
+                                if (!product) return;
+                                setDetails({
+                                  ...details,
+                                  items: details.items.map((current, currentIndex) =>
+                                    currentIndex === index
+                                      ? {
+                                          ...current,
+                                          product: product.id,
+                                          product_is_archived: false,
+                                          product_name: product.name,
+                                          unit: product.defaultUnit,
+                                        }
+                                      : current,
+                                  ),
+                                });
+                              }}
+                            />
                             <InputField label="Quantity" inputMode="decimal" value={item.qty ?? ""} onChange={(event) => setDetails({ ...details, items: details.items.map((current, currentIndex) => currentIndex === index ? { ...current, qty: event.target.value } : current) })} />
                             <InputField label="Unit" maxLength={50} value={item.unit ?? ""} onChange={(event) => setDetails({ ...details, items: details.items.map((current, currentIndex) => currentIndex === index ? { ...current, unit: event.target.value } : current) })} />
                             <InputField label="Unit price" prefix="$" inputMode="decimal" value={itemAmounts[item.id]?.unitPrice ?? ""} onChange={(event) => setItemAmounts({ ...itemAmounts, [item.id]: { ...itemAmounts[item.id], unitPrice: event.target.value } })} />
                             <InputField label="Line total" prefix="$" inputMode="decimal" required value={itemAmounts[item.id]?.line ?? ""} onChange={(event) => setItemAmounts({ ...itemAmounts, [item.id]: { ...itemAmounts[item.id], line: event.target.value } })} />
                           </div>
+                          <Button
+                            className={styles.removeItemButton}
+                            type="button"
+                            variant="tertiary"
+                            disabled={details.items.length === 1}
+                            onClick={() => removeItem(item.id)}
+                          >
+                            Remove Item
+                          </Button>
                         </fieldset>
                       ))}
+                      <Button
+                        type="button"
+                        variant="tertiary"
+                        disabled={isSubmitting || products.length === 0}
+                        onClick={addItem}
+                      >
+                        + Add Item
+                      </Button>
                     </div>
                   </div>
                 ) : null}

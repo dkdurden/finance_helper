@@ -54,6 +54,13 @@ type CategoryOptionApiRecord = {
   name: string;
 };
 
+type ProductOptionApiRecord = {
+  default_unit: string | null;
+  id: number;
+  is_archived: boolean;
+  name: string;
+};
+
 type TransactionFormOptions = {
   accountError: string | null;
   accounts: Array<{ id: number; isLiability: boolean; name: string }>;
@@ -61,6 +68,8 @@ type TransactionFormOptions = {
   categoryError: string | null;
   categoryFilters: Array<{ id: number; name: string }>;
   error: string | null;
+  productError: string | null;
+  products: Array<{ defaultUnit: string | null; id: number; name: string }>;
 };
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
@@ -160,7 +169,7 @@ async function getTransactions(
 async function getTransactionFormOptions(): Promise<TransactionFormOptions> {
   const cookieStore = await cookies();
   const headers = { cookie: cookieStore.toString() };
-  const [accountResult, categoryResult] = await Promise.all([
+  const [accountResult, categoryResult, productResult] = await Promise.all([
     (async () => {
       try {
         const response = await fetch(backendUrl("/api/accounts/"), {
@@ -219,6 +228,35 @@ async function getTransactionFormOptions(): Promise<TransactionFormOptions> {
         };
       }
     })(),
+    (async () => {
+      try {
+        const response = await fetch(backendUrl("/api/products/"), {
+          headers,
+          cache: "no-store",
+        });
+        const data: unknown = response.ok ? await response.json() : null;
+
+        if (!response.ok || !Array.isArray(data)) {
+          throw new Error();
+        }
+
+        return {
+          data: (data as ProductOptionApiRecord[])
+            .filter((product) => !product.is_archived)
+            .map((product) => ({
+              defaultUnit: product.default_unit,
+              id: product.id,
+              name: product.name,
+            })),
+          error: null,
+        };
+      } catch {
+        return {
+          data: [],
+          error: "Unable to load product options right now.",
+        };
+      }
+    })(),
   ]);
 
   return {
@@ -227,7 +265,9 @@ async function getTransactionFormOptions(): Promise<TransactionFormOptions> {
     categories: categoryResult.categories,
     categoryError: categoryResult.error,
     categoryFilters: categoryResult.categoryFilters,
-    error: accountResult.error ?? categoryResult.error,
+    error: accountResult.error ?? categoryResult.error ?? productResult.error,
+    productError: productResult.error,
+    products: productResult.data,
   };
 }
 
@@ -475,6 +515,7 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
                         accounts={formOptions.accounts}
                         categories={formOptions.categories}
                         optionsError={formOptions.error}
+                        products={formOptions.products}
                         receipt={{ id: transaction.receipt_id, name }}
                       />
                     ) : transaction.event_type === "transaction" &&

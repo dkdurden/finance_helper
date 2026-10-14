@@ -31,6 +31,14 @@
   font-weight: var(--text-preset-4-weight);
 }
 
+.productField {
+  grid-column: 1 / -1;
+}
+
+.removeItemButton {
+  justify-self: end;
+}
+
 @media (max-width: 40rem) {
   .moneyGrid,
   .itemGrid {
