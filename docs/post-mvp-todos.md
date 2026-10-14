@@ -1,6 +1,6 @@
 # Post-MVP TODOs
 
-Last updated: 2026-07-16
+Last updated: 2026-10-14
 
 This document tracks product work that remains incomplete but is intentionally not required to close the current MVP milestone. Deferring an item means the current milestone accepts the existing implementation; it does not mean the underlying work is complete.
 
@@ -31,6 +31,7 @@ Status: `deferred`
 
 Status: `deferred`
 
+- Replace the inert mobile sort and category-filter icons with functional controls.
 - Refine the transition between compact mobile rows and the full desktop table.
 - Review category and date visibility at intermediate widths.
 - Check long recipient names, amount alignment, and horizontal spacing.
