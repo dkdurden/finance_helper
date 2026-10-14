@@ -90,6 +90,7 @@ export function TransactionCreateControl({
   const [date, setDate] = useState(getLocalDate);
   const [direction, setDirection] = useState<TransactionDirection>("decrease");
   const [merchant, setMerchant] = useState("");
+  const [note, setNote] = useState("");
   const [categoryPending, setCategoryPending] = useState(false);
   const [categories, setCategories] = useState(initialCategories);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -199,6 +200,7 @@ export function TransactionCreateControl({
                   amount_cents: signedAmountCents,
                   date,
                   from_account: accountId,
+                  note: note.trim() || null,
                   to_account: toAccountId,
                 }
               : {
@@ -206,6 +208,7 @@ export function TransactionCreateControl({
                   category: categoryId,
                   date,
                   merchant: merchant.trim() || null,
+                  note: note.trim() || null,
                   signed_amount_cents: signedAmountCents,
                   transaction_type: "normal",
                   transfer: null,
@@ -243,6 +246,7 @@ export function TransactionCreateControl({
       setDate(getLocalDate());
       setDirection("decrease");
       setMerchant("");
+      setNote("");
       router.refresh();
       requestAnimationFrame(() => {
         triggerWrapRef.current?.querySelector("button")?.focus();
@@ -346,6 +350,14 @@ export function TransactionCreateControl({
                   type="date"
                   value={date}
                   onChange={(event) => setDate(event.target.value)}
+                />
+
+                <InputField
+                  disabled={categoryPending || isSubmitting}
+                  helperText="Optional. Searchable from the transaction list."
+                  label="Note"
+                  value={note}
+                  onChange={(event) => setNote(event.target.value)}
                 />
 
                 <SelectField
