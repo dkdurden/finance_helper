@@ -9,7 +9,7 @@ from rest_framework.test import APITestCase
 
 from .models import Account, Category, Product, Receipt, ReceiptItem, Transaction, Transfer
 from .serializers import TransferSerializer
-from .services import create_receipt
+from .services import ReceiptIntegrityError, create_receipt, update_receipt
 
 User = get_user_model()
 
@@ -983,6 +983,120 @@ class ReceiptServiceTests(APITestCase):
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(Receipt.objects.count(), 0)
         self.assertEqual(ReceiptItem.objects.count(), 0)
+
+    def test_update_receipt_reconciles_items_and_linked_transaction(self):
+        receipt = create_receipt(
+            account=self.account,
+            category=self.category,
+            date="2026-10-14",
+            items=self.receipt_items(),
+            store="Original Market",
+        )
+        existing_item = receipt.items.get()
+        removed_item = ReceiptItem.objects.create(
+            receipt=receipt,
+            product=self.product,
+            name_snapshot="Removed item",
+            line_total_cents=100,
+        )
+        liability_account = Account.objects.create(
+            name="Receipt Update Credit Card",
+            account_type=Account.AccountType.CREDIT_CARD,
+            is_liability=True,
+        )
+        new_product = Product.objects.create(name="Receipt Update Product")
+
+        updated_receipt = update_receipt(
+            receipt.id,
+            account=liability_account,
+            category=self.category,
+            date="2026-10-15",
+            fees_cents=25,
+            items=[
+                {
+                    "id": existing_item.id,
+                    "line_total_cents": 2000,
+                    "name_snapshot": self.product.name,
+                    "product": self.product,
+                    "qty": "2.000",
+                    "unit": "item",
+                    "unit_price_cents": 1000,
+                },
+                {
+                    "line_total_cents": 500,
+                    "name_snapshot": new_product.name,
+                    "product": new_product,
+                },
+            ],
+            note="Updated shop",
+            store="Updated Market",
+            tax_cents=100,
+        )
+
+        updated_receipt.refresh_from_db()
+        updated_receipt.transaction.refresh_from_db()
+        self.assertEqual(updated_receipt.total_cents, 2625)
+        self.assertEqual(updated_receipt.store, "Updated Market")
+        self.assertEqual(updated_receipt.transaction.account, liability_account)
+        self.assertEqual(updated_receipt.transaction.merchant, "Updated Market")
+        self.assertEqual(updated_receipt.transaction.note, "Updated shop")
+        self.assertEqual(updated_receipt.transaction.signed_amount_cents, 2625)
+        self.assertTrue(updated_receipt.items.filter(id=existing_item.id).exists())
+        self.assertFalse(updated_receipt.items.filter(id=removed_item.id).exists())
+        self.assertEqual(updated_receipt.items.count(), 2)
+
+    def test_update_receipt_rejects_malformed_linked_transaction(self):
+        receipt = create_receipt(
+            account=self.account,
+            category=self.category,
+            date="2026-10-14",
+            items=self.receipt_items(),
+        )
+        receipt.transaction.transaction_type = Transaction.TransactionType.ADJUSTMENT
+        receipt.transaction.save(update_fields=["transaction_type"])
+
+        with self.assertRaisesRegex(
+            ReceiptIntegrityError,
+            "Receipt transaction is malformed",
+        ):
+            update_receipt(
+                receipt.id,
+                account=self.account,
+                category=self.category,
+                date="2026-10-15",
+                items=self.receipt_items(),
+            )
+
+    def test_update_receipt_rolls_back_when_item_creation_fails(self):
+        receipt = create_receipt(
+            account=self.account,
+            category=self.category,
+            date="2026-10-14",
+            items=self.receipt_items(),
+            store="Original Market",
+        )
+        original_item = receipt.items.get()
+
+        with patch(
+            "finance.services.ReceiptItem.objects.bulk_create",
+            side_effect=RuntimeError("item creation failed"),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "item creation failed"):
+                update_receipt(
+                    receipt.id,
+                    account=self.account,
+                    category=self.category,
+                    date="2026-10-15",
+                    items=self.receipt_items(),
+                    store="Updated Market",
+                )
+
+        receipt.refresh_from_db()
+        receipt.transaction.refresh_from_db()
+        self.assertEqual(str(receipt.date), "2026-10-14")
+        self.assertEqual(receipt.store, "Original Market")
+        self.assertEqual(receipt.transaction.merchant, "Original Market")
+        self.assertTrue(receipt.items.filter(id=original_item.id).exists())
 
 
 class TransferApiTests(APITestCase):

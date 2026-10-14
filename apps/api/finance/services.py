@@ -8,6 +8,10 @@ class TransferIntegrityError(Exception):
     pass
 
 
+class ReceiptIntegrityError(Exception):
+    pass
+
+
 @db_transaction.atomic
 def create_receipt(
     *,
@@ -50,6 +54,118 @@ def create_receipt(
     ReceiptItem.objects.bulk_create(
         [ReceiptItem(receipt=receipt, **item) for item in items]
     )
+
+    return receipt
+
+
+@db_transaction.atomic
+def update_receipt(
+    receipt_id,
+    *,
+    account,
+    category,
+    date,
+    items,
+    fees_cents=0,
+    note=None,
+    occurred_at=None,
+    store=None,
+    tax_cents=0,
+):
+    receipt = (
+        Receipt.objects.select_for_update()
+        .select_related("transaction")
+        .get(pk=receipt_id)
+    )
+    transaction = Transaction.objects.select_for_update().get(
+        pk=receipt.transaction_id
+    )
+    existing_items = {
+        item.id: item
+        for item in ReceiptItem.objects.select_for_update().filter(receipt=receipt)
+    }
+
+    if (
+        transaction.transaction_type != Transaction.TransactionType.NORMAL
+        or transaction.transfer_id is not None
+    ):
+        raise ReceiptIntegrityError(
+            "Receipt transaction is malformed and cannot be modified."
+        )
+
+    submitted_item_ids = [
+        item["id"] for item in items if item.get("id") is not None
+    ]
+    if (
+        len(submitted_item_ids) != len(set(submitted_item_ids))
+        or any(item_id not in existing_items for item_id in submitted_item_ids)
+    ):
+        raise ReceiptIntegrityError(
+            "Receipt items are malformed and cannot be modified."
+        )
+
+    total_cents = (
+        sum(item["line_total_cents"] for item in items)
+        + tax_cents
+        + fees_cents
+    )
+    transaction.account = account
+    transaction.category = category
+    transaction.date = date
+    transaction.merchant = store
+    transaction.note = note
+    transaction.occurred_at = occurred_at
+    transaction.signed_amount_cents = (
+        total_cents if account.is_liability else -total_cents
+    )
+    transaction.save()
+
+    receipt.date = date
+    receipt.fees_cents = fees_cents
+    receipt.occurred_at = occurred_at
+    receipt.store = store
+    receipt.tax_cents = tax_cents
+    receipt.total_cents = total_cents
+    receipt.save()
+
+    updated_at = timezone.now()
+    items_to_update = []
+    items_to_create = []
+    for item_data in items:
+        item_values = {
+            key: value for key, value in item_data.items() if key != "id"
+        }
+        item_id = item_data.get("id")
+
+        if item_id is None:
+            items_to_create.append(ReceiptItem(receipt=receipt, **item_values))
+            continue
+
+        receipt_item = existing_items[item_id]
+        for field, value in item_values.items():
+            setattr(receipt_item, field, value)
+        receipt_item.updated_at = updated_at
+        items_to_update.append(receipt_item)
+
+    retained_item_ids = set(submitted_item_ids)
+    ReceiptItem.objects.filter(receipt=receipt).exclude(
+        id__in=retained_item_ids
+    ).delete()
+    if items_to_update:
+        ReceiptItem.objects.bulk_update(
+            items_to_update,
+            [
+                "product",
+                "name_snapshot",
+                "qty",
+                "unit",
+                "unit_price_cents",
+                "line_total_cents",
+                "updated_at",
+            ],
+        )
+    if items_to_create:
+        ReceiptItem.objects.bulk_create(items_to_create)
 
     return receipt
 
