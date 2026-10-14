@@ -355,4 +355,16 @@ class TransactionSerializer(serializers.ModelSerializer):
                 {"category": "category is required for non-transfer transactions."}
             )
 
+        if (
+            category is not None
+            and category.is_archived
+            and (
+                self.instance is None
+                or self.instance.category_id != category.id
+            )
+        ):
+            raise serializers.ValidationError(
+                {"category": "Archived categories cannot be assigned to transactions."}
+            )
+
         return attrs

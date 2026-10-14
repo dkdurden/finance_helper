@@ -1897,6 +1897,80 @@ class TransactionApiTests(APITestCase):
         self.assertEqual(response.data["category_name"], updated_category.name)
         self.assertEqual(response.data["account_name"], self.secondary_account.name)
 
+    def test_create_transaction_rejects_archived_category(self):
+        archived_category = Category.objects.create(
+            name="Archived",
+            is_archived=True,
+        )
+
+        response = self.client.post(
+            reverse("transaction-list"),
+            {
+                "date": "2026-03-05",
+                "signed_amount_cents": -1000,
+                "transaction_type": "normal",
+                "category": archived_category.id,
+                "account": self.account.id,
+                "transfer": None,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data["category"][0],
+            "Archived categories cannot be assigned to transactions.",
+        )
+
+    def test_update_transaction_rejects_different_archived_category(self):
+        archived_category = Category.objects.create(
+            name="Archived",
+            is_archived=True,
+        )
+        transaction = Transaction.objects.create(
+            date="2026-03-05",
+            signed_amount_cents=-1000,
+            transaction_type=Transaction.TransactionType.NORMAL,
+            category=self.category,
+            account=self.account,
+        )
+
+        response = self.client.patch(
+            reverse("transaction-detail", args=[transaction.id]),
+            {"category": archived_category.id},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data["category"][0],
+            "Archived categories cannot be assigned to transactions.",
+        )
+
+    def test_update_transaction_preserves_existing_archived_category(self):
+        archived_category = Category.objects.create(
+            name="Archived",
+            is_archived=True,
+        )
+        transaction = Transaction.objects.create(
+            date="2026-03-05",
+            signed_amount_cents=-1000,
+            transaction_type=Transaction.TransactionType.NORMAL,
+            category=archived_category,
+            account=self.account,
+        )
+
+        response = self.client.patch(
+            reverse("transaction-detail", args=[transaction.id]),
+            {"note": "Updated historical transaction"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        transaction.refresh_from_db()
+        self.assertEqual(transaction.category, archived_category)
+        self.assertEqual(transaction.note, "Updated historical transaction")
+
     def test_transaction_amount_must_not_be_zero(self):
         payload = {
             "date": "2026-03-05",
