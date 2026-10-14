@@ -1,6 +1,6 @@
 # Session Start Guide (for New AI Context)
 
-Last updated: 2026-07-15
+Last updated: 2026-10-14
 
 Use this file at the beginning of any new chat/session so the assistant can start with full project context and minimal back-and-forth.
 
@@ -11,17 +11,18 @@ You are working in the `finance_helper` repo.
 
 Read these files first:
 
-1. README.md
-2. docs/plan.md
-3. docs/README.md
-4. docs/learn/milestone-1-notes.md
-5. docs/learn/milestone-2-notes.md
-6. docs/how-to/api-core-endpoints.md
-7. docs/how-to/ledger-transfer-model.md
-8. apps/web/AGENTS_STYLE_GUIDE.md
-9. docs/decisions/2026-03-10-web-local-dev.md
-10. docs/plan-auth.md
-11. docs/post-mvp-todos.md
+1. AGENTS.md
+2. README.md
+3. docs/plan.md
+4. docs/README.md
+5. docs/learn/milestone-1-notes.md
+6. docs/learn/milestone-2-notes.md
+7. docs/how-to/api-core-endpoints.md
+8. docs/how-to/ledger-transfer-model.md
+9. apps/web/AGENTS_STYLE_GUIDE.md
+10. docs/decisions/2026-03-10-web-local-dev.md
+11. docs/plan-auth.md
+12. docs/post-mvp-todos.md
 
 Then do the following:
 
@@ -58,7 +59,7 @@ Constraints:
   - `accounts`, `categories`, `transactions`, `transfers`
   - `products`, `receipts`, `receipt-items`
 - Admin registrations exist for current finance models.
-- Current API test status: `Ran 31 tests ... OK`.
+- Focused API tests cover the implemented account, transaction, transfer, ledger-event, and authentication behavior.
 - Milestone 2 is complete in `apps/web`, including the Figma-driven frontend foundation, Django session authentication, protected app routes, and the first authenticated server-side finance read.
 - Completed frontend prototype slices so far:
   - responsive sidebar navigation for desktop, tablet, and mobile
@@ -75,6 +76,13 @@ Constraints:
   - `/transactions` page implemented with an authenticated Django API read, formatted rows, loading/empty/error states, custom dropdown shells, pagination shell, and mobile responsive treatment
   - Django session signup, login, logout, current-user lookup, and CSRF initialization
   - Next.js auth proxies, protected app routes, and authenticated-user redirects
+- Milestone 3 is complete:
+  - account create, edit, delete, derived-balance, and balance-adjustment flows
+  - normal transaction create, edit, and delete flows
+  - atomic transfer create, edit, and delete with protected derived postings
+  - authenticated, paginated `GET /api/ledger-events/` with one row per logical event
+  - Transactions page integration with real pagination, search, sorting, category filtering, and transaction/transfer actions
+  - active-category assignment protections with archived categories retained for historical filtering
 - The current responsive baseline and out-of-scope feature shells are accepted for Milestone 2.
 - Remaining responsive refinement and deferred Budgets, Pots, and Recurring Bills functionality are incomplete post-MVP work tracked in `docs/post-mvp-todos.md`.
 - `apps/web/TODOS.md` points to the central post-MVP tracker.
@@ -82,7 +90,7 @@ Constraints:
 
 ## Next Recommended Step
 
-Begin Milestone 3 by inspecting the current Account and Transaction APIs and proposing one small accounts/transactions flow slice before implementing CRUD, derived balances, or authenticated mutations.
+Begin Milestone 4 by inspecting the existing Product, Receipt, and Receipt Item APIs plus the current web page structure. Propose one small receipt UX slice and wait for approval before implementing it.
 
 ## Definition of Done Per Milestone
 
@@ -104,7 +112,7 @@ Begin Milestone 3 by inspecting the current Account and Transaction APIs and pro
 ```powershell
 Copy-Item .env.example .env
 Copy-Item apps/api/.env.example apps/api/.env
-Copy-Item apps/web/.env.example apps/web/.env
+Copy-Item apps/web/.env.example apps/web/.env.local
 docker compose up --build db api
 docker compose ps
 docker compose logs -f api
