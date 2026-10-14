@@ -30,6 +30,7 @@ type TransferActionControlProps = {
     fromAccountId: number;
     id: number;
     name: string;
+    note: string | null;
     toAccountId: number;
   };
 };
@@ -82,6 +83,7 @@ function TransferEditModal({
     (transfer.amountCents / 100).toFixed(2),
   );
   const [date, setDate] = useState(transfer.date);
+  const [note, setNote] = useState(transfer.note ?? "");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const accountOptions = useMemo<SelectOption[]>(
@@ -165,6 +167,7 @@ function TransferEditModal({
           amount_cents: amountCents,
           date,
           from_account: fromAccountId,
+          note: note.trim() || null,
           to_account: toAccountId,
         }),
       });
@@ -235,8 +238,7 @@ function TransferEditModal({
 
         <form className={formStyles.content} onSubmit={handleSubmit}>
           <p className={modalStyles.description} id={descriptionId}>
-            Update the date, source, destination, and amount. The transfer note
-            will stay unchanged.
+            Update the date, note, source, destination, and amount.
           </p>
 
           <div className={formStyles.controls}>
@@ -248,6 +250,14 @@ function TransferEditModal({
               type="date"
               value={date}
               onChange={(event) => setDate(event.target.value)}
+            />
+
+            <InputField
+              disabled={isSubmitting}
+              helperText="Optional. Searchable from the transaction list."
+              label="Note"
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
             />
 
             <SelectField

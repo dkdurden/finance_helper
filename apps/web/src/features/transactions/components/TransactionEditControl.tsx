@@ -37,6 +37,7 @@ export type EditableTransaction = {
   id: number;
   merchant: string | null;
   name: string;
+  note: string | null;
   signedAmountCents: number;
 };
 
@@ -96,6 +97,7 @@ function TransactionEditModal({
     formatAmountForInput(transaction.signedAmountCents),
   );
   const [merchant, setMerchant] = useState(transaction.merchant ?? "");
+  const [note, setNote] = useState(transaction.note ?? "");
   const [direction, setDirection] = useState<TransactionDirection>(
     transaction.signedAmountCents > 0 ? "increase" : "decrease",
   );
@@ -189,6 +191,7 @@ function TransactionEditModal({
           category: categoryId,
           date,
           merchant: merchant.trim() || null,
+          note: note.trim() || null,
           signed_amount_cents: signedAmountCents,
         }),
       });
@@ -257,8 +260,8 @@ function TransactionEditModal({
 
         <form className={formStyles.content} onSubmit={handleSubmit}>
           <p className={modalStyles.description} id={descriptionId}>
-            Update the date, merchant, account, category, and amount. Other
-            transaction details will stay unchanged.
+            Update the date, merchant, note, account, category, and amount.
+            Other transaction details will stay unchanged.
           </p>
 
           <div className={formStyles.controls}>
@@ -279,6 +282,14 @@ function TransactionEditModal({
               maxLength={255}
               value={merchant}
               onChange={(event) => setMerchant(event.target.value)}
+            />
+
+            <InputField
+              disabled={categoryPending || isSubmitting}
+              helperText="Optional. Searchable from the transaction list."
+              label="Note"
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
             />
 
             <SelectField

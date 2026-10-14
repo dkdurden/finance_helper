@@ -16,6 +16,7 @@ type LedgerEventApiRecord = {
   amount_cents: number;
   transaction_type: "normal" | "adjustment" | "transfer";
   merchant: string | null;
+  note: string | null;
   account_id: number | null;
   account_name: string | null;
   category_id: number | null;
@@ -412,6 +413,7 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
                           id: transaction.id,
                           merchant: transaction.merchant,
                           name,
+                          note: transaction.note,
                           signedAmountCents: transaction.amount_cents,
                         }}
                       />
@@ -427,6 +429,7 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
                           fromAccountId: transaction.from_account_id,
                           id: transaction.id,
                           name,
+                          note: transaction.note,
                           toAccountId: transaction.to_account_id,
                         }}
                       />
