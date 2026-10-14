@@ -3,7 +3,7 @@ from django.db.models import Sum
 from rest_framework import serializers
 
 from .models import Account, Category, Product, Receipt, ReceiptItem, Transaction, Transfer
-from .services import create_transfer, update_transfer
+from .services import create_receipt, create_transfer, update_transfer
 
 User = get_user_model()
 
@@ -152,6 +152,111 @@ class ReceiptSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class ReceiptCreateItemSerializer(serializers.Serializer):
+    product = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.filter(is_archived=False)
+    )
+    qty = serializers.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        allow_null=True,
+        required=False,
+    )
+    unit = serializers.CharField(
+        max_length=50,
+        allow_blank=True,
+        allow_null=True,
+        required=False,
+    )
+    unit_price_cents = serializers.IntegerField(
+        allow_null=True,
+        min_value=0,
+        required=False,
+    )
+    line_total_cents = serializers.IntegerField(min_value=0)
+
+    def validate_qty(self, value):
+        if value is not None and value <= 0:
+            raise serializers.ValidationError(
+                "qty must be greater than zero when provided."
+            )
+
+        return value
+
+
+class ReceiptCreateSerializer(serializers.ModelSerializer):
+    account = serializers.PrimaryKeyRelatedField(
+        queryset=Account.objects.all(),
+        write_only=True,
+    )
+    category = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.filter(is_archived=False),
+        write_only=True,
+    )
+    items = ReceiptCreateItemSerializer(many=True, allow_empty=False, write_only=True)
+    note = serializers.CharField(
+        allow_blank=True,
+        allow_null=True,
+        required=False,
+        write_only=True,
+    )
+
+    class Meta:
+        model = Receipt
+        fields = [
+            "id",
+            "account",
+            "category",
+            "date",
+            "occurred_at",
+            "store",
+            "note",
+            "tax_cents",
+            "fees_cents",
+            "items",
+            "total_cents",
+            "transaction",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "total_cents",
+            "transaction",
+            "created_at",
+            "updated_at",
+        ]
+        extra_kwargs = {
+            "fees_cents": {"min_value": 0},
+            "tax_cents": {"min_value": 0},
+        }
+
+    def validate(self, attrs):
+        total_cents = (
+            sum(item["line_total_cents"] for item in attrs["items"])
+            + attrs.get("tax_cents", 0)
+            + attrs.get("fees_cents", 0)
+        )
+
+        if total_cents <= 0:
+            raise serializers.ValidationError(
+                {"items": "Receipt total must be greater than zero."}
+            )
+
+        return attrs
+
+    def create(self, validated_data):
+        items = validated_data.pop("items")
+        receipt_items = [
+            {
+                **item,
+                "name_snapshot": item["product"].name,
+            }
+            for item in items
+        ]
+        return create_receipt(items=receipt_items, **validated_data)
 
 
 class ReceiptItemSerializer(serializers.ModelSerializer):

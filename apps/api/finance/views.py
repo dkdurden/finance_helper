@@ -33,6 +33,7 @@ from .serializers import (
     LedgerEventSerializer,
     LoginSerializer,
     ProductSerializer,
+    ReceiptCreateSerializer,
     ReceiptItemSerializer,
     ReceiptSerializer,
     SignUpSerializer,
@@ -205,6 +206,12 @@ class ProductViewSet(viewsets.ModelViewSet):
 class ReceiptViewSet(viewsets.ModelViewSet):
     queryset = Receipt.objects.all()
     serializer_class = ReceiptSerializer
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return ReceiptCreateSerializer
+
+        return super().get_serializer_class()
 
 
 class ReceiptItemViewSet(viewsets.ModelViewSet):

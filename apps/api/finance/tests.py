@@ -632,6 +632,10 @@ class ReceiptApiTests(APITestCase):
             opening_balance_date="2026-01-01T00:00:00Z",
         )
         self.category = Category.objects.create(name="Receipt Category")
+        self.product = Product.objects.create(
+            name="Receipt Product",
+            default_unit="item",
+        )
         self.transaction = Transaction.objects.create(
             date="2026-03-05",
             signed_amount_cents=-2500,
@@ -644,19 +648,98 @@ class ReceiptApiTests(APITestCase):
 
     def test_create_receipt(self):
         payload = {
+            "account": self.account.id,
+            "category": self.category.id,
             "date": "2026-03-05",
             "store": "Target",
             "tax_cents": 200,
-            "fees_cents": 0,
-            "total_cents": 2500,
-            "transaction": self.transaction.id,
+            "fees_cents": 50,
+            "items": [
+                {
+                    "product": self.product.id,
+                    "qty": "2.000",
+                    "unit": "item",
+                    "unit_price_cents": 1000,
+                    "line_total_cents": 2000,
+                }
+            ],
         }
 
         response = self.client.post(reverse("receipt-list"), payload, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["store"], payload["store"])
-        self.assertEqual(response.data["total_cents"], payload["total_cents"])
+        self.assertEqual(response.data["total_cents"], 2250)
+        receipt = Receipt.objects.get(id=response.data["id"])
+        self.assertEqual(receipt.items.count(), 1)
+        self.assertEqual(receipt.items.get().name_snapshot, self.product.name)
+        self.assertEqual(receipt.transaction.signed_amount_cents, -2250)
+        self.assertEqual(receipt.transaction.merchant, payload["store"])
+
+    def test_create_receipt_rejects_empty_items(self):
+        response = self.client.post(
+            reverse("receipt-list"),
+            {
+                "account": self.account.id,
+                "category": self.category.id,
+                "date": "2026-03-05",
+                "items": [],
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("items", response.data)
+
+    def test_create_receipt_rejects_archived_product(self):
+        archived_product = Product.objects.create(
+            name="Archived Receipt Product",
+            is_archived=True,
+        )
+
+        response = self.client.post(
+            reverse("receipt-list"),
+            {
+                "account": self.account.id,
+                "category": self.category.id,
+                "date": "2026-03-05",
+                "items": [
+                    {
+                        "product": archived_product.id,
+                        "line_total_cents": 100,
+                    }
+                ],
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("product", response.data["items"][0])
+
+    def test_create_receipt_rejects_archived_category(self):
+        archived_category = Category.objects.create(
+            name="Archived Receipt Category",
+            is_archived=True,
+        )
+
+        response = self.client.post(
+            reverse("receipt-list"),
+            {
+                "account": self.account.id,
+                "category": archived_category.id,
+                "date": "2026-03-05",
+                "items": [
+                    {
+                        "product": self.product.id,
+                        "line_total_cents": 100,
+                    }
+                ],
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("category", response.data)
 
     def test_list_receipts(self):
         Receipt.objects.create(
