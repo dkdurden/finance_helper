@@ -492,8 +492,8 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
                       transaction.from_account_id !== null &&
                       transaction.to_account_id !== null ? (
                       <TransferActionControl
+                        accountError={formOptions.accountError}
                         accounts={formOptions.accounts}
-                        optionsError={formOptions.error}
                         transfer={{
                           amountCents: transaction.amount_cents,
                           date: transaction.date,

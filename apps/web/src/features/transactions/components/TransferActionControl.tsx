@@ -22,8 +22,8 @@ import deleteStyles from "./TransactionDeleteModal.module.css";
 import styles from "./TransactionEditControl.module.css";
 
 type TransferActionControlProps = {
+  accountError?: string | null;
   accounts: TransactionAccountOption[];
-  optionsError?: string | null;
   transfer: {
     amountCents: number;
     date: string;
@@ -64,9 +64,9 @@ type TransferEditModalProps = TransferActionControlProps & {
 };
 
 function TransferEditModal({
+  accountError = null,
   accounts,
   onClose,
-  optionsError = null,
   transfer,
 }: TransferEditModalProps) {
   const router = useRouter();
@@ -317,12 +317,12 @@ function TransferEditModal({
             />
           </div>
 
-          {optionsError ? (
+          {accountError ? (
             <p
               className={`${formStyles.statusMessage} ${formStyles.errorMessage}`}
               role="alert"
             >
-              {optionsError}
+              {accountError}
             </p>
           ) : null}
 
@@ -337,7 +337,7 @@ function TransferEditModal({
 
           <Button
             type="submit"
-            disabled={isSubmitting || accounts.length < 2 || optionsError !== null}
+            disabled={isSubmitting || accounts.length < 2 || accountError !== null}
           >
             {isSubmitting ? "Saving Changes..." : "Save Changes"}
           </Button>
@@ -348,8 +348,8 @@ function TransferEditModal({
 }
 
 export function TransferActionControl({
+  accountError = null,
   accounts,
-  optionsError = null,
   transfer,
 }: TransferActionControlProps) {
   const router = useRouter();
@@ -514,8 +514,8 @@ export function TransferActionControl({
 
       {activeModal === "edit" ? (
         <TransferEditModal
+          accountError={accountError}
           accounts={accounts}
-          optionsError={optionsError}
           transfer={transfer}
           onClose={closeModal}
         />
