@@ -174,10 +174,36 @@
 }
 
 .transactionAvatar {
+  display: inline-grid;
   width: 2.5rem;
   height: 2.5rem;
+  place-items: center;
   border-radius: 999px;
-  object-fit: cover;
+  background: var(--color-beige-100);
+  color: var(--color-grey-900);
+  font-size: var(--text-preset-5-bold-size);
+  font-weight: var(--text-preset-5-bold-weight);
+}
+
+.panelLink {
+  display: inline-flex;
+  gap: var(--space-150);
+  align-items: center;
+  color: var(--color-grey-500);
+  font-size: var(--text-preset-4-size);
+  line-height: var(--text-preset-4-line-height);
+  text-decoration: none;
+}
+
+.panelLink:hover {
+  color: var(--color-grey-900);
+}
+
+.transactionState {
+  margin: 0;
+  padding-block: var(--space-300);
+  color: var(--color-grey-500);
+  font-size: var(--text-preset-4-size);
 }
 
 .transactionDetails {

@@ -1,11 +1,12 @@
 import Image from "next/image";
+import Link from "next/link";
 import { cookies } from "next/headers";
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/button/Button";
 import { OverviewSummaryCard } from "@/features/overview/components/OverviewSummaryCard";
 import { SpendingByCategoryChart } from "@/features/overview/components/SpendingByCategoryChart";
 import { backendUrl } from "@/lib/backendUrl";
-import { formatCalendarMonth, getCurrentYearMonth } from "@/lib/date";
+import { formatCalendarDate, formatCalendarMonth, getCurrentYearMonth } from "@/lib/date";
 import styles from "./page.module.css";
 
 type MonthlySummary = {
@@ -19,9 +20,31 @@ type CategorySpending = {
   expenseCents: number;
 };
 
+type LedgerEvent = {
+  event_type: "transaction" | "transfer";
+  id: number;
+  date: string;
+  amount_cents: number;
+  transaction_type: "normal" | "adjustment" | "transfer";
+  merchant: string | null;
+  from_account_name: string | null;
+  to_account_name: string | null;
+};
+
+type RecentTransactionsResult = {
+  data: LedgerEvent[];
+  error: boolean;
+};
+
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
+});
+
+const signedCurrencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  signDisplay: "always",
 });
 
 async function getNetWorthCents(): Promise<number | null> {
@@ -129,43 +152,52 @@ async function getSpendingByCategory(month: string): Promise<CategorySpending[] 
   }
 }
 
-const recentTransactions = [
-  {
-    name: "Emma Richardson",
-    date: "19 Aug 2024",
-    amount: "+$75.50",
-    positive: true,
-    avatar: "/images/avatars/emma-richardson.jpg",
-  },
-  {
-    name: "Savory Bites Bistro",
-    date: "19 Aug 2024",
-    amount: "-$55.50",
-    positive: false,
-    avatar: "/images/avatars/savory-bites-bistro.jpg",
-  },
-  {
-    name: "Daniel Carter",
-    date: "18 Aug 2024",
-    amount: "-$42.30",
-    positive: false,
-    avatar: "/images/avatars/daniel-carter.jpg",
-  },
-  {
-    name: "Sun Park",
-    date: "17 Aug 2024",
-    amount: "+$120.00",
-    positive: true,
-    avatar: "/images/avatars/sun-park.jpg",
-  },
-  {
-    name: "Urban Services Hub",
-    date: "17 Aug 2024",
-    amount: "-$65.00",
-    positive: false,
-    avatar: "/images/avatars/urban-services-hub.jpg",
-  },
-];
+async function getRecentTransactions(): Promise<RecentTransactionsResult> {
+  try {
+    const cookieStore = await cookies();
+    const response = await fetch(backendUrl("/api/ledger-events/?page=1"), {
+      headers: { cookie: cookieStore.toString() },
+      cache: "no-store",
+    });
+    if (!response.ok) return { data: [], error: true };
+
+    const data: unknown = await response.json();
+    if (
+      !data ||
+      typeof data !== "object" ||
+      !("results" in data) ||
+      !Array.isArray(data.results)
+    ) {
+      return { data: [], error: true };
+    }
+
+    return { data: (data.results as LedgerEvent[]).slice(0, 5), error: false };
+  } catch {
+    return { data: [], error: true };
+  }
+}
+
+function getTransactionName(transaction: LedgerEvent) {
+  if (transaction.event_type === "transfer") {
+    return transaction.from_account_name && transaction.to_account_name
+      ? `${transaction.from_account_name} to ${transaction.to_account_name}`
+      : "Transfer";
+  }
+  if (transaction.merchant?.trim()) return transaction.merchant.trim();
+  return transaction.transaction_type === "adjustment"
+    ? "Balance adjustment"
+    : "Transaction";
+}
+
+function getInitials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word.charAt(0))
+    .join("")
+    .toUpperCase() || "T";
+}
 
 const spendingPalette = [
   { accentClass: styles.budgetAccentGreen, color: "var(--color-green)" },
@@ -195,10 +227,11 @@ const recurringBills = [
 export default async function Home() {
   const currentMonth = getCurrentYearMonth();
   const currentMonthLabel = formatCalendarMonth(currentMonth);
-  const [netWorthCents, monthlySummary, categorySpending] = await Promise.all([
+  const [netWorthCents, monthlySummary, categorySpending, recentTransactions] = await Promise.all([
     getNetWorthCents(),
     getCurrentMonthSummary(currentMonth),
     getSpendingByCategory(currentMonth),
+    getRecentTransactions(),
   ]);
   const netWorth =
     netWorthCents === null
@@ -318,41 +351,53 @@ export default async function Home() {
           <section className={styles.panel} aria-label="Transactions section">
             <div className={styles.panelHeader}>
               <h2 className={styles.panelTitle}>Transactions</h2>
-              <Button variant="tertiary">View All</Button>
+              <Link className={styles.panelLink} href="/transactions">
+                View All
+                <span aria-hidden="true">›</span>
+              </Link>
             </div>
 
             <div className={styles.transactionsList}>
-              {recentTransactions.map((transaction, index) => (
-                <article className={styles.transactionRow} key={`${transaction.name}-${transaction.date}`}>
+              {recentTransactions.error ? (
+                <p className={styles.transactionState}>Unable to load recent transactions.</p>
+              ) : recentTransactions.data.length === 0 ? (
+                <p className={styles.transactionState}>No transactions yet.</p>
+              ) : recentTransactions.data.map((transaction, index) => {
+                const name = getTransactionName(transaction);
+                const isPositive =
+                  transaction.event_type === "transaction" && transaction.amount_cents > 0;
+                const amount = transaction.event_type === "transfer"
+                  ? currencyFormatter.format(transaction.amount_cents / 100)
+                  : signedCurrencyFormatter.format(transaction.amount_cents / 100);
+
+                return (
+                <article className={styles.transactionRow} key={`${transaction.event_type}-${transaction.id}`}>
                   <div className={styles.transactionRowContent}>
                     <div className={styles.transactionIdentity}>
-                      <Image
-                        src={transaction.avatar}
-                        alt=""
-                        width={40}
-                        height={40}
-                        className={styles.transactionAvatar}
-                      />
+                      <span className={styles.transactionAvatar} aria-hidden="true">
+                        {getInitials(name)}
+                      </span>
                       <div className={styles.transactionDetails}>
-                        <p className={styles.transactionName}>{transaction.name}</p>
+                        <p className={styles.transactionName}>{name}</p>
                       </div>
                     </div>
 
                     <div className={styles.transactionMeta}>
                       <p
                         className={`${styles.transactionAmount} ${
-                          transaction.positive ? styles.transactionAmountPositive : styles.transactionAmountNegative
+                          isPositive ? styles.transactionAmountPositive : styles.transactionAmountNegative
                         }`}
                       >
-                        {transaction.amount}
+                        {amount}
                       </p>
-                      <p className={styles.transactionDate}>{transaction.date}</p>
+                      <p className={styles.transactionDate}>{formatCalendarDate(transaction.date)}</p>
                     </div>
                   </div>
 
-                  {index < recentTransactions.length - 1 ? <div className={styles.transactionDivider} aria-hidden="true" /> : null}
+                  {index < recentTransactions.data.length - 1 ? <div className={styles.transactionDivider} aria-hidden="true" /> : null}
                 </article>
-              ))}
+                );
+              })}
             </div>
           </section>
         </div>
