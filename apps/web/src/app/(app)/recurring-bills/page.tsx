@@ -152,7 +152,10 @@ export default function RecurringBillsPage() {
           </div>
 
           <div className={styles.billList}>
-            {bills.map((bill) => (
+            {bills.map((bill) => {
+              const billStatusIcon = statusIcon[bill.status];
+
+              return (
               <article className={styles.billRow} key={`${bill.name}-${bill.dueDate}`}>
                 <div className={styles.billTitleCell}>
                   <Image
@@ -169,9 +172,9 @@ export default function RecurringBillsPage() {
                   <p className={bill.status === "paid" ? styles.paidText : ""}>
                     {bill.dueDate}
                   </p>
-                  {statusIcon[bill.status] ? (
+                  {billStatusIcon ? (
                     <Image
-                      src={statusIcon[bill.status]}
+                      src={billStatusIcon}
                       alt=""
                       width={16}
                       height={16}
@@ -184,7 +187,8 @@ export default function RecurringBillsPage() {
                   {bill.amount}
                 </p>
               </article>
-            ))}
+              );
+            })}
           </div>
         </section>
       </div>

@@ -68,7 +68,7 @@ export function BudgetModal({ mode = "add", onClose }: BudgetModalProps) {
   const categoryDropdownId = useId();
   const themeDropdownId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
-  const content = mode === "delete" ? null : modalContent[mode];
+  const content = modalContent[mode === "edit" ? "edit" : "add"];
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(categoryOptions[0]);
   const [themeOpen, setThemeOpen] = useState(false);

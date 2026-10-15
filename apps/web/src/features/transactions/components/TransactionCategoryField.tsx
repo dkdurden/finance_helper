@@ -22,7 +22,7 @@ type TransactionCategoryFieldProps = {
   value: number | null;
 };
 
-function getErrorMessage(value: unknown) {
+function getErrorMessage(value: unknown): string {
   if (typeof value === "string") {
     return value;
   }
