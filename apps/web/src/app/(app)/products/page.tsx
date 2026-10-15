@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { AppShell } from "@/components/layout/AppShell";
+import { ProductEditControl } from "@/features/products/components/ProductEditControl";
 import { backendUrl } from "@/lib/backendUrl";
 import styles from "./page.module.css";
 
@@ -103,6 +104,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
           <span>Default unit</span>
           <span>Last bought</span>
           <span>Status</span>
+          <span className={styles.actionsHeader}>Actions</span>
         </div>
 
         <div className={styles.productList}>
@@ -157,6 +159,15 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                 >
                   {product.is_archived ? "Archived" : "Active"}
                 </p>
+                <div className={styles.productActions}>
+                  <ProductEditControl
+                    product={{
+                      defaultUnit: product.default_unit,
+                      id: product.id,
+                      name: product.name,
+                    }}
+                  />
+                </div>
               </article>
             ))
           )}
