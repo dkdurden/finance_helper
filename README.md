@@ -33,7 +33,13 @@ docs/
   - Account CRUD, derived balances, and balance adjustments are implemented.
   - Normal transactions and atomic transfers support create, edit, and delete flows.
   - `/api/ledger-events/` provides the authenticated, paginated, one-row-per-event feed used by `/transactions`.
-  - Next focus: Milestone 4 receipt module UX.
+- Milestone 4 complete: receipt and product workflows.
+  - Receipt creation, editing, and deletion keep transactions and receipt items synchronized.
+  - Product creation, editing, search, purchase history, and archive/restore flows are implemented.
+- Milestone 5 complete: reporting.
+  - Monthly income and expense totals use calendar-safe dates and exclude transfers and adjustments.
+  - The Overview shows live category spending, net worth, and the five latest ledger events.
+- Next focus: V1 acceptance testing and prioritizing deferred post-MVP work.
 - Current local development workflow:
   - `db` and `api` run through Docker Compose
   - `web` runs locally for reliable hot reload on Windows
