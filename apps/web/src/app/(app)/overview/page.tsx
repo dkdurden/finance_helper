@@ -8,12 +8,6 @@ import { backendUrl } from "@/lib/backendUrl";
 import { formatCalendarMonth, getCurrentYearMonth } from "@/lib/date";
 import styles from "./page.module.css";
 
-type AccountApiRecord = {
-  id: number;
-  is_liability: boolean;
-  balance_cents: number;
-};
-
 type MonthlySummary = {
   expenseCents: number;
   incomeCents: number;
@@ -30,31 +24,27 @@ const currencyFormatter = new Intl.NumberFormat("en-US", {
   currency: "USD",
 });
 
-async function getCurrentBalanceCents(): Promise<number | null> {
+async function getNetWorthCents(): Promise<number | null> {
   try {
     const cookieStore = await cookies();
-    const response = await fetch(backendUrl("/api/accounts/"), {
+    const response = await fetch(backendUrl("/api/reports/net-worth/"), {
       headers: {
         cookie: cookieStore.toString(),
       },
       cache: "no-store",
     });
 
-    if (!response.ok) {
-      return null;
-    }
-
+    if (!response.ok) return null;
     const data: unknown = await response.json();
-
-    if (!Array.isArray(data)) {
+    if (
+      !data ||
+      typeof data !== "object" ||
+      !("net_worth_cents" in data) ||
+      typeof data.net_worth_cents !== "number"
+    ) {
       return null;
     }
-
-    return (data as AccountApiRecord[]).reduce(
-      (total, account) =>
-        total + (account.is_liability ? -account.balance_cents : account.balance_cents),
-      0,
-    );
+    return data.net_worth_cents;
   } catch {
     return null;
   }
@@ -205,15 +195,15 @@ const recurringBills = [
 export default async function Home() {
   const currentMonth = getCurrentYearMonth();
   const currentMonthLabel = formatCalendarMonth(currentMonth);
-  const [currentBalanceCents, monthlySummary, categorySpending] = await Promise.all([
-    getCurrentBalanceCents(),
+  const [netWorthCents, monthlySummary, categorySpending] = await Promise.all([
+    getNetWorthCents(),
     getCurrentMonthSummary(currentMonth),
     getSpendingByCategory(currentMonth),
   ]);
-  const currentBalance =
-    currentBalanceCents === null
+  const netWorth =
+    netWorthCents === null
       ? "Unavailable"
-      : currencyFormatter.format(currentBalanceCents / 100);
+      : currencyFormatter.format(netWorthCents / 100);
   const monthlyIncome =
     monthlySummary === null
       ? "Unavailable"
@@ -255,7 +245,7 @@ export default async function Home() {
     <AppShell title="Overview">
       {/* Overview-specific summary row */}
       <section className={styles.summaryGrid} aria-label="Summary cards">
-        <OverviewSummaryCard label="Current Balance" value={currentBalance} primary />
+        <OverviewSummaryCard label="Net Worth" value={netWorth} primary />
         <OverviewSummaryCard label={`Income — ${currentMonthLabel}`} value={monthlyIncome} />
         <OverviewSummaryCard label={`Expenses — ${currentMonthLabel}`} value={monthlyExpenses} />
       </section>

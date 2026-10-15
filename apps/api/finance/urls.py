@@ -10,6 +10,7 @@ from .views import (
     LoginView,
     LogoutView,
     MonthlySummaryView,
+    NetWorthView,
     ProductViewSet,
     ReceiptItemViewSet,
     ReceiptViewSet,
@@ -43,5 +44,6 @@ urlpatterns = [
         SpendingByCategoryView.as_view(),
         name="spending-by-category",
     ),
+    path("reports/net-worth/", NetWorthView.as_view(), name="net-worth"),
     path("", include(router.urls)),
 ]

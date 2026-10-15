@@ -199,6 +199,46 @@ class SpendingByCategoryView(APIView):
         )
 
 
+class NetWorthView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        accounts = Account.objects.annotate(
+            balance_cents=ExpressionWrapper(
+                F("opening_balance_cents")
+                + Coalesce(Sum("transactions__signed_amount_cents"), Value(0)),
+                output_field=BigIntegerField(),
+            )
+        )
+        totals = accounts.aggregate(
+            asset_cents=Coalesce(
+                Sum(
+                    Case(
+                        When(is_liability=False, then=F("balance_cents")),
+                        default=Value(0),
+                        output_field=BigIntegerField(),
+                    )
+                ),
+                Value(0),
+            ),
+            liability_cents=Coalesce(
+                Sum(
+                    Case(
+                        When(is_liability=True, then=F("balance_cents")),
+                        default=Value(0),
+                        output_field=BigIntegerField(),
+                    )
+                ),
+                Value(0),
+            ),
+        )
+        totals["net_worth_cents"] = (
+            totals["asset_cents"] - totals["liability_cents"]
+        )
+
+        return Response(totals)
+
+
 class SignUpView(APIView):
     permission_classes = [permissions.AllowAny]
 

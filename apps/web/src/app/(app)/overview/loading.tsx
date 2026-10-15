@@ -10,7 +10,7 @@ export default function OverviewLoading() {
         aria-busy="true"
         aria-label="Overview balance is loading"
       >
-        <OverviewSummaryCard label="Current Balance" value="Loading..." primary />
+        <OverviewSummaryCard label="Net Worth" value="Loading..." primary />
         <OverviewSummaryCard label="Income" value="$0.00" />
         <OverviewSummaryCard label="Expenses" value="$0.00" />
       </section>

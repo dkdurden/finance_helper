@@ -890,6 +890,83 @@ class SpendingByCategoryApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
+class NetWorthApiTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email="net-worth-tests@example.com",
+            password="strong-password-123",
+        )
+        self.client.force_authenticate(user=self.user)
+
+    def test_net_worth_sums_derived_asset_and_liability_balances(self):
+        checking = Account.objects.create(
+            name="Net Worth Checking",
+            account_type=Account.AccountType.CHECKING,
+            is_liability=False,
+            opening_balance_cents=100000,
+            opening_balance_date="2026-01-01T00:00:00Z",
+        )
+        Account.objects.create(
+            name="Net Worth Savings",
+            account_type=Account.AccountType.SAVINGS,
+            is_liability=False,
+            opening_balance_cents=50000,
+            opening_balance_date="2026-01-01T00:00:00Z",
+        )
+        credit_card = Account.objects.create(
+            name="Net Worth Credit Card",
+            account_type=Account.AccountType.CREDIT_CARD,
+            is_liability=True,
+            opening_balance_cents=20000,
+            opening_balance_date="2026-01-01T00:00:00Z",
+        )
+        category = Category.objects.create(name="Net Worth Activity")
+        Transaction.objects.create(
+            account=checking,
+            category=category,
+            date="2026-10-01",
+            signed_amount_cents=-10000,
+        )
+        Transaction.objects.create(
+            account=credit_card,
+            category=category,
+            date="2026-10-02",
+            signed_amount_cents=5000,
+        )
+
+        response = self.client.get(reverse("net-worth"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data,
+            {
+                "asset_cents": 140000,
+                "liability_cents": 25000,
+                "net_worth_cents": 115000,
+            },
+        )
+
+    def test_net_worth_returns_zero_without_accounts(self):
+        response = self.client.get(reverse("net-worth"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data,
+            {
+                "asset_cents": 0,
+                "liability_cents": 0,
+                "net_worth_cents": 0,
+            },
+        )
+
+    def test_net_worth_requires_authentication(self):
+        self.client.force_authenticate(user=None)
+
+        response = self.client.get(reverse("net-worth"))
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
 class ReceiptApiTests(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(
