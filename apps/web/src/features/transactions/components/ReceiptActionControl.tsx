@@ -238,8 +238,6 @@ export function ReceiptActionControl({
   useEffect(() => {
     if (activeModal !== "edit") return;
     const controller = new AbortController();
-    setIsLoading(true);
-    setErrorMessage(null);
     void fetch(`/api/receipts/${receipt.id}`, {
       cache: "no-store",
       signal: controller.signal,
@@ -423,6 +421,8 @@ export function ReceiptActionControl({
             role="menuitem"
             onClick={() => {
               setMenuOpen(false);
+              setIsLoading(true);
+              setErrorMessage(null);
               setActiveModal("edit");
             }}
           >

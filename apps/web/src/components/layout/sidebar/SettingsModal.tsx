@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import { Button } from "@/components/button/Button";
 import styles from "./Sidebar.module.css";
 
@@ -17,22 +17,25 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  const handleClose = useCallback(() => {
+    setErrorMessage(null);
+    onClose();
+  }, [onClose]);
+
   useEffect(() => {
     if (!isOpen) {
       return;
     }
 
-    setErrorMessage(null);
-
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        onClose();
+        handleClose();
       }
     }
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [handleClose, isOpen]);
 
   async function handleLogout() {
     setIsLoggingOut(true);
@@ -74,7 +77,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       className={styles.modalBackdrop}
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
-          onClose();
+          handleClose();
         }
       }}
     >
@@ -87,7 +90,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         <button
           type="button"
           className={styles.modalClose}
-          onClick={onClose}
+          onClick={handleClose}
           aria-label="Close settings"
         >
           <Image
@@ -124,7 +127,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             >
               {isLoggingOut ? "Logging Out..." : "Logout"}
             </Button>
-            <Button disabled={isLoggingOut} onClick={onClose} variant="secondary">
+            <Button disabled={isLoggingOut} onClick={handleClose} variant="secondary">
               Cancel
             </Button>
           </div>
