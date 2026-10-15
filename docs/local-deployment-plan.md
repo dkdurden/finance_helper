@@ -129,18 +129,61 @@ Use a separate production Compose file, such as
 
 ### Phase 3: first installation
 
-The intended operator workflow will be:
+Run these commands from the repository root on the home computer. Use a tagged
+release rather than an in-progress development branch when one is available.
+
+Create the untracked production environment file:
 
 ```powershell
-docker compose -f docker-compose.production.yml build
-docker compose -f docker-compose.production.yml up -d db api
-docker compose -f docker-compose.production.yml exec api python manage.py migrate
-docker compose -f docker-compose.production.yml up -d web
-docker compose -f docker-compose.production.yml ps
+Copy-Item .env.production.example .env.production
 ```
 
-Then open `http://localhost:3000`, create the first account, disable signup in
-the Django environment, and restart the API container.
+Open `.env.production` in a text editor and replace every placeholder. The
+database password in `DATABASE_URL` must match `POSTGRES_PASSWORD`. Keep
+`DJANGO_ALLOW_SIGNUP=true` only for initial account creation.
+
+Validate the Compose model without displaying the resolved secrets:
+
+```powershell
+docker compose --env-file .env.production -f docker-compose.production.yml config --quiet
+```
+
+Build the release images, start PostgreSQL, and confirm that it becomes
+healthy:
+
+```powershell
+docker compose --env-file .env.production -f docker-compose.production.yml build
+docker compose --env-file .env.production -f docker-compose.production.yml up -d db
+docker compose --env-file .env.production -f docker-compose.production.yml ps
+```
+
+Apply the migrations committed with the release before starting the
+application services:
+
+```powershell
+docker compose --env-file .env.production -f docker-compose.production.yml run --rm api python manage.py migrate
+```
+
+Start Django and Next.js, then inspect service health and recent logs:
+
+```powershell
+docker compose --env-file .env.production -f docker-compose.production.yml up -d api web
+docker compose --env-file .env.production -f docker-compose.production.yml ps
+docker compose --env-file .env.production -f docker-compose.production.yml logs --tail 100 api web
+```
+
+Open `http://localhost:3000`, create the first account, and verify that it can
+sign in. Then set `DJANGO_ALLOW_SIGNUP=false` in `.env.production` and recreate
+only the API service so the new value takes effect:
+
+```powershell
+docker compose --env-file .env.production -f docker-compose.production.yml up -d --force-recreate api
+docker compose --env-file .env.production -f docker-compose.production.yml ps
+```
+
+Confirm that the existing account can still sign in and that a second account
+cannot be registered. Do not delete `.env.production`; the same Django secret
+must be retained across restarts and upgrades.
 
 Before the first release, verify whether the app needs a separate Django static
 file collection step. The current API is JSON-only, but Django admin assets
@@ -155,10 +198,30 @@ would require production static-file handling.
 - Document the manual fallback command:
 
 ```powershell
-docker compose -f docker-compose.production.yml up -d
+docker compose --env-file .env.production -f docker-compose.production.yml up -d
 ```
 
 Do not place secrets directly in operating-system startup scripts.
+
+Useful operating commands:
+
+```powershell
+# Show current service health.
+docker compose --env-file .env.production -f docker-compose.production.yml ps
+
+# Follow application logs. Press Ctrl+C to stop following logs.
+docker compose --env-file .env.production -f docker-compose.production.yml logs --follow api web
+
+# Restart the application without deleting its database volume.
+docker compose --env-file .env.production -f docker-compose.production.yml restart api web
+
+# Stop and remove containers and networks while preserving the database volume.
+docker compose --env-file .env.production -f docker-compose.production.yml down
+```
+
+Do not add `--volumes` or `-v` to `docker compose down` during normal operation.
+That option deletes the named PostgreSQL volume and can permanently remove the
+application data if no usable backup exists.
 
 ## Data persistence and backups
 
