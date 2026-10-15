@@ -16,6 +16,34 @@ The primary authenticated pages have sufficient responsive behavior for the Mile
 
 ### Responsive refinement
 
+#### Authentication screens
+
+Status: `deferred`
+
+- Review the login and signup hero-copy contrast at desktop sizes.
+- Ensure the headline and supporting text remain readable where light shapes in
+  the illustration pass behind the text.
+- Compare readability across displays, browser zoom levels, and viewport sizes.
+- During future design work, evaluate a text shadow, localized overlay, adjusted
+  text position, or altered image treatment.
+- Verify the final treatment against WCAG text-contrast requirements.
+
+#### App shell and sidebar
+
+Status: `deferred`
+
+- Keep the desktop sidebar anchored to the viewport on pages with long content.
+- Ensure the Minimize Menu and Maximize Menu control remains reachable without
+  scrolling to the bottom of the page.
+- Verify navigation and toggle access at common desktop viewport heights and on
+  pages with different content lengths.
+- Preserve the desktop sidebar's collapsed or expanded state when navigating
+  between authenticated pages. Currently, selecting a navigation item after
+  collapsing the sidebar causes it to expand on the destination page.
+- Verify direct page loads and responsive breakpoint changes separately from
+  route-to-route state preservation.
+- Review mobile bottom-navigation behavior separately from the desktop sidebar.
+
 #### Overview
 
 Status: `deferred`
@@ -68,6 +96,16 @@ Status: `deferred`
 - Check long bill names, due-date status icons, amount alignment, and bottom-navigation clearance.
 
 ### Feature functionality
+
+#### Products
+
+Status: `deferred`
+
+- Add a visible standalone product-creation entry point to the Products page.
+- Products can currently be created only from another workflow, such as receipt
+  entry.
+- Keep fields, validation, duplicate handling, and resulting records consistent
+  between standalone and inline product creation.
 
 #### Budgets
 
