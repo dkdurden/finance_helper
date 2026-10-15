@@ -24,6 +24,10 @@ import {
   TransactionCategoryField,
   type TransactionCategory,
 } from "./TransactionCategoryField";
+import {
+  ReceiptProductField,
+  type ReceiptProduct,
+} from "./ReceiptProductField";
 import styles from "./TransactionCreateControl.module.css";
 
 export type TransactionAccountOption = {
@@ -37,9 +41,20 @@ type TransactionCreateControlProps = {
   accounts: TransactionAccountOption[];
   categories: TransactionCategory[];
   categoryError?: string | null;
+  productError?: string | null;
+  products: Array<{ defaultUnit: string | null; id: number; name: string }>;
 };
 
-type EntryType = "transaction" | "transfer";
+type EntryType = "transaction" | "transfer" | "receipt";
+
+type ReceiptItemDraft = {
+  id: number;
+  lineTotal: string;
+  productId: number;
+  qty: string;
+  unit: string;
+  unitPrice: string;
+};
 
 function getErrorMessage(value: unknown, fallback: string): string {
   if (typeof value === "string") {
@@ -72,11 +87,19 @@ function getLocalDate() {
   return `${now.getFullYear()}-${month}-${day}`;
 }
 
+function parseNonNegativeCents(value: string) {
+  const trimmed = value.trim();
+  if (!/^\d+(\.\d{1,2})?$/.test(trimmed)) return null;
+  return Math.round(Number(trimmed) * 100);
+}
+
 export function TransactionCreateControl({
   accountError = null,
   accounts,
   categories: initialCategories,
   categoryError = null,
+  productError = null,
+  products: initialProducts,
 }: TransactionCreateControlProps) {
   const router = useRouter();
   const titleId = useId();
@@ -93,12 +116,18 @@ export function TransactionCreateControl({
   const [direction, setDirection] = useState<TransactionDirection>("decrease");
   const [merchant, setMerchant] = useState("");
   const [note, setNote] = useState("");
+  const [receiptTax, setReceiptTax] = useState("0.00");
+  const [receiptFees, setReceiptFees] = useState("0.00");
+  const nextReceiptItemId = useRef(1);
+  const [receiptItems, setReceiptItems] = useState<ReceiptItemDraft[]>([]);
   const [categoryPending, setCategoryPending] = useState(false);
   const [categories, setCategories] = useState(initialCategories);
+  const [products, setProducts] = useState(initialProducts);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const optionsError =
-    accountError ?? (entryType === "transaction" ? categoryError : null);
+  const optionsError = accountError ??
+    (entryType === "transaction" || entryType === "receipt" ? categoryError : null) ??
+    (entryType === "receipt" ? productError : null);
 
   const selectedAccount =
     accounts.find((account) => account.id === accountId) ?? null;
@@ -123,9 +152,34 @@ export function TransactionCreateControl({
         label: "Transfer",
         value: "transfer",
       },
+      {
+        color: "var(--color-yellow)",
+        label: "Receipt",
+        value: "receipt",
+      },
     ],
     [],
   );
+  function createReceiptItem(
+    selectedProduct?: ReceiptProduct,
+  ): ReceiptItemDraft | null {
+    const product = selectedProduct ?? products[0];
+    if (!product) return null;
+    return {
+      id: nextReceiptItemId.current++,
+      lineTotal: "",
+      productId: product.id,
+      qty: "",
+      unit: product.defaultUnit ?? "",
+      unitPrice: "",
+    };
+  }
+
+  function updateReceiptItem(id: number, updates: Partial<ReceiptItemDraft>) {
+    setReceiptItems((current) =>
+      current.map((item) => (item.id === id ? { ...item, ...updates } : item)),
+    );
+  }
 
   const closeModal = useCallback(() => {
     if (categoryPending || isSubmitting) {
@@ -154,7 +208,7 @@ export function TransactionCreateControl({
       return;
     }
 
-    if (entryType === "transaction" && categoryId === null) {
+    if (entryType !== "transfer" && categoryId === null) {
       setErrorMessage("Select a category.");
       return;
     }
@@ -169,13 +223,41 @@ export function TransactionCreateControl({
       return;
     }
 
-    if (signedAmountCents === null) {
+    if (entryType !== "receipt" && signedAmountCents === null) {
       setErrorMessage("Enter a valid amount greater than zero with up to two decimal places.");
       return;
     }
 
     if (!date) {
       setErrorMessage("Select a date.");
+      return;
+    }
+
+    const taxCents = parseNonNegativeCents(receiptTax);
+    const feesCents = parseNonNegativeCents(receiptFees);
+    const invalidReceiptItemAmount = receiptItems.some(
+      (item) =>
+        parseNonNegativeCents(item.lineTotal) === null ||
+        (item.unitPrice.trim() !== "" &&
+          parseNonNegativeCents(item.unitPrice) === null),
+    );
+    const receiptItemPayload = receiptItems.map((item) => ({
+      product: item.productId,
+      qty: item.qty.trim() || null,
+      unit: item.unit.trim() || null,
+      unit_price_cents: item.unitPrice.trim()
+        ? parseNonNegativeCents(item.unitPrice)
+        : null,
+      line_total_cents: parseNonNegativeCents(item.lineTotal),
+    }));
+    if (
+      entryType === "receipt" &&
+      (taxCents === null ||
+        feesCents === null ||
+        receiptItemPayload.length === 0 ||
+        invalidReceiptItemAmount)
+    ) {
+      setErrorMessage("Enter valid non-negative dollar amounts with up to two decimal places.");
       return;
     }
 
@@ -192,7 +274,11 @@ export function TransactionCreateControl({
       }
 
       const response = await fetch(
-        entryType === "transfer" ? "/api/transfers" : "/api/transactions",
+        entryType === "transfer"
+          ? "/api/transfers"
+          : entryType === "receipt"
+            ? "/api/receipts"
+            : "/api/transactions",
         {
           method: "POST",
           headers: {
@@ -207,7 +293,18 @@ export function TransactionCreateControl({
                   note: note.trim() || null,
                   to_account: toAccountId,
                 }
-              : {
+              : entryType === "receipt"
+                ? {
+                    account: accountId,
+                    category: categoryId,
+                    date,
+                    store: merchant.trim() || null,
+                    note: note.trim() || null,
+                    tax_cents: taxCents,
+                    fees_cents: feesCents,
+                    items: receiptItemPayload,
+                  }
+                : {
                   account: accountId,
                   category: categoryId,
                   date,
@@ -235,7 +332,9 @@ export function TransactionCreateControl({
             responseData,
             entryType === "transfer"
               ? "Unable to add the transfer."
-              : "Unable to add the transaction.",
+              : entryType === "receipt"
+                ? "Unable to add the receipt."
+                : "Unable to add the transaction.",
           ),
         );
         return;
@@ -251,6 +350,9 @@ export function TransactionCreateControl({
       setDirection("decrease");
       setMerchant("");
       setNote("");
+      setReceiptTax("0.00");
+      setReceiptFees("0.00");
+      setReceiptItems([]);
       router.refresh();
       requestAnimationFrame(() => {
         triggerWrapRef.current?.querySelector("button")?.focus();
@@ -261,7 +363,9 @@ export function TransactionCreateControl({
           ? error.message
           : entryType === "transfer"
             ? "Unable to add the transfer."
-            : "Unable to add the transaction.",
+            : entryType === "receipt"
+              ? "Unable to add the receipt."
+              : "Unable to add the transaction.",
       );
     } finally {
       setIsSubmitting(false);
@@ -331,7 +435,9 @@ export function TransactionCreateControl({
               <p className={modalStyles.description} id={descriptionId}>
                 {entryType === "transfer"
                   ? "Choose the source, destination, and amount for this transfer."
-                  : "Choose an account, category, and amount for this transaction."}
+                  : entryType === "receipt"
+                    ? "Enter the receipt details and at least one item."
+                    : "Choose an account, category, and amount for this transaction."}
               </p>
 
               <div className={styles.controls}>
@@ -341,7 +447,12 @@ export function TransactionCreateControl({
                   options={entryTypeOptions}
                   value={entryType}
                   onChange={(event) => {
-                    setEntryType(event.target.value as EntryType);
+                    const nextEntryType = event.target.value as EntryType;
+                    setEntryType(nextEntryType);
+                    if (nextEntryType === "receipt" && receiptItems.length === 0) {
+                      const item = createReceiptItem();
+                      if (item) setReceiptItems([item]);
+                    }
                     setErrorMessage(null);
                   }}
                 />
@@ -434,8 +545,12 @@ export function TransactionCreateControl({
                   <>
                     <InputField
                       disabled={categoryPending || isSubmitting}
-                      helperText="Optional. Used as the transaction name in the ledger."
-                      label="Merchant"
+                      helperText={
+                        entryType === "receipt"
+                          ? "Optional. Used as the receipt name in the ledger."
+                          : "Optional. Used as the transaction name in the ledger."
+                      }
+                      label={entryType === "receipt" ? "Store" : "Merchant"}
                       maxLength={255}
                       value={merchant}
                       onChange={(event) => setMerchant(event.target.value)}
@@ -452,14 +567,87 @@ export function TransactionCreateControl({
                       onValueChange={setCategoryId}
                     />
 
-                    <TransactionAmountField
-                      account={selectedAccount}
-                      amount={amount}
-                      direction={direction}
-                      disabled={categoryPending || isSubmitting}
-                      onAmountChange={setAmount}
-                      onDirectionChange={setDirection}
-                    />
+                    {entryType === "receipt" ? (
+                      <>
+                        <InputField
+                          disabled={categoryPending || isSubmitting}
+                          helperText="Enter zero or a positive amount with up to two decimal places."
+                          inputMode="decimal"
+                          label="Tax"
+                          prefix="$"
+                          value={receiptTax}
+                          onChange={(event) => setReceiptTax(event.target.value)}
+                        />
+                        <InputField
+                          disabled={categoryPending || isSubmitting}
+                          helperText="Enter zero or a positive amount with up to two decimal places."
+                          inputMode="decimal"
+                          label="Fees"
+                          prefix="$"
+                          value={receiptFees}
+                          onChange={(event) => setReceiptFees(event.target.value)}
+                        />
+                        <div className={styles.receiptItems}>
+                          {receiptItems.length === 0 ? (
+                            <ReceiptProductField
+                              disabled={categoryPending || isSubmitting}
+                              products={products}
+                              value={null}
+                              onPendingChange={setCategoryPending}
+                              onProductCreated={(product) =>
+                                setProducts((current) => [...current, product])
+                              }
+                              onValueChange={(product) => {
+                                const item = createReceiptItem(product);
+                                if (item) setReceiptItems([item]);
+                              }}
+                            />
+                          ) : null}
+                          {receiptItems.map((item, index) => (
+                            <fieldset className={styles.receiptItem} key={item.id} disabled={isSubmitting}>
+                              <legend className={styles.receiptItemTitle}>Item {index + 1}</legend>
+                              <ReceiptProductField
+                                disabled={categoryPending || isSubmitting}
+                                products={products}
+                                value={item.productId}
+                                onPendingChange={setCategoryPending}
+                                onProductCreated={(product) =>
+                                  setProducts((current) => [...current, product])
+                                }
+                                onValueChange={(product) =>
+                                  updateReceiptItem(item.id, {
+                                    productId: product.id,
+                                    unit: product.defaultUnit ?? "",
+                                  })
+                                }
+                              />
+                              <InputField label="Quantity" inputMode="decimal" value={item.qty} onChange={(event) => updateReceiptItem(item.id, { qty: event.target.value })} />
+                              <InputField label="Unit" maxLength={50} value={item.unit} onChange={(event) => updateReceiptItem(item.id, { unit: event.target.value })} />
+                              <InputField label="Unit price" prefix="$" inputMode="decimal" value={item.unitPrice} onChange={(event) => updateReceiptItem(item.id, { unitPrice: event.target.value })} />
+                              <InputField label="Line total" prefix="$" inputMode="decimal" required value={item.lineTotal} onChange={(event) => updateReceiptItem(item.id, { lineTotal: event.target.value })} />
+                              <Button type="button" variant="tertiary" disabled={receiptItems.length === 1} onClick={() => setReceiptItems((current) => current.filter((currentItem) => currentItem.id !== item.id))}>
+                                Remove Item
+                              </Button>
+                            </fieldset>
+                          ))}
+                          <Button type="button" variant="tertiary" disabled={products.length === 0 || isSubmitting} onClick={() => {
+                            const item = createReceiptItem();
+                            if (item) setReceiptItems((current) => [...current, item]);
+                          }}>
+                            + Add Item
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <TransactionAmountField
+                        account={selectedAccount}
+                        amount={amount}
+                        direction={direction}
+                        disabled={categoryPending || isSubmitting}
+                        onAmountChange={setAmount}
+                        onDirectionChange={setDirection}
+                      />
+                    )}
                   </>
                 )}
               </div>
@@ -482,16 +670,21 @@ export function TransactionCreateControl({
                   categoryPending ||
                   isSubmitting ||
                   accounts.length < (entryType === "transfer" ? 2 : 1) ||
+                  (entryType === "receipt" && (products.length === 0 || receiptItems.length === 0)) ||
                   optionsError !== null
                 }
               >
                 {isSubmitting
                   ? entryType === "transfer"
                     ? "Adding Transfer..."
-                    : "Adding Transaction..."
+                    : entryType === "receipt"
+                      ? "Adding Receipt..."
+                      : "Adding Transaction..."
                   : entryType === "transfer"
                     ? "Add Transfer"
-                    : "Add Transaction"}
+                    : entryType === "receipt"
+                      ? "Add Receipt"
+                      : "Add Transaction"}
               </Button>
             </form>
           </div>

@@ -395,6 +395,8 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
           accounts={formOptions.accounts}
           categories={formOptions.categories}
           categoryError={formOptions.categoryError}
+          productError={formOptions.productError}
+          products={formOptions.products}
         />
       }
     >

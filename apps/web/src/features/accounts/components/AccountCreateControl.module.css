@@ -11,10 +11,23 @@
 .modal {
   display: grid;
   width: min(100%, 35rem);
+  max-height: calc(100dvh - 3rem);
   gap: var(--space-250);
   border-radius: var(--space-150);
   background: var(--color-white);
   padding: var(--space-400);
+}
+
+.modal:has(> form) {
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.modal > form {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 .header {

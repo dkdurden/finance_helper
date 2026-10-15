@@ -12,6 +12,26 @@
   gap: var(--space-50);
 }
 
+.receiptItems {
+  display: grid;
+  gap: var(--space-200);
+}
+
+.receiptItem {
+  display: grid;
+  gap: var(--space-150);
+  margin: 0;
+  border: 1px solid var(--color-grey-100);
+  border-radius: var(--space-100);
+  padding: var(--space-150);
+}
+
+.receiptItemTitle {
+  padding: 0 var(--space-50);
+  color: var(--color-grey-900);
+  font-weight: 700;
+}
+
 .statusMessage {
   margin: 0;
   border-radius: var(--space-100);
