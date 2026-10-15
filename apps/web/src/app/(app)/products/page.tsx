@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { AppShell } from "@/components/layout/AppShell";
 import { ProductEditControl } from "@/features/products/components/ProductEditControl";
 import { backendUrl } from "@/lib/backendUrl";
+import { formatCalendarDate } from "@/lib/date";
 import styles from "./page.module.css";
 
 type ProductApiRecord = {
@@ -28,16 +29,6 @@ const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
 });
-
-const dateFormatter = new Intl.DateTimeFormat("en-GB", {
-  day: "2-digit",
-  month: "short",
-  year: "numeric",
-});
-
-function formatPurchaseDate(date: string) {
-  return dateFormatter.format(new Date(`${date}T00:00:00Z`));
-}
 
 async function getProducts(): Promise<ProductLoadResult> {
   try {
@@ -143,7 +134,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                         {[
                           product.last_purchase_store,
                           product.last_purchase_date
-                            ? formatPurchaseDate(product.last_purchase_date)
+                            ? formatCalendarDate(product.last_purchase_date)
                             : null,
                         ]
                           .filter(Boolean)

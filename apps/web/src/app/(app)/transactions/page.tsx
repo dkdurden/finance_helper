@@ -9,6 +9,7 @@ import { TransactionEditControl } from "@/features/transactions/components/Trans
 import { ReceiptActionControl } from "@/features/transactions/components/ReceiptActionControl";
 import { TransferActionControl } from "@/features/transactions/components/TransferActionControl";
 import { backendUrl } from "@/lib/backendUrl";
+import { formatCalendarDate } from "@/lib/date";
 import styles from "./page.module.css";
 
 type LedgerEventApiRecord = {
@@ -81,12 +82,6 @@ const currencyFormatter = new Intl.NumberFormat("en-US", {
 const neutralCurrencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
-});
-
-const dateFormatter = new Intl.DateTimeFormat("en-GB", {
-  day: "2-digit",
-  month: "short",
-  year: "numeric",
 });
 
 const ledgerEventPageSize = 20;
@@ -281,10 +276,6 @@ function formatEventAmount(event: LedgerEventApiRecord) {
   }
 
   return formatAmount(event.amount_cents);
-}
-
-function formatDate(date: string) {
-  return dateFormatter.format(new Date(date + "T00:00:00Z"));
 }
 
 function getTransactionName(transaction: LedgerEventApiRecord) {
@@ -496,7 +487,9 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
                       ? "Transfer"
                       : transaction.category_name}
                   </p>
-                  <p className={styles.dateCell}>{formatDate(transaction.date)}</p>
+                  <p className={styles.dateCell}>
+                    {formatCalendarDate(transaction.date)}
+                  </p>
                   <div className={styles.amountActionsCell}>
                     <p
                       className={[

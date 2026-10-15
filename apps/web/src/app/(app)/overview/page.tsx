@@ -5,12 +5,18 @@ import { Button } from "@/components/button/Button";
 import { BudgetDonutChart } from "@/features/overview/components/BudgetDonutChart";
 import { OverviewSummaryCard } from "@/features/overview/components/OverviewSummaryCard";
 import { backendUrl } from "@/lib/backendUrl";
+import { formatCalendarMonth, getCurrentYearMonth } from "@/lib/date";
 import styles from "./page.module.css";
 
 type AccountApiRecord = {
   id: number;
   is_liability: boolean;
   balance_cents: number;
+};
+
+type MonthlySummary = {
+  expenseCents: number;
+  incomeCents: number;
 };
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
@@ -43,6 +49,39 @@ async function getCurrentBalanceCents(): Promise<number | null> {
         total + (account.is_liability ? -account.balance_cents : account.balance_cents),
       0,
     );
+  } catch {
+    return null;
+  }
+}
+
+async function getCurrentMonthSummary(month: string): Promise<MonthlySummary | null> {
+  try {
+    const cookieStore = await cookies();
+    const response = await fetch(
+      backendUrl(`/api/reports/monthly-summary/?month=${month}`),
+      {
+        headers: { cookie: cookieStore.toString() },
+        cache: "no-store",
+      },
+    );
+
+    if (!response.ok) return null;
+    const data: unknown = await response.json();
+    if (
+      !data ||
+      typeof data !== "object" ||
+      !("income_cents" in data) ||
+      typeof data.income_cents !== "number" ||
+      !("expense_cents" in data) ||
+      typeof data.expense_cents !== "number"
+    ) {
+      return null;
+    }
+
+    return {
+      incomeCents: data.income_cents,
+      expenseCents: data.expense_cents,
+    };
   } catch {
     return null;
   }
@@ -128,19 +167,32 @@ const recurringBills = [
 ];
 
 export default async function Home() {
-  const currentBalanceCents = await getCurrentBalanceCents();
+  const currentMonth = getCurrentYearMonth();
+  const currentMonthLabel = formatCalendarMonth(currentMonth);
+  const [currentBalanceCents, monthlySummary] = await Promise.all([
+    getCurrentBalanceCents(),
+    getCurrentMonthSummary(currentMonth),
+  ]);
   const currentBalance =
     currentBalanceCents === null
       ? "Unavailable"
       : currencyFormatter.format(currentBalanceCents / 100);
+  const monthlyIncome =
+    monthlySummary === null
+      ? "Unavailable"
+      : currencyFormatter.format(monthlySummary.incomeCents / 100);
+  const monthlyExpenses =
+    monthlySummary === null
+      ? "Unavailable"
+      : currencyFormatter.format(monthlySummary.expenseCents / 100);
 
   return (
     <AppShell title="Overview">
       {/* Overview-specific summary row */}
       <section className={styles.summaryGrid} aria-label="Summary cards">
         <OverviewSummaryCard label="Current Balance" value={currentBalance} primary />
-        <OverviewSummaryCard label="Income" value="$0.00" />
-        <OverviewSummaryCard label="Expenses" value="$0.00" />
+        <OverviewSummaryCard label={`Income — ${currentMonthLabel}`} value={monthlyIncome} />
+        <OverviewSummaryCard label={`Expenses — ${currentMonthLabel}`} value={monthlyExpenses} />
       </section>
 
       {/* Page-specific content region for the Overview dashboard */}

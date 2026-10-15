@@ -9,6 +9,7 @@ from .views import (
     LedgerEventListView,
     LoginView,
     LogoutView,
+    MonthlySummaryView,
     ProductViewSet,
     ReceiptItemViewSet,
     ReceiptViewSet,
@@ -35,5 +36,6 @@ urlpatterns = [
     path("auth/me/", CurrentUserView.as_view(), name="auth-me"),
     path("auth/signup/", SignUpView.as_view(), name="auth-signup"),
     path("ledger-events/", LedgerEventListView.as_view(), name="ledger-event-list"),
+    path("reports/monthly-summary/", MonthlySummaryView.as_view(), name="monthly-summary"),
     path("", include(router.urls)),
 ]

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { Button } from "@/components/button/Button";
 import { InputField } from "@/components/input/InputField";
+import { getCurrentCalendarDate } from "@/lib/date";
 import styles from "./AccountCreateControl.module.css";
 
 type AccountAdjustmentModalProps = {
@@ -21,14 +22,6 @@ const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
 });
-
-function getLocalDate() {
-  const now = new Date();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-
-  return `${now.getFullYear()}-${month}-${day}`;
-}
 
 function getErrorMessage(value: unknown): string {
   if (typeof value === "string") {
@@ -67,7 +60,7 @@ export function AccountAdjustmentModal({
   const [targetBalance, setTargetBalance] = useState(
     (account.balanceCents / 100).toFixed(2),
   );
-  const [adjustmentDate, setAdjustmentDate] = useState(getLocalDate);
+  const [adjustmentDate, setAdjustmentDate] = useState(getCurrentCalendarDate);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 

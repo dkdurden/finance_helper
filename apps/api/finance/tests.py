@@ -671,6 +671,107 @@ class ProductApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
+class MonthlySummaryApiTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email="monthly-summary-tests@example.com",
+            password="strong-password-123",
+        )
+        self.client.force_authenticate(user=self.user)
+        self.asset = Account.objects.create(
+            name="Reporting Checking",
+            account_type=Account.AccountType.CHECKING,
+            is_liability=False,
+            opening_balance_cents=0,
+            opening_balance_date="2026-01-01T00:00:00Z",
+        )
+        self.savings = Account.objects.create(
+            name="Reporting Savings",
+            account_type=Account.AccountType.SAVINGS,
+            is_liability=False,
+            opening_balance_cents=0,
+            opening_balance_date="2026-01-01T00:00:00Z",
+        )
+        self.liability = Account.objects.create(
+            name="Reporting Credit Card",
+            account_type=Account.AccountType.CREDIT_CARD,
+            is_liability=True,
+            opening_balance_cents=0,
+            opening_balance_date="2026-01-01T00:00:00Z",
+        )
+        self.category = Category.objects.create(name="Reporting Category")
+
+    def create_transaction(self, *, account, amount, date, transaction_type="normal"):
+        return Transaction.objects.create(
+            account=account,
+            category=self.category,
+            date=date,
+            signed_amount_cents=amount,
+            transaction_type=transaction_type,
+        )
+
+    def test_monthly_summary_normalizes_liabilities_and_excludes_non_activity(self):
+        self.create_transaction(account=self.asset, amount=200000, date="2026-10-01")
+        self.create_transaction(account=self.asset, amount=-10000, date="2026-10-02")
+        self.create_transaction(account=self.liability, amount=5000, date="2026-10-03")
+        self.create_transaction(account=self.liability, amount=-1000, date="2026-10-04")
+        self.create_transaction(
+            account=self.asset,
+            amount=2000,
+            date="2026-10-05",
+            transaction_type=Transaction.TransactionType.ADJUSTMENT,
+        )
+        self.create_transaction(account=self.asset, amount=99900, date="2026-09-30")
+        transfer_response = self.client.post(
+            reverse("transfer-list"),
+            {
+                "date": "2026-10-06",
+                "amount_cents": 50000,
+                "from_account": self.asset.id,
+                "to_account": self.savings.id,
+            },
+            format="json",
+        )
+        self.assertEqual(transfer_response.status_code, status.HTTP_201_CREATED)
+
+        response = self.client.get(
+            reverse("monthly-summary"),
+            {"month": "2026-10"},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data,
+            {
+                "month": "2026-10",
+                "income_cents": 201000,
+                "expense_cents": 15000,
+            },
+        )
+
+    def test_monthly_summary_rejects_invalid_month(self):
+        response = self.client.get(
+            reverse("monthly-summary"),
+            {"month": "October 2026"},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data["month"],
+            "Use a valid month in YYYY-MM format.",
+        )
+
+    def test_monthly_summary_requires_authentication(self):
+        self.client.force_authenticate(user=None)
+
+        response = self.client.get(
+            reverse("monthly-summary"),
+            {"month": "2026-10"},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
 class ReceiptApiTests(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(

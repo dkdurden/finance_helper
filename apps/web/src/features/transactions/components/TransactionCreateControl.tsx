@@ -15,6 +15,7 @@ import { Button } from "@/components/button/Button";
 import { InputField } from "@/components/input/InputField";
 import { SelectField, type SelectOption } from "@/components/input/SelectField";
 import modalStyles from "@/features/accounts/components/AccountCreateControl.module.css";
+import { getCurrentCalendarDate } from "@/lib/date";
 import {
   TransactionAmountField,
   getSignedAmountCents,
@@ -79,14 +80,6 @@ function getErrorMessage(value: unknown, fallback: string): string {
   return fallback;
 }
 
-function getLocalDate() {
-  const now = new Date();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-
-  return `${now.getFullYear()}-${month}-${day}`;
-}
-
 function parseNonNegativeCents(value: string) {
   const trimmed = value.trim();
   if (!/^\d+(\.\d{1,2})?$/.test(trimmed)) return null;
@@ -112,7 +105,7 @@ export function TransactionCreateControl({
   const [toAccountId, setToAccountId] = useState<number | null>(null);
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [amount, setAmount] = useState("");
-  const [date, setDate] = useState(getLocalDate);
+  const [date, setDate] = useState(getCurrentCalendarDate);
   const [direction, setDirection] = useState<TransactionDirection>("decrease");
   const [merchant, setMerchant] = useState("");
   const [note, setNote] = useState("");
@@ -346,7 +339,7 @@ export function TransactionCreateControl({
       setToAccountId(null);
       setCategoryId(null);
       setAmount("");
-      setDate(getLocalDate());
+      setDate(getCurrentCalendarDate());
       setDirection("decrease");
       setMerchant("");
       setNote("");

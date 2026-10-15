@@ -1,3 +1,5 @@
+from datetime import date
+
 from django.conf import settings
 from django.contrib.auth import login, logout
 from django.db import transaction as db_transaction
@@ -60,6 +62,78 @@ def user_payload(user):
         "name": user.first_name,
         "email": user.email,
     }
+
+
+class MonthlySummaryView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        raw_month = request.query_params.get("month", "").strip()
+        try:
+            year_text, month_text = raw_month.split("-", 1)
+            if len(year_text) != 4 or len(month_text) != 2:
+                raise ValueError
+            year = int(year_text)
+            month = int(month_text)
+            month_start = date(year, month, 1)
+        except (TypeError, ValueError):
+            return Response(
+                {"month": "Use a valid month in YYYY-MM format."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        next_month = (
+            date(year + 1, 1, 1)
+            if month == 12
+            else date(year, month + 1, 1)
+        )
+        transactions = Transaction.objects.filter(
+            date__gte=month_start,
+            date__lt=next_month,
+            transaction_type=Transaction.TransactionType.NORMAL,
+        )
+        totals = transactions.aggregate(
+            income_cents=Coalesce(
+                Sum(
+                    Case(
+                        When(
+                            account__is_liability=False,
+                            signed_amount_cents__gt=0,
+                            then=F("signed_amount_cents"),
+                        ),
+                        When(
+                            account__is_liability=True,
+                            signed_amount_cents__lt=0,
+                            then=-F("signed_amount_cents"),
+                        ),
+                        default=Value(0),
+                        output_field=BigIntegerField(),
+                    )
+                ),
+                Value(0),
+            ),
+            expense_cents=Coalesce(
+                Sum(
+                    Case(
+                        When(
+                            account__is_liability=False,
+                            signed_amount_cents__lt=0,
+                            then=-F("signed_amount_cents"),
+                        ),
+                        When(
+                            account__is_liability=True,
+                            signed_amount_cents__gt=0,
+                            then=F("signed_amount_cents"),
+                        ),
+                        default=Value(0),
+                        output_field=BigIntegerField(),
+                    )
+                ),
+                Value(0),
+            ),
+        )
+
+        return Response({"month": raw_month, **totals})
 
 
 class SignUpView(APIView):
