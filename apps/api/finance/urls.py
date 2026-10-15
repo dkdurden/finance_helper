@@ -14,6 +14,7 @@ from .views import (
     ReceiptItemViewSet,
     ReceiptViewSet,
     SignUpView,
+    SpendingByCategoryView,
     TransactionViewSet,
     TransferViewSet,
     health,
@@ -37,5 +38,10 @@ urlpatterns = [
     path("auth/signup/", SignUpView.as_view(), name="auth-signup"),
     path("ledger-events/", LedgerEventListView.as_view(), name="ledger-event-list"),
     path("reports/monthly-summary/", MonthlySummaryView.as_view(), name="monthly-summary"),
+    path(
+        "reports/spending-by-category/",
+        SpendingByCategoryView.as_view(),
+        name="spending-by-category",
+    ),
     path("", include(router.urls)),
 ]

@@ -136,6 +136,69 @@ class MonthlySummaryView(APIView):
         return Response({"month": raw_month, **totals})
 
 
+class SpendingByCategoryView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        raw_month = request.query_params.get("month", "").strip()
+        try:
+            year_text, month_text = raw_month.split("-", 1)
+            if len(year_text) != 4 or len(month_text) != 2:
+                raise ValueError
+            year = int(year_text)
+            month = int(month_text)
+            month_start = date(year, month, 1)
+        except (TypeError, ValueError):
+            return Response(
+                {"month": "Use a valid month in YYYY-MM format."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        next_month = (
+            date(year + 1, 1, 1)
+            if month == 12
+            else date(year, month + 1, 1)
+        )
+        expenses = (
+            Transaction.objects.filter(
+                date__gte=month_start,
+                date__lt=next_month,
+                transaction_type=Transaction.TransactionType.NORMAL,
+            )
+            .filter(
+                Q(account__is_liability=False, signed_amount_cents__lt=0)
+                | Q(account__is_liability=True, signed_amount_cents__gt=0)
+            )
+            .annotate(
+                expense_cents=Case(
+                    When(
+                        account__is_liability=False,
+                        then=-F("signed_amount_cents"),
+                    ),
+                    default=F("signed_amount_cents"),
+                    output_field=BigIntegerField(),
+                )
+            )
+            .values("category_id", "category__name")
+            .annotate(expense_cents=Sum("expense_cents"))
+            .order_by("-expense_cents", "category__name", "category_id")
+        )
+
+        return Response(
+            {
+                "month": raw_month,
+                "categories": [
+                    {
+                        "category_id": expense["category_id"],
+                        "category_name": expense["category__name"],
+                        "expense_cents": expense["expense_cents"],
+                    }
+                    for expense in expenses
+                ],
+            }
+        )
+
+
 class SignUpView(APIView):
     permission_classes = [permissions.AllowAny]
 

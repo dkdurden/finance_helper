@@ -291,6 +291,10 @@
   background: var(--color-navy);
 }
 
+.budgetAccentNeutral {
+  background: var(--color-grey-300);
+}
+
 .budgetItemContent {
   display: grid;
   align-content: center;
@@ -309,6 +313,13 @@
   font-size: var(--text-preset-4-bold-size);
   font-weight: var(--text-preset-4-bold-weight);
   line-height: var(--text-preset-4-bold-line-height);
+}
+
+.spendingState {
+  margin: 0;
+  padding: var(--space-500) var(--space-200);
+  color: var(--color-grey-500);
+  text-align: center;
 }
 
 .recurringBillsList {

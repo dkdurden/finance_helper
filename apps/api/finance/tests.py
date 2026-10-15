@@ -772,6 +772,124 @@ class MonthlySummaryApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
+class SpendingByCategoryApiTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email="category-report-tests@example.com",
+            password="strong-password-123",
+        )
+        self.client.force_authenticate(user=self.user)
+        self.asset = Account.objects.create(
+            name="Category Report Checking",
+            account_type=Account.AccountType.CHECKING,
+            is_liability=False,
+            opening_balance_cents=0,
+            opening_balance_date="2026-01-01T00:00:00Z",
+        )
+        self.liability = Account.objects.create(
+            name="Category Report Credit Card",
+            account_type=Account.AccountType.CREDIT_CARD,
+            is_liability=True,
+            opening_balance_cents=0,
+            opening_balance_date="2026-01-01T00:00:00Z",
+        )
+        self.groceries = Category.objects.create(name="Groceries")
+        self.utilities = Category.objects.create(name="Utilities")
+
+    def create_transaction(self, *, account, amount, category, date, transaction_type="normal"):
+        return Transaction.objects.create(
+            account=account,
+            category=category,
+            date=date,
+            signed_amount_cents=amount,
+            transaction_type=transaction_type,
+        )
+
+    def test_spending_by_category_groups_normalized_monthly_expenses(self):
+        self.create_transaction(
+            account=self.asset,
+            amount=-10000,
+            category=self.groceries,
+            date="2026-10-01",
+        )
+        self.create_transaction(
+            account=self.liability,
+            amount=5000,
+            category=self.groceries,
+            date="2026-10-02",
+        )
+        self.create_transaction(
+            account=self.asset,
+            amount=-7000,
+            category=self.utilities,
+            date="2026-10-03",
+        )
+        self.create_transaction(
+            account=self.asset,
+            amount=200000,
+            category=self.groceries,
+            date="2026-10-04",
+        )
+        self.create_transaction(
+            account=self.asset,
+            amount=-3000,
+            category=self.utilities,
+            date="2026-10-05",
+            transaction_type=Transaction.TransactionType.ADJUSTMENT,
+        )
+        self.create_transaction(
+            account=self.asset,
+            amount=-9000,
+            category=self.utilities,
+            date="2026-09-30",
+        )
+        self.groceries.is_archived = True
+        self.groceries.save(update_fields=["is_archived", "updated_at"])
+
+        response = self.client.get(
+            reverse("spending-by-category"),
+            {"month": "2026-10"},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data,
+            {
+                "month": "2026-10",
+                "categories": [
+                    {
+                        "category_id": self.groceries.id,
+                        "category_name": "Groceries",
+                        "expense_cents": 15000,
+                    },
+                    {
+                        "category_id": self.utilities.id,
+                        "category_name": "Utilities",
+                        "expense_cents": 7000,
+                    },
+                ],
+            },
+        )
+
+    def test_spending_by_category_rejects_invalid_month(self):
+        response = self.client.get(
+            reverse("spending-by-category"),
+            {"month": "2026-13"},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_spending_by_category_requires_authentication(self):
+        self.client.force_authenticate(user=None)
+
+        response = self.client.get(
+            reverse("spending-by-category"),
+            {"month": "2026-10"},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
 class ReceiptApiTests(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(

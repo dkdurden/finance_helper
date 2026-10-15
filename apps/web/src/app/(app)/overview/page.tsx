@@ -2,8 +2,8 @@ import Image from "next/image";
 import { cookies } from "next/headers";
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/button/Button";
-import { BudgetDonutChart } from "@/features/overview/components/BudgetDonutChart";
 import { OverviewSummaryCard } from "@/features/overview/components/OverviewSummaryCard";
+import { SpendingByCategoryChart } from "@/features/overview/components/SpendingByCategoryChart";
 import { backendUrl } from "@/lib/backendUrl";
 import { formatCalendarMonth, getCurrentYearMonth } from "@/lib/date";
 import styles from "./page.module.css";
@@ -17,6 +17,12 @@ type AccountApiRecord = {
 type MonthlySummary = {
   expenseCents: number;
   incomeCents: number;
+};
+
+type CategorySpending = {
+  categoryId: number | null;
+  categoryName: string;
+  expenseCents: number;
 };
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
@@ -87,6 +93,52 @@ async function getCurrentMonthSummary(month: string): Promise<MonthlySummary | n
   }
 }
 
+async function getSpendingByCategory(month: string): Promise<CategorySpending[] | null> {
+  try {
+    const cookieStore = await cookies();
+    const response = await fetch(
+      backendUrl(`/api/reports/spending-by-category/?month=${month}`),
+      {
+        headers: { cookie: cookieStore.toString() },
+        cache: "no-store",
+      },
+    );
+    if (!response.ok) return null;
+    const data: unknown = await response.json();
+    if (
+      !data ||
+      typeof data !== "object" ||
+      !("categories" in data) ||
+      !Array.isArray(data.categories)
+    ) {
+      return null;
+    }
+    const categories: CategorySpending[] = [];
+    for (const value of data.categories) {
+      if (
+        !value ||
+        typeof value !== "object" ||
+        !("category_id" in value) ||
+        (typeof value.category_id !== "number" && value.category_id !== null) ||
+        !("category_name" in value) ||
+        typeof value.category_name !== "string" ||
+        !("expense_cents" in value) ||
+        typeof value.expense_cents !== "number"
+      ) {
+        return null;
+      }
+      categories.push({
+        categoryId: value.category_id,
+        categoryName: value.category_name,
+        expenseCents: value.expense_cents,
+      });
+    }
+    return categories;
+  } catch {
+    return null;
+  }
+}
+
 const recentTransactions = [
   {
     name: "Emma Richardson",
@@ -125,27 +177,11 @@ const recentTransactions = [
   },
 ];
 
-const budgetCategories = [
-  {
-    name: "Entertainment",
-    amount: "$50.00",
-    accentClass: styles.budgetAccentGreen,
-  },
-  {
-    name: "Bills",
-    amount: "$750.00",
-    accentClass: styles.budgetAccentCyan,
-  },
-  {
-    name: "Dining Out",
-    amount: "$75.00",
-    accentClass: styles.budgetAccentGold,
-  },
-  {
-    name: "Personal Care",
-    amount: "$100.00",
-    accentClass: styles.budgetAccentNavy,
-  },
+const spendingPalette = [
+  { accentClass: styles.budgetAccentGreen, color: "var(--color-green)" },
+  { accentClass: styles.budgetAccentCyan, color: "var(--color-cyan)" },
+  { accentClass: styles.budgetAccentGold, color: "var(--color-yellow)" },
+  { accentClass: styles.budgetAccentNavy, color: "var(--color-navy)" },
 ];
 
 const recurringBills = [
@@ -169,9 +205,10 @@ const recurringBills = [
 export default async function Home() {
   const currentMonth = getCurrentYearMonth();
   const currentMonthLabel = formatCalendarMonth(currentMonth);
-  const [currentBalanceCents, monthlySummary] = await Promise.all([
+  const [currentBalanceCents, monthlySummary, categorySpending] = await Promise.all([
     getCurrentBalanceCents(),
     getCurrentMonthSummary(currentMonth),
+    getSpendingByCategory(currentMonth),
   ]);
   const currentBalance =
     currentBalanceCents === null
@@ -185,6 +222,34 @@ export default async function Home() {
     monthlySummary === null
       ? "Unavailable"
       : currencyFormatter.format(monthlySummary.expenseCents / 100);
+  const totalCategorySpending = categorySpending?.reduce(
+    (total, category) => total + category.expenseCents,
+    0,
+  ) ?? 0;
+  const visibleCategorySpending = categorySpending
+    ? [
+        ...categorySpending.slice(0, 4),
+        ...(categorySpending.length > 4
+          ? [{
+              categoryId: null,
+              categoryName: "Other",
+              expenseCents: categorySpending
+                .slice(4)
+                .reduce((total, category) => total + category.expenseCents, 0),
+            }]
+          : []),
+      ].map((category, index) => ({
+        ...category,
+        accentClass:
+          category.categoryName === "Other"
+            ? styles.budgetAccentNeutral
+            : spendingPalette[index]?.accentClass ?? styles.budgetAccentNeutral,
+        color:
+          category.categoryName === "Other"
+            ? "var(--color-grey-300)"
+            : spendingPalette[index]?.color ?? "var(--color-grey-300)",
+      }))
+    : null;
 
   return (
     <AppShell title="Overview">
@@ -303,30 +368,45 @@ export default async function Home() {
         </div>
 
         <div className={styles.rightColumn}>
-          {/* Budgets card: chart + category breakdown */}
-          <section className={styles.panel} aria-label="Budgets section">
+          <section className={styles.panel} aria-label="Monthly spending by category">
             <div className={styles.panelHeader}>
-              <h2 className={styles.panelTitle}>Budgets</h2>
-              <Button variant="tertiary">See Details</Button>
+              <h2 className={styles.panelTitle}>
+                Spending by Category — {currentMonthLabel}
+              </h2>
             </div>
-
-            <div className={styles.budgetsLayout}>
-              <div className={styles.budgetChartWrap}>
-                <BudgetDonutChart />
-              </div>
-
-              <div className={styles.budgetBreakdown} aria-label="Budget breakdown">
-                {budgetCategories.map((category) => (
-                  <div className={styles.budgetItem} key={category.name}>
-                    <span className={`${styles.budgetAccent} ${category.accentClass}`} aria-hidden="true" />
-                    <div className={styles.budgetItemContent}>
-                      <p className={styles.budgetItemLabel}>{category.name}</p>
-                      <p className={styles.budgetItemValue}>{category.amount}</p>
+            {visibleCategorySpending === null ? (
+              <p className={styles.spendingState} role="alert">
+                Spending by category is unavailable.
+              </p>
+            ) : visibleCategorySpending.length === 0 ? (
+              <p className={styles.spendingState}>No expenses recorded this month.</p>
+            ) : (
+              <div className={styles.budgetsLayout}>
+                <div className={styles.budgetChartWrap}>
+                  <SpendingByCategoryChart
+                    segments={visibleCategorySpending.map((category) => ({
+                      color: category.color,
+                      name: category.categoryName,
+                      value: category.expenseCents,
+                    }))}
+                    totalLabel={currencyFormatter.format(totalCategorySpending / 100)}
+                  />
+                </div>
+                <div className={styles.budgetBreakdown} aria-label="Spending breakdown">
+                  {visibleCategorySpending.map((category) => (
+                    <div className={styles.budgetItem} key={category.categoryName}>
+                      <span className={`${styles.budgetAccent} ${category.accentClass}`} aria-hidden="true" />
+                      <div className={styles.budgetItemContent}>
+                        <p className={styles.budgetItemLabel}>{category.categoryName}</p>
+                        <p className={styles.budgetItemValue}>
+                          {currencyFormatter.format(category.expenseCents / 100)} · {Math.round(category.expenseCents / totalCategorySpending * 100)}%
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </section>
 
           {/* Recurring bills card: paid, upcoming, due soon summary */}
