@@ -16,7 +16,7 @@ ENV API_BASE_URL=http://api:8000
 
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY apps/web/package.json apps/web/package-lock.json ./
-COPY apps/web/next.config.ts apps/web/tsconfig.json apps/web/next-env.d.ts ./
+COPY apps/web/next.config.ts apps/web/tsconfig.json ./
 COPY apps/web/public ./public
 COPY apps/web/src ./src
 

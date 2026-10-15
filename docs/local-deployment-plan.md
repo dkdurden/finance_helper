@@ -31,23 +31,26 @@ http://localhost:3000
 
 ## Current readiness
 
-Already available:
+Implemented in the repository:
 
 - Docker configuration for PostgreSQL and Django development.
 - A named PostgreSQL volume for persistent database storage.
 - Gunicorn in the Django Python dependencies.
 - A successful Next.js production build.
 - Django migrations and authenticated application routes.
+- A multi-stage production web image.
+- A production API image served by Gunicorn.
+- Environment-driven Django production settings.
+- A separate production Compose stack with health checks, private API and
+  database networking, and restart policies.
 
-Required before using the production stack:
+Still required for each new installation:
 
-- Add a production web image and enable the `web` Compose service.
-- Change the API container from `manage.py runserver` to Gunicorn.
-- Read Django's secret key, debug mode, and allowed hosts from environment
-  variables instead of hardcoded development values.
-- Add service health checks and startup dependencies.
-- Run database migrations as an explicit deployment step.
-- Define backup, restore, update, and rollback commands.
+- Create an untracked `.env.production` with unique local secrets.
+- Build the production images and apply migrations.
+- Create the first user, then disable further signup.
+- Create and validate a backup outside Docker's named volume.
+- Verify data persistence across application-container recreation.
 
 ## Host prerequisites
 
@@ -117,6 +120,8 @@ generator. If signup is used to create the first account, change
 
 - Add a multi-stage Next.js Dockerfile that installs locked dependencies,
   builds the app, and starts it with `next start` or standalone output.
+- Do not require `next-env.d.ts` as a Docker build input. Next.js generates this
+  ignored type-declaration file during development or a production build.
 - Start Django with Gunicorn and an appropriate worker timeout.
 - Remove source-code bind mounts from the production Compose configuration.
 - Keep only the web port published to the host.
@@ -131,6 +136,14 @@ Use a separate production Compose file, such as
 
 Run these commands from the repository root on the home computer. Use a tagged
 release rather than an in-progress development branch when one is available.
+
+Confirm that Docker Desktop or Docker Engine is running:
+
+```powershell
+docker --version
+docker compose version
+docker info
+```
 
 Create the untracked production environment file:
 
@@ -185,6 +198,18 @@ Confirm that the existing account can still sign in and that a second account
 cannot be registered. Do not delete `.env.production`; the same Django secret
 must be retained across restarts and upgrades.
 
+Test persistence before entering real data. Create a recognizable temporary
+record in the app, recreate only the application containers, and confirm that
+the record remains:
+
+```powershell
+docker compose --env-file .env.production -f docker-compose.production.yml up -d --force-recreate api web
+docker compose --env-file .env.production -f docker-compose.production.yml ps
+```
+
+All services should return to `healthy`. Delete the temporary record after the
+check if it is no longer useful.
+
 Before the first release, verify whether the app needs a separate Django static
 file collection step. The current API is JSON-only, but Django admin assets
 would require production static-file handling.
@@ -230,12 +255,50 @@ backup. A hardware failure, accidental volume deletion, or database corruption
 can still destroy it.
 
 Use logical PostgreSQL backups written outside the Docker volume. The final
-deployment should provide reviewed commands equivalent to:
+deployment should provide reviewed commands equivalent to the following
+PowerShell workflow. Replace the backup-directory placeholder with an absolute
+path outside the repository:
 
-```text
-pg_dump -> timestamped compressed backup file on the host
-pg_restore or psql -> newly created database
+```powershell
+$BackupDirectory = "<absolute-backup-directory>"
+$Timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+$BackupName = "finance_helper-$Timestamp.dump"
+$BackupPath = Join-Path $BackupDirectory $BackupName
+
+New-Item -ItemType Directory -Path $BackupDirectory -Force | Out-Null
+
+docker compose --env-file .env.production -f docker-compose.production.yml exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom --file=/tmp/finance_helper.dump'
+docker compose --env-file .env.production -f docker-compose.production.yml cp db:/tmp/finance_helper.dump $BackupPath
+Get-FileHash -Algorithm SHA256 -LiteralPath $BackupPath
 ```
+
+The named Docker volume is live database storage, not a portable backup. Do not
+copy or edit PostgreSQL's raw volume files from the host. Use `pg_dump` archives
+for copies that need to survive Docker removal, hardware failure, or transfer to
+another computer.
+
+Validate each new archive with PostgreSQL tooling. A strong validation restores
+it into a disposable PostgreSQL container that has no published ports and no
+connection to the production database:
+
+```powershell
+docker run --detach --rm --name finance-helper-restore-test --env POSTGRES_PASSWORD=<temporary-validation-password> --mount "type=bind,source=$BackupDirectory,target=/backups,readonly" postgres:16-alpine
+docker exec finance-helper-restore-test pg_isready -U postgres
+docker exec finance-helper-restore-test createdb -U postgres finance_helper_restore_test
+docker exec finance-helper-restore-test pg_restore -U postgres --dbname=finance_helper_restore_test --no-owner --no-privileges "/backups/$BackupName"
+```
+
+Compare aggregate row counts for users, accounts, categories, transactions,
+transfers, products, receipts, and receipt items with production. Do not print
+names, email addresses, notes, credentials, or financial values into logs. When
+validation is complete, remove only the disposable container:
+
+```powershell
+docker stop finance-helper-restore-test
+```
+
+Stopping this container deletes its temporary restored database because it was
+started with `--rm`; it does not affect production or the host backup file.
 
 Backup policy:
 
@@ -267,6 +330,10 @@ Application rollback means checking out the previous commit and rebuilding its
 images. Database rollback is separate: Django migrations are not assumed to be
 reversible. Restore the pre-update database backup if a migration cannot be
 safely reversed.
+
+Do not modify or move an existing release tag when an installation uncovers a
+deployment fix. Create a branch from the tag, commit the fix, merge it into the
+current main branch, and create a new release tag after verification.
 
 ## Acceptance checklist
 
