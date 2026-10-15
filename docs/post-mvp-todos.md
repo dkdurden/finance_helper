@@ -36,6 +36,15 @@ Status: `deferred`
 - Review category and date visibility at intermediate widths.
 - Check long recipient names, amount alignment, and horizontal spacing.
 
+#### Products
+
+Status: `deferred`
+
+- Review the product table at mobile, tablet, and desktop widths.
+- Check long product names, units, stores, and last-purchase details for wrapping and truncation.
+- Verify the search form, status badges, and bottom-navigation clearance on narrow screens.
+- Confirm the four-column desktop layout remains readable at intermediate widths.
+
 #### Budgets
 
 Status: `deferred`

@@ -30,6 +30,11 @@ const navItems: NavItem[] = [
     icon: "/images/icon-nav-transactions.svg",
     label: "Transactions",
   },
+  {
+    href: "/products",
+    icon: "/images/icon-nav-budgets.svg",
+    label: "Products",
+  },
 ];
 
 const TOGGLE_ARC_RADIUS = 8;

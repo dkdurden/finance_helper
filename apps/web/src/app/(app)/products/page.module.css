@@ -1,0 +1,221 @@
+.panel {
+  display: grid;
+  gap: var(--space-300);
+  border-radius: var(--space-150);
+  background: var(--color-white);
+  padding: var(--space-400);
+  box-shadow: var(--shadow-sm);
+}
+
+.searchForm {
+  display: flex;
+  align-items: end;
+  gap: var(--space-150);
+}
+
+.searchLabel {
+  position: absolute;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+.searchInput {
+  min-width: 0;
+  max-width: 24rem;
+  flex: 1;
+  border: 1px solid var(--color-beige-500);
+  border-radius: var(--space-100);
+  background: var(--color-white);
+  padding: var(--space-150) var(--space-250);
+  color: var(--color-grey-900);
+  font: inherit;
+}
+
+.searchInput:focus-visible {
+  border-color: var(--color-grey-900);
+  outline: 2px solid transparent;
+  box-shadow: 0 0 0 2px rgb(32 31 36 / 0.08);
+}
+
+.searchButton {
+  border: 0;
+  border-radius: var(--space-100);
+  background: var(--color-grey-900);
+  padding: var(--space-150) var(--space-250);
+  color: var(--color-white);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.tableHeader,
+.productRow {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1fr) 9rem minmax(12rem, 0.8fr) 7rem;
+  gap: var(--space-400);
+  align-items: center;
+}
+
+.tableHeader {
+  border-bottom: 1px solid var(--color-grey-100);
+  padding: var(--space-150) var(--space-200);
+  color: var(--color-grey-500);
+  font-size: var(--text-preset-5-size);
+  line-height: var(--text-preset-5-line-height);
+}
+
+.productList {
+  display: grid;
+}
+
+.productRow {
+  border-bottom: 1px solid var(--color-grey-100);
+  padding: var(--space-200);
+}
+
+.productRow:last-child {
+  border-bottom: 0;
+}
+
+.productIdentity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-200);
+}
+
+.productInitial {
+  display: inline-flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--color-beige-100);
+  color: var(--color-grey-900);
+  font-weight: 700;
+}
+
+.productName,
+.defaultUnit,
+.lastPrice,
+.purchaseContext,
+.noPurchase,
+.status,
+.stateMessage {
+  margin: 0;
+}
+
+.productName {
+  overflow: hidden;
+  color: var(--color-grey-900);
+  font-size: var(--text-preset-4-bold-size);
+  font-weight: var(--text-preset-4-bold-weight);
+  line-height: var(--text-preset-4-bold-line-height);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.defaultUnit {
+  color: var(--color-grey-500);
+}
+
+.lastPurchase {
+  display: grid;
+  gap: var(--space-50);
+}
+
+.lastPrice {
+  color: var(--color-grey-900);
+  font-size: var(--text-preset-4-bold-size);
+  font-weight: var(--text-preset-4-bold-weight);
+  line-height: var(--text-preset-4-bold-line-height);
+}
+
+.purchaseContext,
+.noPurchase {
+  color: var(--color-grey-500);
+  font-size: var(--text-preset-5-size);
+  line-height: var(--text-preset-5-line-height);
+}
+
+.status {
+  width: fit-content;
+  border-radius: 999px;
+  padding: var(--space-50) var(--space-150);
+  font-size: var(--text-preset-5-size);
+  font-weight: 700;
+}
+
+.active {
+  background: rgb(39 124 107 / 0.12);
+  color: var(--color-green);
+}
+
+.archived {
+  background: var(--color-beige-100);
+  color: var(--color-grey-500);
+}
+
+.stateMessage {
+  padding: var(--space-400) var(--space-200);
+  color: var(--color-grey-500);
+  text-align: center;
+}
+
+.errorMessage {
+  color: var(--color-danger);
+}
+
+@media (max-width: 47.9375rem) {
+  .panel {
+    padding: var(--space-300) var(--space-250);
+  }
+
+  .searchForm {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .searchInput {
+    width: 100%;
+    max-width: none;
+  }
+
+  .tableHeader {
+    display: none;
+  }
+
+  .productRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-100) var(--space-150);
+    padding: var(--space-200) 0;
+  }
+
+  .productIdentity {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .defaultUnit {
+    grid-column: 1;
+    grid-row: 2;
+    padding-left: calc(2.5rem + var(--space-200));
+  }
+
+  .lastPurchase {
+    grid-column: 1;
+    grid-row: 3;
+    padding-left: calc(2.5rem + var(--space-200));
+  }
+
+  .status {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    align-self: center;
+  }
+}

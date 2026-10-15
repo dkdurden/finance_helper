@@ -1,3 +1,5 @@
+from decimal import Decimal, ROUND_HALF_UP
+
 from django.contrib.auth import authenticate, get_user_model, password_validation
 from django.db.models import Sum
 from rest_framework import serializers
@@ -123,6 +125,28 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
+    last_purchase_date = serializers.DateField(read_only=True)
+    last_purchase_store = serializers.CharField(read_only=True, allow_null=True)
+    last_purchase_unit = serializers.CharField(read_only=True, allow_null=True)
+    last_unit_price_cents = serializers.SerializerMethodField()
+
+    def get_last_unit_price_cents(self, obj):
+        stored_price = getattr(obj, "last_purchase_unit_price_cents", None)
+        if stored_price is not None:
+            return stored_price
+
+        line_total = getattr(obj, "last_purchase_line_total_cents", None)
+        qty = getattr(obj, "last_purchase_qty", None)
+        if line_total is None or qty is None or qty <= 0:
+            return None
+
+        return int(
+            (Decimal(line_total) / qty).quantize(
+                Decimal("1"),
+                rounding=ROUND_HALF_UP,
+            )
+        )
+
     class Meta:
         model = Product
         fields = [
@@ -130,6 +154,10 @@ class ProductSerializer(serializers.ModelSerializer):
             "name",
             "default_unit",
             "is_archived",
+            "last_unit_price_cents",
+            "last_purchase_date",
+            "last_purchase_store",
+            "last_purchase_unit",
             "created_at",
             "updated_at",
         ]

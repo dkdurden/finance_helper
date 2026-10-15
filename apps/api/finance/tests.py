@@ -590,6 +590,55 @@ class ProductApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["name"], "Dish Soap")
+        self.assertIsNone(response.data[0]["last_unit_price_cents"])
+        self.assertIsNone(response.data[0]["last_purchase_date"])
+
+    def test_list_products_includes_latest_purchase_price_and_context(self):
+        account = Account.objects.create(
+            name="Product History Account",
+            account_type=Account.AccountType.CHECKING,
+            is_liability=False,
+            opening_balance_cents=0,
+            opening_balance_date="2026-01-01T00:00:00Z",
+        )
+        category = Category.objects.create(name="Product History Category")
+        product = Product.objects.create(name="Coffee", default_unit="bag")
+
+        for date, store, qty, unit_price, line_total in [
+            ("2026-03-01", "Old Store", "1.000", 499, 499),
+            ("2026-03-03", "Latest Store", "3.000", None, 1000),
+        ]:
+            transaction = Transaction.objects.create(
+                account=account,
+                category=category,
+                date=date,
+                merchant=store,
+                signed_amount_cents=-line_total,
+                transaction_type=Transaction.TransactionType.NORMAL,
+            )
+            receipt = Receipt.objects.create(
+                date=date,
+                store=store,
+                total_cents=line_total,
+                transaction=transaction,
+            )
+            ReceiptItem.objects.create(
+                receipt=receipt,
+                product=product,
+                name_snapshot=product.name,
+                qty=qty,
+                unit="bag",
+                unit_price_cents=unit_price,
+                line_total_cents=line_total,
+            )
+
+        response = self.client.get(reverse("product-list"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data[0]["last_unit_price_cents"], 333)
+        self.assertEqual(response.data[0]["last_purchase_date"], "2026-03-03")
+        self.assertEqual(response.data[0]["last_purchase_store"], "Latest Store")
+        self.assertEqual(response.data[0]["last_purchase_unit"], "bag")
 
     def test_search_products_matches_active_names_case_insensitively(self):
         matching_product = Product.objects.create(

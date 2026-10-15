@@ -5,10 +5,13 @@ from django.db.models import (
     BigIntegerField,
     Case,
     CharField,
+    DateField,
     ExpressionWrapper,
     F,
     IntegerField,
+    OuterRef,
     Q,
+    Subquery,
     Sum,
     Value,
     When,
@@ -200,6 +203,35 @@ class ProductViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         search = self.request.query_params.get("search", "").strip()
+        latest_item = ReceiptItem.objects.filter(product=OuterRef("pk")).order_by(
+            "-receipt__date",
+            "-receipt__occurred_at",
+            "-id",
+        )
+
+        queryset = queryset.annotate(
+            last_purchase_date=Subquery(
+                latest_item.values("receipt__date")[:1],
+                output_field=DateField(),
+            ),
+            last_purchase_store=Subquery(
+                latest_item.values("receipt__store")[:1],
+                output_field=CharField(),
+            ),
+            last_purchase_unit=Subquery(
+                latest_item.values("unit")[:1],
+                output_field=CharField(),
+            ),
+            last_purchase_unit_price_cents=Subquery(
+                latest_item.values("unit_price_cents")[:1],
+                output_field=BigIntegerField(),
+            ),
+            last_purchase_line_total_cents=Subquery(
+                latest_item.values("line_total_cents")[:1],
+                output_field=BigIntegerField(),
+            ),
+            last_purchase_qty=Subquery(latest_item.values("qty")[:1]),
+        )
 
         if search:
             queryset = queryset.filter(
