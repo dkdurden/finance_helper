@@ -164,6 +164,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                     product={{
                       defaultUnit: product.default_unit,
                       id: product.id,
+                      isArchived: product.is_archived,
                       name: product.name,
                     }}
                   />

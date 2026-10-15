@@ -12,6 +12,7 @@ type ProductEditControlProps = {
   product: {
     defaultUnit: string | null;
     id: number;
+    isArchived: boolean;
     name: string;
   };
 };
@@ -43,6 +44,7 @@ export function ProductEditControl({ product }: ProductEditControlProps) {
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [statusAction, setStatusAction] = useState<"archive" | "restore" | null>(null);
   const [name, setName] = useState(product.name);
   const [defaultUnit, setDefaultUnit] = useState(product.defaultUnit ?? "");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -56,6 +58,13 @@ export function ProductEditControl({ product }: ProductEditControlProps) {
     setErrorMessage(null);
     requestAnimationFrame(() => menuButtonRef.current?.focus());
   }, [isSubmitting, product.defaultUnit, product.name]);
+
+  const closeStatusModal = useCallback(() => {
+    if (isSubmitting) return;
+    setStatusAction(null);
+    setErrorMessage(null);
+    requestAnimationFrame(() => menuButtonRef.current?.focus());
+  }, [isSubmitting]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -87,6 +96,15 @@ export function ProductEditControl({ product }: ProductEditControlProps) {
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [closeModal, modalOpen, nameId]);
+
+  useEffect(() => {
+    if (!statusAction) return;
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") closeStatusModal();
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [closeStatusModal, statusAction]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -125,6 +143,34 @@ export function ProductEditControl({ product }: ProductEditControlProps) {
     }
   }
 
+  async function updateArchivedStatus() {
+    if (!statusAction) return;
+    setErrorMessage(null);
+    setIsSubmitting(true);
+    try {
+      const csrfResponse = await fetch("/api/auth/csrf", { method: "GET", cache: "no-store" });
+      if (!csrfResponse.ok) throw new Error("Unable to initialize product security.");
+      const response = await fetch(`/api/products/${product.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_archived: statusAction === "archive" }),
+      });
+      let data: unknown = null;
+      try { data = await response.json(); } catch { data = null; }
+      if (!response.ok) {
+        setErrorMessage(getErrorMessage(data));
+        return;
+      }
+      setStatusAction(null);
+      router.refresh();
+      requestAnimationFrame(() => menuButtonRef.current?.focus());
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Unable to update the product.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   return (
     <div className={actionStyles.actions} ref={controlRef}>
       <button
@@ -149,6 +195,20 @@ export function ProductEditControl({ product }: ProductEditControlProps) {
           >
             Edit Product
           </button>
+          <button
+            className={[
+              actionStyles.actionsMenuItem,
+              !product.isArchived ? actionStyles.actionsMenuItemDanger : "",
+            ].filter(Boolean).join(" ")}
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setMenuOpen(false);
+              setStatusAction(product.isArchived ? "restore" : "archive");
+            }}
+          >
+            {product.isArchived ? "Restore Product" : "Archive Product"}
+          </button>
         </div>
       ) : null}
 
@@ -172,6 +232,44 @@ export function ProductEditControl({ product }: ProductEditControlProps) {
                 {isSubmitting ? "Saving Changes..." : "Save Changes"}
               </Button>
             </form>
+          </div>
+        </div>
+      ) : null}
+
+      {statusAction ? (
+        <div className={modalStyles.overlay} role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) closeStatusModal();
+        }}>
+          <div className={modalStyles.modal} role="dialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={descriptionId}>
+            <header className={modalStyles.header}>
+              <h2 className={modalStyles.title} id={titleId}>
+                {statusAction === "archive" ? "Archive Product" : "Restore Product"}
+              </h2>
+              <button className={modalStyles.closeButton} type="button" aria-label={`Close ${statusAction === "archive" ? "Archive" : "Restore"} Product modal`} disabled={isSubmitting} onClick={closeStatusModal}>
+                <Image src="/images/icon-close-modal.svg" alt="" width={32} height={32} aria-hidden="true" />
+              </button>
+            </header>
+            <div className={modalStyles.form}>
+              <p className={modalStyles.description} id={descriptionId}>
+                {statusAction === "archive"
+                  ? `Archive “${product.name}”? Existing receipts will keep their history, but the product will no longer be available for new receipt items.`
+                  : `Restore “${product.name}”? It will become available for new receipt items again.`}
+              </p>
+              {errorMessage ? <p className={modalStyles.errorMessage} role="alert">{errorMessage}</p> : null}
+              <Button
+                className={modalStyles.submitButton}
+                variant={statusAction === "archive" ? "destroy" : "primary"}
+                disabled={isSubmitting}
+                onClick={() => void updateArchivedStatus()}
+              >
+                {isSubmitting
+                  ? statusAction === "archive" ? "Archiving..." : "Restoring..."
+                  : statusAction === "archive" ? "Archive Product" : "Restore Product"}
+              </Button>
+              <Button variant="tertiary" disabled={isSubmitting} onClick={closeStatusModal}>
+                Cancel
+              </Button>
+            </div>
           </div>
         </div>
       ) : null}
