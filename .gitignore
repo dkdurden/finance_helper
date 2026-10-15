@@ -1,4 +1,5 @@
 .env
+.env.production
 apps/api/.env
 apps/web/.env.local
 __pycache__/
