@@ -2,6 +2,11 @@ services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     environment:
       POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB must be configured}
       POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER must be configured}
@@ -20,6 +25,11 @@ services:
       context: .
       dockerfile: infra/docker/api.production.Dockerfile
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     environment:
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be configured}
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY must be configured}
@@ -37,6 +47,11 @@ services:
       args:
         NEXT_PUBLIC_APP_TIME_ZONE: ${NEXT_PUBLIC_APP_TIME_ZONE:-America/New_York}
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     environment:
       API_BASE_URL: http://api:8000
     ports:

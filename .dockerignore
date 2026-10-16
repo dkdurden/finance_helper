@@ -18,8 +18,12 @@ cypress/videos/
 reports/
 
 # Ignore environment and config files (sensitive data)
-*.env*
+**/.env*
+!**/.env*.example
 *.log
+
+# Ignore Python bytecode caches at any depth
+**/__pycache__/
 
 # Ignore TypeScript build artifacts (if using TypeScript)
 *.tsbuildinfo
