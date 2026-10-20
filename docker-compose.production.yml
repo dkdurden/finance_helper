@@ -54,6 +54,7 @@ services:
         max-file: "3"
     environment:
       API_BASE_URL: http://api:8000
+      WEB_ALLOWED_ORIGINS: ${WEB_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
     ports:
       - "127.0.0.1:${WEB_PORT:-3000}:3000"
     depends_on:
