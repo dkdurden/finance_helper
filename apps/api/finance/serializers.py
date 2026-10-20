@@ -607,6 +607,9 @@ class LedgerEventSerializer(serializers.Serializer):
 TRANSFER_POSTING_MUTATION_ERROR = (
     "Transfer postings are managed through the transfer endpoint."
 )
+RECEIPT_TRANSACTION_MUTATION_ERROR = (
+    "Receipt transactions are managed through the receipt endpoint."
+)
 
 
 class TransactionSerializer(serializers.ModelSerializer):
@@ -651,6 +654,11 @@ class TransactionSerializer(serializers.ModelSerializer):
         ):
             raise serializers.ValidationError(
                 {"detail": TRANSFER_POSTING_MUTATION_ERROR}
+            )
+
+        if self.instance is not None and hasattr(self.instance, "receipt"):
+            raise serializers.ValidationError(
+                {"detail": RECEIPT_TRANSACTION_MUTATION_ERROR}
             )
 
         transaction_type = attrs.get("transaction_type", getattr(self.instance, "transaction_type", None))

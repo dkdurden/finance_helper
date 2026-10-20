@@ -2796,6 +2796,23 @@ class TransactionApiTests(APITestCase):
             transfer=self.transfer,
         )
 
+    def create_receipt_linked_transaction(self):
+        transaction = Transaction.objects.create(
+            date="2026-03-05",
+            signed_amount_cents=-2500,
+            transaction_type=Transaction.TransactionType.NORMAL,
+            merchant="Market",
+            category=self.category,
+            account=self.account,
+        )
+        receipt = Receipt.objects.create(
+            date=transaction.date,
+            store=transaction.merchant,
+            total_cents=2500,
+            transaction=transaction,
+        )
+        return receipt, transaction
+
     def test_transfer_posting_serializes_null_category(self):
         transaction = self.create_transfer_posting()
 
@@ -2890,6 +2907,60 @@ class TransactionApiTests(APITestCase):
         self.assertEqual(transaction.transaction_type, Transaction.TransactionType.NORMAL)
         self.assertEqual(response.data["category_name"], updated_category.name)
         self.assertEqual(response.data["account_name"], self.secondary_account.name)
+
+    def test_direct_receipt_transaction_update_is_rejected(self):
+        receipt, transaction = self.create_receipt_linked_transaction()
+        balance_before = self.client.get(
+            reverse("account-detail", args=[self.account.id])
+        ).data["balance_cents"]
+
+        response = self.client.patch(
+            reverse("transaction-detail", args=[transaction.id]),
+            {"signed_amount_cents": -5000, "merchant": "Changed Market"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data["detail"][0],
+            "Receipt transactions are managed through the receipt endpoint.",
+        )
+        receipt.refresh_from_db()
+        transaction.refresh_from_db()
+        self.assertEqual(receipt.total_cents, 2500)
+        self.assertEqual(receipt.store, "Market")
+        self.assertEqual(transaction.signed_amount_cents, -2500)
+        self.assertEqual(transaction.merchant, "Market")
+        self.assertEqual(
+            self.client.get(
+                reverse("account-detail", args=[self.account.id])
+            ).data["balance_cents"],
+            balance_before,
+        )
+
+    def test_direct_receipt_transaction_deletion_is_rejected(self):
+        receipt, transaction = self.create_receipt_linked_transaction()
+        balance_before = self.client.get(
+            reverse("account-detail", args=[self.account.id])
+        ).data["balance_cents"]
+
+        response = self.client.delete(
+            reverse("transaction-detail", args=[transaction.id])
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data["detail"],
+            "Receipt transactions are managed through the receipt endpoint.",
+        )
+        self.assertTrue(Receipt.objects.filter(id=receipt.id).exists())
+        self.assertTrue(Transaction.objects.filter(id=transaction.id).exists())
+        self.assertEqual(
+            self.client.get(
+                reverse("account-detail", args=[self.account.id])
+            ).data["balance_cents"],
+            balance_before,
+        )
 
     def test_create_transaction_rejects_archived_category(self):
         archived_category = Category.objects.create(

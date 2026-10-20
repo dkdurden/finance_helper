@@ -43,6 +43,7 @@ from .serializers import (
     ReceiptItemSerializer,
     ReceiptSerializer,
     ReceiptUpdateSerializer,
+    RECEIPT_TRANSACTION_MUTATION_ERROR,
     SignUpSerializer,
     TRANSFER_POSTING_MUTATION_ERROR,
     TransactionSerializer,
@@ -716,6 +717,12 @@ class TransactionViewSet(viewsets.ModelViewSet):
         if transaction.transaction_type == Transaction.TransactionType.TRANSFER:
             return Response(
                 {"detail": TRANSFER_POSTING_MUTATION_ERROR},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if hasattr(transaction, "receipt"):
+            return Response(
+                {"detail": RECEIPT_TRANSACTION_MUTATION_ERROR},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
