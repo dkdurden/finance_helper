@@ -1,7 +1,7 @@
 from datetime import date
 
 from django.conf import settings
-from django.contrib.auth import login, logout
+from django.contrib.auth import get_user_model, login, logout
 from django.db import transaction as db_transaction
 from django.db.models import (
     BigIntegerField,
@@ -54,6 +54,8 @@ from .services import (
     delete_receipt,
     delete_transfer,
 )
+
+User = get_user_model()
 
 
 def user_payload(user):
@@ -246,6 +248,11 @@ class SignUpView(APIView):
         if not settings.ALLOW_SIGNUP:
             return Response(
                 {"detail": "Signup is disabled."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        if User.objects.exists():
+            return Response(
+                {"detail": "An account already exists."},
                 status=status.HTTP_403_FORBIDDEN,
             )
 

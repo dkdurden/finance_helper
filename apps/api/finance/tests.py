@@ -48,7 +48,7 @@ class SignUpApiTests(APITestCase):
         self.assertEqual(user.first_name, payload["name"])
         self.assertTrue(user.check_password(payload["password"]))
 
-    def test_signup_rejects_duplicate_email(self):
+    def test_signup_rejects_second_user(self):
         User.objects.create_user(
             email="dana@example.com",
             password="strong-password-123",
@@ -57,15 +57,16 @@ class SignUpApiTests(APITestCase):
         response = self.client.post(
             reverse("auth-signup"),
             {
-                "name": "Dana Thomas",
-                "email": "dana@example.com",
+                "name": "Morgan Lee",
+                "email": "morgan@example.com",
                 "password": "another-strong-password-123",
             },
             format="json",
         )
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data["email"][0], "A user with that email already exists.")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data["detail"], "An account already exists.")
+        self.assertEqual(User.objects.count(), 1)
 
     def test_signup_rejects_weak_password(self):
         response = self.client.post(
