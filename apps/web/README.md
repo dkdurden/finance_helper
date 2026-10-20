@@ -19,6 +19,11 @@ Copy-Item apps/web/.env.example apps/web/.env.local
 
 If the frontend needs to call the local Django API, set `API_BASE_URL` in `apps/web/.env.local` to `http://localhost:8000`.
 
+`WEB_ALLOWED_ORIGINS` must contain the exact browser origins allowed to call
+the web API, separated by commas and without paths. The example value permits
+both `http://localhost:3000` and `http://127.0.0.1:3000`. If the development
+port changes, update these origins to use the same port.
+
 Set `NEXT_PUBLIC_APP_TIME_ZONE` to the IANA timezone that defines the app's
 "today" and "current month" boundaries, such as `America/New_York`. Calendar
 dates entered by users remain timezone-neutral.

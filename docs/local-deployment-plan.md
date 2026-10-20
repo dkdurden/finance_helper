@@ -95,7 +95,14 @@ Next.js environment:
 API_BASE_URL=http://api:8000
 NEXT_PUBLIC_APP_NAME=Finance Helper
 NEXT_PUBLIC_APP_TIME_ZONE=America/New_York
+WEB_PORT=3000
+WEB_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 ```
+
+`WEB_ALLOWED_ORIGINS` is a comma-separated list of exact browser origins with
+no paths. Its ports must match `WEB_PORT`. If the app is opened with a different
+host name or port, add that exact origin before starting the web service; do not
+use wildcards.
 
 The database password in `DATABASE_URL` must match `POSTGRES_PASSWORD`.
 Generate the Django secret and database password with a secure password
@@ -274,6 +281,8 @@ Before calling the local deployment complete, verify:
 
 - All containers are healthy after a clean start and after a host reboot.
 - `http://localhost:3000` loads without exposing the API or database ports.
+- API requests with a wrong `Host`, and API mutations with a missing or
+  unapproved `Origin`, are rejected.
 - Signup creates the initial user, and disabling signup prevents another user
   from registering.
 - Login, logout, and session persistence work.
